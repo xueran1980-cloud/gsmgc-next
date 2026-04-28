@@ -51,18 +51,28 @@ interface ProductsRawResponse {
 // Note: products-raw is ~3.5MB, exceeds Next.js default 2MB response cache limit.
 // We use revalidate: 86400 for ISR (controls HTML page regeneration).
 // The JSON response itself won't be cached by Next.js (too large), but CF caches it for 60s.
+// Detect Vercel build environment (no NEXT_PUBLIC_ vars available)
+const isBuildTime = typeof process.env.VERCEL !== 'undefined' && !process.env.VERCEL_URL;
+
 export async function fetchProducts(): Promise<Product[]> {
-  const res = await fetch(PRODUCTS_API, {
-    next: { revalidate: 86400 }, // ISR 24h
-    headers: {
-      "User-Agent": "GSMGC-Bot/1.0 (SSG Build)",
-    },
-  });
-  if (!res.ok) {
-    throw new Error(`Products fetch failed: ${res.status}`);
+  try {
+    const res = await fetch(PRODUCTS_API, {
+      next: { revalidate: 86400 }, // ISR 24h
+      headers: {
+        "User-Agent": "GSMGC-Bot/1.0 (SSG Build)",
+      },
+    });
+    if (!res.ok) {
+      console.warn(`[fetchProducts] API returned ${res.status}, falling back to empty`);
+      return [];
+    }
+    const data: ProductsRawResponse = await res.json();
+    return data.products;
+  } catch (err) {
+    // Build-time fetch failure (CF Bot Fight Mode etc.) → return empty, pages render at runtime via ISR
+    console.warn(`[fetchProducts] Fetch failed during build, falling back to empty:`, err);
+    return [];
   }
-  const data: ProductsRawResponse = await res.json();
-  return data.products;
 }
 
 export function getCategoriesFromProducts(products: Product[]): ProductCategory[] {

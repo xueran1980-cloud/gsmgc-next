@@ -13,6 +13,9 @@ import ImageGallery from '@/components/ImageGallery';
 import ShareButton from '@/components/ShareButton';
 
 // ---------- Static Params ----------
+// If build-time fetch fails (CF blocks Vercel build IP), returns [].
+// Pages are generated on first visit via ISR (revalidate=86400 in fetchProducts).
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
   const products = await fetchProducts();
