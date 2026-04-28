@@ -6,9 +6,9 @@ import CategoriesSection from "@/components/CategoriesSection";
 import BrandsSection from "@/components/BrandsSection";
 import StatsSection from "@/components/StatsSection";
 
-// Dynamic rendering: fetch products at request time, not build time.
-// CF Bot Fight Mode blocks Vercel build IPs (error 1010).
-export const dynamic = 'force-dynamic';
+// ISR: revalidate every 60s via CF Edge Cache (products-raw TTL = 600s).
+// CF Bot Fight Mode is bypassed with User-Agent header in fetchProducts().
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   alternates: { canonical: "https://gsmgc.es" },
