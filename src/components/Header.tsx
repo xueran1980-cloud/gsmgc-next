@@ -1,14 +1,121 @@
-import Link from "next/link";
-import { Phone, Smartphone, Search } from "lucide-react";
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
+import {
+  ShoppingCart, Search, Menu, X, User, Phone,
+  ChevronDown, Smartphone, Battery, Cable, Headphones,
+  Monitor, Wrench, Package, LayoutGrid,
+} from 'lucide-react';
+import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
+import CartDrawer from '@/components/CartDrawer';
 
 const NAV_LINKS = [
-  { label: "Inicio", href: "/" },
-  { label: "Catálogo", href: "/tienda" },
-  { label: "Nosotros", href: "/sobre-nosotros" },
-  { label: "Contacto", href: "/contacto" },
+  { label: 'Inicio', href: '/' },
+  {
+    label: 'Catálogo', href: '/tienda',
+    dropdown: [
+      { label: 'Ver todo', href: '/tienda', icon: LayoutGrid, desc: 'Todo el catálogo' },
+      { label: 'Pantallas', href: '/tienda?category=34', icon: Monitor, desc: 'LCD y OLED' },
+      { label: 'Fundas', href: '/tienda?category=36', icon: Smartphone, desc: 'Silicona, TPU, piel' },
+      { label: 'Baterías', href: '/tienda?category=23', icon: Battery, desc: 'Todas las marcas' },
+      { label: 'Cables y cargadores', href: '/tienda?category=39', icon: Cable, desc: 'USB-C, Lightning...' },
+      { label: 'Audio', href: '/tienda?category=24', icon: Headphones, desc: 'Auriculares y altavoces' },
+      { label: 'Herramientas', href: '/tienda?category=29', icon: Wrench, desc: 'Reparación y herramientas' },
+      { label: 'Novedades', href: '/tienda?orderby=date&order=desc', icon: Package, desc: 'Últimas llegadas' },
+    ],
+  },
+  { label: 'Nosotros', href: '/sobre-nosotros' },
+  { label: 'Contacto', href: '/contacto' },
 ];
 
+/* Dropdown menu component */
+function NavDropdown({ items, onClose }: { items: NonNullable<typeof NAV_LINKS[number]['dropdown']>; onClose: () => void }) {
+  if (!items) return null;
+  return (
+    <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 py-2 animate-[fadeInDown_0.15s_ease]">
+      {items.map(({ label, href, icon: Icon, desc }) => (
+        <Link
+          key={href}
+          href={href}
+          onClick={onClose}
+          className="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition group"
+        >
+          <div className="w-8 h-8 bg-blue-50 group-hover:bg-[#2563eb] rounded-lg flex items-center justify-center shrink-0 transition">
+            <Icon size={15} className="text-[#2563eb] group-hover:text-white transition" />
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-gray-900 group-hover:text-[#2563eb] transition">{label}</div>
+            <div className="text-xs text-gray-400">{desc}</div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 export default function Header() {
+  const { totalItems } = useCart();
+  const { isAuthenticated, user, logout } = useAuth();
+  const [cartOpen, setCartOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchVal, setSearchVal] = useState('');
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const dropdownTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const accountTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Close all on route change
+  useEffect(() => {
+    setActiveDropdown(null);
+    setMenuOpen(false);
+    setSearchOpen(false);
+    setAccountMenuOpen(false);
+  }, [pathname]);
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (searchVal.trim()) {
+      router.push(`/tienda?search=${encodeURIComponent(searchVal.trim())}`);
+      setSearchOpen(false);
+      setSearchVal('');
+    }
+  }
+
+  function handleMouseEnter(label: string) {
+    if (dropdownTimer.current) clearTimeout(dropdownTimer.current);
+    setActiveDropdown(label);
+  }
+
+  function handleMouseLeave() {
+    dropdownTimer.current = setTimeout(() => setActiveDropdown(null), 150);
+  }
+
+  function handleDropdownMouseEnter() {
+    if (dropdownTimer.current) clearTimeout(dropdownTimer.current);
+  }
+
+  function handleAccountEnter() {
+    if (accountTimer.current) clearTimeout(accountTimer.current);
+    setAccountMenuOpen(true);
+  }
+
+  function handleAccountLeave() {
+    accountTimer.current = setTimeout(() => setAccountMenuOpen(false), 150);
+  }
+
+  async function handleLogout() {
+    await logout();
+    setAccountMenuOpen(false);
+    router.push('/');
+  }
+
   return (
     <>
       {/* Top bar */}
@@ -21,12 +128,17 @@ export default function Header() {
           <span className="hidden md:block text-xs text-blue-200">
             🇮🇨 Envío en 24h a Canarias · Garantía 6 meses · Solo mayoristas
           </span>
-          <Link
-            href="/mi-cuenta?register=1"
-            className="bg-[#ea580c] hover:bg-orange-500 px-3 py-0.5 rounded text-white text-xs font-bold transition"
-          >
-            Solicitar cuenta
-          </Link>
+          <span className="flex items-center gap-3">
+            <Link href="/mi-cuenta" className="hover:text-blue-200 transition flex items-center gap-1 text-xs">
+              <User size={13} /> Acceso
+            </Link>
+            <Link
+              href="/mi-cuenta?register=1"
+              className="bg-[#ea580c] hover:bg-orange-500 px-3 py-0.5 rounded text-white text-xs font-bold transition"
+            >
+              Solicitar cuenta
+            </Link>
+          </span>
         </div>
       </div>
 
@@ -46,38 +158,202 @@ export default function Header() {
 
           {/* Desktop nav */}
           <nav className="hidden lg:flex items-center gap-0.5 ml-4">
-            {NAV_LINKS.map(link => (
-              <Link
+            {NAV_LINKS.map((link) => (
+              <div
                 key={link.label}
-                href={link.href}
-                className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:text-[#2563eb] hover:bg-blue-50 transition"
+                className="relative"
+                onMouseEnter={() => link.dropdown ? handleMouseEnter(link.label) : null}
+                onMouseLeave={link.dropdown ? handleMouseLeave : undefined}
               >
-                {link.label}
-              </Link>
+                <Link
+                  href={link.href}
+                  className={`flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition ${
+                    pathname === link.href
+                      ? 'text-[#2563eb] bg-blue-50'
+                      : 'text-gray-700 hover:text-[#2563eb] hover:bg-blue-50'
+                  }`}
+                >
+                  {link.label}
+                  {link.dropdown && (
+                    <ChevronDown
+                      size={14}
+                      className={`transition-transform ${activeDropdown === link.label ? 'rotate-180' : ''}`}
+                    />
+                  )}
+                </Link>
+
+                {link.dropdown && activeDropdown === link.label && (
+                  <div onMouseEnter={handleDropdownMouseEnter} onMouseLeave={handleMouseLeave}>
+                    <NavDropdown items={link.dropdown} onClose={() => setActiveDropdown(null)} />
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
 
-          {/* Search placeholder */}
-          <div className="flex-1 hidden md:block max-w-xs xl:max-w-sm ml-auto">
-            <Link
-              href="/tienda"
-              className="flex items-center gap-2 border border-gray-200 rounded-xl pl-4 pr-4 py-2.5 text-sm text-gray-400 hover:border-[#2563eb] transition bg-gray-50"
-            >
-              <Search size={15} />
-              <span>Buscar producto...</span>
-            </Link>
+          {/* Search box — desktop */}
+          <div className="flex-1 hidden md:block max-w-xs xl:max-w-sm">
+            <form onSubmit={handleSearch} className="relative">
+              <input
+                type="text"
+                value={searchVal}
+                onChange={(e) => setSearchVal(e.target.value)}
+                placeholder="Buscar producto, marca, modelo..."
+                className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent bg-gray-50 focus:bg-white transition"
+              />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            </form>
           </div>
 
-          {/* Mobile menu button */}
-          <Link
-            href="/tienda"
-            className="lg:hidden p-2 text-gray-600 hover:text-[#2563eb] hover:bg-blue-50 rounded-lg transition"
-            aria-label="Menú"
-          >
-            <Smartphone size={21} />
-          </Link>
+          {/* Right icons */}
+          <div className="flex items-center gap-1 ml-auto lg:ml-0">
+            {/* Mobile search toggle */}
+            <button
+              onClick={() => setSearchOpen(!searchOpen)}
+              className="md:hidden p-2 text-gray-600 hover:text-[#2563eb] hover:bg-blue-50 rounded-lg transition"
+              aria-label="Buscar"
+            >
+              <Search size={20} />
+            </button>
+
+            {/* Account */}
+            <div
+              className="hidden sm:block relative"
+              onMouseEnter={handleAccountEnter}
+              onMouseLeave={handleAccountLeave}
+            >
+              <Link
+                href={isAuthenticated ? '#' : '/mi-cuenta'}
+                onClick={(e) => {
+                  if (isAuthenticated) {
+                    e.preventDefault();
+                    setAccountMenuOpen(!accountMenuOpen);
+                  }
+                }}
+                className="flex p-2 text-gray-600 hover:text-[#2563eb] hover:bg-blue-50 rounded-lg transition items-center"
+                aria-label="Mi cuenta"
+              >
+                <User size={20} />
+              </Link>
+
+              {/* Account dropdown */}
+              {isAuthenticated && accountMenuOpen && (
+                <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 py-2">
+                  <div className="px-4 py-2 border-b border-gray-50">
+                    <p className="text-sm font-bold text-gray-900 truncate">{user?.display_name || user?.email}</p>
+                    <p className="text-xs text-gray-400 truncate">{user?.company || ''}</p>
+                  </div>
+                  <Link
+                    href="/mi-cuenta"
+                    onClick={() => setAccountMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-[#2563eb] transition"
+                  >
+                    <User size={14} /> Mi cuenta
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition"
+                  >
+                    Cerrar sesión
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Cart */}
+            <button
+              onClick={() => setCartOpen(true)}
+              className="relative p-2 text-gray-600 hover:text-[#2563eb] hover:bg-blue-50 rounded-lg transition"
+              aria-label="Carrito"
+            >
+              <ShoppingCart size={21} />
+              {totalItems > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-[#ea580c] text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">
+                  {totalItems > 99 ? '99+' : totalItems}
+                </span>
+              )}
+            </button>
+
+            {/* Mobile menu toggle */}
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="lg:hidden p-2 text-gray-600 hover:text-[#2563eb] hover:bg-blue-50 rounded-lg transition"
+              aria-label="Menú"
+            >
+              {menuOpen ? <X size={21} /> : <Menu size={21} />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile search bar */}
+        {searchOpen && (
+          <div className="md:hidden px-4 pb-3 border-t border-gray-50">
+            <form onSubmit={handleSearch} className="relative mt-2">
+              <input
+                autoFocus
+                type="text"
+                value={searchVal}
+                onChange={(e) => setSearchVal(e.target.value)}
+                placeholder="Buscar..."
+                className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] bg-gray-50"
+              />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            </form>
+          </div>
+        )}
+
+        {/* Mobile menu */}
+        {menuOpen && (
+          <nav className="lg:hidden border-t border-gray-100 bg-white pb-2">
+            {NAV_LINKS.map((link) => (
+              <div key={link.label}>
+                <Link
+                  href={link.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 hover:text-[#2563eb] hover:bg-blue-50 transition"
+                >
+                  {link.label}
+                </Link>
+                {/* Mobile dropdown items */}
+                {link.dropdown && (
+                  <div className="bg-gray-50 border-t border-b border-gray-100">
+                    {link.dropdown.slice(1).map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2 px-7 py-2.5 text-xs text-gray-600 hover:text-[#2563eb] hover:bg-blue-50 transition"
+                      >
+                        <item.icon size={14} className="text-gray-400" />
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+            <div className="px-4 pt-3 border-t border-gray-100 mt-1">
+              <Link
+                href="/mi-cuenta"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#2563eb] mb-2"
+              >
+                <User size={16} /> Mi cuenta
+              </Link>
+              <Link
+                href="/mi-cuenta?register=1"
+                onClick={() => setMenuOpen(false)}
+                className="block bg-[#2563eb] text-white text-center font-bold py-2.5 rounded-xl text-sm hover:bg-[#1d4ed8] transition"
+              >
+                Solicitar cuenta mayorista
+              </Link>
+            </div>
+          </nav>
+        )}
       </header>
+
+      {/* CartDrawer */}
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
     </>
   );
 }

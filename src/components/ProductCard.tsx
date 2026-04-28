@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Product } from "@/lib/api";
 import { getProductImage } from "@/lib/api";
+import AddToCartButton from "@/components/AddToCartButton";
 
 function generateSlug(name: string): string {
   if (!name) return "";
@@ -128,7 +129,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
         )}
       </div>
 
-      {/* Price */}
+      {/* Price + Add to Cart */}
       <div className="flex items-end gap-2 mt-3 pt-3 border-t border-gray-50">
         <div className="flex-1">
           <div className="text-[#2563eb] font-black text-lg leading-none">
@@ -145,6 +146,10 @@ export default function ProductCard({ product, compact = false }: { product: Pro
             <div className="text-[11px] text-gray-400 mt-0.5">+ IVA/IGIC</div>
           )}
         </div>
+      </div>
+      {/* Add to Cart (client component, keeps card as server component) */}
+      <div className="mt-3">
+        <AddToCartButton product={product} />
       </div>
     </Link>
   );

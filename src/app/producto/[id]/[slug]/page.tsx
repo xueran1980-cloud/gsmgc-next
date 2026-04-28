@@ -11,6 +11,7 @@ import {
 import { fetchProducts, generateSlug, type Product } from '@/lib/api';
 import ImageGallery from '@/components/ImageGallery';
 import ShareButton from '@/components/ShareButton';
+import ProductActions from './ProductActions';
 
 // ---------- Static Params ----------
 // If build-time fetch fails (CF blocks Vercel build IP), returns [].
@@ -286,6 +287,9 @@ export default async function ProductPage({ params }: PageProps) {
                 Cantidad mínima de compra: <strong>{product.min_qty} unidades</strong>
               </div>
             )}
+
+            {/* Add to Cart (client component) */}
+            <ProductActions product={product} />
 
             {/* WhatsApp CTA */}
             <a
