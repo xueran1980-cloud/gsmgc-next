@@ -1,0 +1,88 @@
+// GSMGC Next.js - 数据获取层
+// SSG/ISR 页面在服务端调用，CSR 页面通过 smartFetch 调用
+
+const PRODUCTS_API = "https://api.gsmgc.es/wp-json/gsmgc/v1/products-raw";
+
+// ---------- 类型定义 ----------
+
+export interface ProductImage {
+  id: number;
+  src: string;
+}
+
+export interface ProductCategory {
+  id: number;
+  name: string;
+  slug: string;
+  parent: number;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  slug: string;
+  sku: string;
+  price: string;
+  regular_price: string;
+  sale_price: string;
+  stock_status: string;
+  stock_quantity: number | null;
+  manage_stock: boolean;
+  short_description: string;
+  description: string;
+  total_sales: number;
+  date_created: string;
+  images: ProductImage[];
+  categories: ProductCategory[];
+  status: string;
+  min_qty: number;
+}
+
+interface ProductsRawResponse {
+  success: boolean;
+  count: number;
+  cached_at: string;
+  products: Product[];
+}
+
+// ---------- SSG/ISR 数据获取（Server Component） ----------
+
+// Server-side fetch for SSG/ISR pages
+// Note: products-raw is ~3.5MB, exceeds Next.js default 2MB response cache limit.
+// We use revalidate: 86400 for ISR (controls HTML page regeneration).
+// The JSON response itself won't be cached by Next.js (too large), but CF caches it for 60s.
+export async function fetchProducts(): Promise<Product[]> {
+  const res = await fetch(PRODUCTS_API, {
+    next: { revalidate: 86400 }, // ISR 24h
+  });
+  if (!res.ok) {
+    throw new Error(`Products fetch failed: ${res.status}`);
+  }
+  const data: ProductsRawResponse = await res.json();
+  return data.products;
+}
+
+export function getCategoriesFromProducts(products: Product[]): ProductCategory[] {
+  const categoryMap = new Map<number, ProductCategory>();
+  for (const product of products) {
+    if (!product.categories) continue;
+    for (const cat of product.categories) {
+      if (!categoryMap.has(cat.id)) {
+        categoryMap.set(cat.id, cat);
+      }
+    }
+  }
+  return Array.from(categoryMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+// ---------- 客户端工具函数 ----------
+
+export function getProductImage(product: Product): string {
+  return product.images?.[0]?.src || "/product-placeholder.svg";
+}
+
+export function formatPrice(priceStr: string): string {
+  const price = parseFloat(priceStr);
+  if (isNaN(price)) return "0,00";
+  return price.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}

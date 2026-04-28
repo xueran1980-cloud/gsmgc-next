@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <linearGradient id="phone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1e40af"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="800" fill="url(#bg)" rx="0"/>
+
+  <!-- Phone body -->
+  <rect x="270" y="160" width="260" height="500" rx="36" fill="url(#phone)"/>
+
+  <!-- Phone screen -->
+  <rect x="286" y="196" width="228" height="428" rx="8" fill="white" fill-opacity="0.15"/>
+
+  <!-- Camera notch -->
+  <rect x="350" y="172" width="100" height="18" rx="9" fill="black" fill-opacity="0.3"/>
+
+  <!-- Screen content lines -->
+  <rect x="310" y="230" width="180" height="8" rx="4" fill="white" fill-opacity="0.25"/>
+  <rect x="310" y="252" width="140" height="8" rx="4" fill="white" fill-opacity="0.15"/>
+  <rect x="310" y="280" width="180" height="80" rx="8" fill="white" fill-opacity="0.1"/>
+  <rect x="310" y="376" width="180" height="8" rx="4" fill="white" fill-opacity="0.15"/>
+  <rect x="310" y="398" width="120" height="8" rx="4" fill="white" fill-opacity="0.15"/>
+  <rect x="310" y="420" width="160" height="8" rx="4" fill="white" fill-opacity="0.15"/>
+
+  <!-- Home button area -->
+  <circle cx="400" cy="628" r="16" fill="white" fill-opacity="0.2"/>
+
+  <!-- Bottom color bar -->
+  <rect x="0" y="740" width="800" height="60" fill="url(#bar)"/>
+
+  <!-- "Sin imagen" label -->
+  <text x="400" y="776" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="white" letter-spacing="2">SIN IMAGEN</text>
+</svg>
