@@ -1,6 +1,11 @@
 import type { MetadataRoute } from 'next';
 import { fetchProducts, getCategoriesFromProducts, generateSlug } from '@/lib/api';
 
+// Dynamic rendering: generate sitemap at request time (not build time)
+// CF Bot Fight Mode blocks Vercel build IPs, so build-time fetch always fails.
+// Runtime fetch works fine (Tienda 3.2MB proves it).
+export const dynamic = 'force-dynamic';
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const products = await fetchProducts();
   const baseUrl = 'https://gsmgc.es';

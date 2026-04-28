@@ -6,6 +6,10 @@ import CategoriesSection from "@/components/CategoriesSection";
 import BrandsSection from "@/components/BrandsSection";
 import StatsSection from "@/components/StatsSection";
 
+// Dynamic rendering: fetch products at request time, not build time.
+// CF Bot Fight Mode blocks Vercel build IPs (error 1010).
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   alternates: { canonical: "https://gsmgc.es" },
 };

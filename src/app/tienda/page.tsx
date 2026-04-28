@@ -3,8 +3,9 @@ import type { Metadata } from 'next';
 import { fetchProducts, getCategoriesFromProducts, generateSlug } from '@/lib/api';
 import TiendaClient from '@/components/TiendaClient';
 
-// SSG: fetch all products at build time
-export const revalidate = 86400; // ISR 24h
+// Dynamic rendering: fetch products at request time, not build time.
+// CF Bot Fight Mode blocks Vercel build IPs (error 1010).
+export const dynamic = 'force-dynamic';
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | undefined }>;
