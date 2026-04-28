@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
         hostname: "api.gsmgc.es",
         pathname: "/wp-content/uploads/**",
       },
+      {
+        protocol: "https",
+        hostname: "gsmgc.es",
+        pathname: "/wp-content/uploads/**",
+      },
     ],
   },
   // ISR 构建超时

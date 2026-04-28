@@ -1,9 +1,14 @@
+import type { Metadata } from "next";
 import { fetchProducts, getCategoriesFromProducts } from "@/lib/api";
 import Hero from "@/components/Hero";
 import { ProductsCarousel } from "@/components/ProductsCarousel";
 import CategoriesSection from "@/components/CategoriesSection";
 import BrandsSection from "@/components/BrandsSection";
 import StatsSection from "@/components/StatsSection";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "https://gsmgc.es" },
+};
 
 export default async function HomePage() {
   const products = await fetchProducts();

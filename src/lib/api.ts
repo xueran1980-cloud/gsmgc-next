@@ -75,6 +75,18 @@ export function getCategoriesFromProducts(products: Product[]): ProductCategory[
   return Array.from(categoryMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
+// ---------- Slug 生成（与 ProductCard 一致） ----------
+
+export function generateSlug(name: string): string {
+  if (!name) return "";
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 // ---------- 客户端工具函数 ----------
 
 export function getProductImage(product: Product): string {
