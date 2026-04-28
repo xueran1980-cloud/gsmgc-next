@@ -18,13 +18,16 @@ function useCarousel() {
   return { ref, scroll };
 }
 
-export function ProductsCarousel({ title, products, viewAllLink }: { title: string; products: Product[]; viewAllLink?: string }) {
+export function ProductsCarousel({ title, products, viewAllLink, icon }: { title: string; products: Product[]; viewAllLink?: string; icon?: React.ReactNode }) {
   const { ref, scroll } = useCarousel();
 
   return (
     <section className="py-10">
       <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-4">
-        <h2 className="text-2xl font-black text-gray-900">{title}</h2>
+        <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+          {icon && <span>{icon}</span>}
+          {title}
+        </h2>
         <div className="flex items-center gap-2">
           <button
             onClick={() => scroll(-1)}

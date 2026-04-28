@@ -54,12 +54,14 @@ export default async function HomePage() {
       <Hero featuredProducts={heroProducts} />
       <ProductsCarousel
         title="Novedades"
+        icon={<span className="text-xl">✨</span>}
         products={latest}
         viewAllLink="/tienda?orderby=date"
       />
       <CategoriesSection categories={categoriesWithCounts} />
       <ProductsCarousel
         title="Más vendidos"
+        icon={<span className="text-xl">🔥</span>}
         products={featured}
         viewAllLink="/tienda"
       />

@@ -9,6 +9,7 @@ export interface CartItem {
   sku: string;
   name: string;
   price: string;
+  regular_price?: string;
   stock: number;
   image?: string;
   qty: number;
