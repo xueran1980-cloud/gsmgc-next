@@ -54,6 +54,9 @@ interface ProductsRawResponse {
 export async function fetchProducts(): Promise<Product[]> {
   const res = await fetch(PRODUCTS_API, {
     next: { revalidate: 86400 }, // ISR 24h
+    headers: {
+      "User-Agent": "GSMGC-Bot/1.0 (SSG Build)",
+    },
   });
   if (!res.ok) {
     throw new Error(`Products fetch failed: ${res.status}`);
