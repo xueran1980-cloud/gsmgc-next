@@ -55,6 +55,10 @@ interface ProductsRawResponse {
 export async function fetchProducts(): Promise<Product[]> {
   const res = await fetch(PRODUCTS_API, {
     next: { revalidate: 86400 }, // ISR 24h
+    headers: {
+      // Critical: CF Bot Fight Mode blocks requests without User-Agent (error 1010)
+      "User-Agent": "GSMGC-Bot/1.0",
+    },
   });
   if (!res.ok) {
     console.warn(`[fetchProducts] API returned ${res.status}, returning empty array`);
