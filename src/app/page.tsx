@@ -51,6 +51,60 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* JSON-LD: Organization + WebSite SearchAction */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "GSMGC Accesorios Móvil",
+            "alternateName": "GSMGC",
+            "url": "https://gsmgc.es",
+            "logo": "https://gsmgc.es/wp-content/uploads/2026/04/gsmgc-logo.png",
+            "description": "Mayorista B2B de accesorios y repuestos para móviles en Canarias. Más de 2.100 productos con envío en 24h.",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "C/ Mayor 45",
+              "addressLocality": "Las Palmas de Gran Canaria",
+              "postalCode": "35001",
+              "addressRegion": "Canarias",
+              "addressCountry": "ES",
+            },
+            "telephone": "+34-688-560-560",
+            "areaServed": [
+              { "@type": "State", "name": "Canarias", "containsPlace": [
+                { "@type": "City", "name": "Gran Canaria" },
+                { "@type": "City", "name": "Tenerife" },
+              ]},
+            ],
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "telephone": "+34-688-560-560",
+              "contactType": "customer service",
+              "availableLanguage": ["Spanish", "English"],
+              "areaServed": "ES",
+            },
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "GSMGC - Accesorios Móviles Mayorista Canarias",
+            "url": "https://gsmgc.es",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://gsmgc.es/tienda?search={search_term_string}",
+              "query-input": "required name=search_term_string",
+            },
+          }),
+        }}
+      />
+
       <Hero featuredProducts={heroProducts} />
       <ProductsCarousel
         title="Novedades"

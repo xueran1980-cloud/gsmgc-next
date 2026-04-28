@@ -5,6 +5,7 @@ const FOOTER_LINKS: Record<string, { label: string; href: string }[]> = {
   Tienda: [
     { label: "Inicio", href: "/" },
     { label: "Catálogo", href: "/tienda" },
+    { label: "Marcas", href: "/tienda?sort=brand" },
     { label: "Novedades", href: "/tienda?orderby=date" },
   ],
   Legal: [
@@ -16,6 +17,7 @@ const FOOTER_LINKS: Record<string, { label: string; href: string }[]> = {
   Cuenta: [
     { label: "Iniciar sesión", href: "/mi-cuenta" },
     { label: "Registrarse", href: "/mi-cuenta?register=1" },
+    { label: "Recuperar contraseña", href: "/mi-cuenta?lost=1" },
   ],
 };
 
