@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ShoppingCart, Check, Minus, Plus } from 'lucide-react';
+import { ShoppingCart, Check } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
 interface ProductActionsProps {
@@ -50,50 +50,51 @@ export default function ProductActions({ product }: ProductActionsProps) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex items-center gap-3 mb-5">
       {/* Quantity selector */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden">
-          <button
-            onClick={() => setQty((q) => Math.max(minQty, q - 1))}
-            className="w-10 h-10 flex items-center justify-center hover:bg-gray-50 transition"
-            type="button"
-          >
-            <Minus size={16} className="text-gray-500" />
-          </button>
-          <span className="w-12 text-center font-bold text-sm">{qty}</span>
-          <button
-            onClick={() => setQty((q) => Math.min(stock, q + 1))}
-            className="w-10 h-10 flex items-center justify-center hover:bg-gray-50 transition"
-            type="button"
-          >
-            <Plus size={16} className="text-gray-500" />
-          </button>
-        </div>
-        {stock > 0 && (
-          <span className="text-xs text-gray-400">{stock} disponibles</span>
-        )}
+      <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+        <button
+          onClick={() => setQty((q) => Math.max(minQty, q - 1))}
+          className="w-11 h-12 text-gray-600 hover:bg-gray-50 transition text-lg font-bold flex items-center justify-center"
+          type="button"
+        >
+          −
+        </button>
+        <input
+          type="number"
+          value={qty}
+          onChange={e => setQty(Math.max(minQty, parseInt(e.target.value) || minQty))}
+          className="w-14 text-center font-black text-lg border-x border-gray-100 h-12 focus:outline-none"
+          min={minQty}
+        />
+        <button
+          onClick={() => setQty((q) => Math.min(stock, q + 1))}
+          className="w-11 h-12 text-gray-600 hover:bg-gray-50 transition text-lg font-bold flex items-center justify-center"
+          type="button"
+        >
+          +
+        </button>
       </div>
 
       {/* Add to cart button */}
       <button
         onClick={handleAdd}
         disabled={added}
-        className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm transition-all duration-200 ${
+        className={`flex-1 h-12 rounded-xl font-bold flex items-center justify-center gap-2 transition text-base ${
           added
             ? 'bg-green-500 text-white'
-            : 'bg-[#2563eb] text-white hover:bg-[#1d4ed8] active:bg-[#1e40af]'
+            : 'bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-lg hover:shadow-xl'
         }`}
       >
         {added ? (
           <>
             <Check size={18} />
-            Agregado al carrito
+            Añadido al carrito
           </>
         ) : (
           <>
             <ShoppingCart size={18} />
-            Agregar al carrito — €{(parseFloat(product.price || '0') * qty).toFixed(2)}
+            Añadir al carrito
           </>
         )}
       </button>

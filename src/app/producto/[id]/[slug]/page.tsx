@@ -12,6 +12,7 @@ import { fetchProducts, generateSlug, type Product } from '@/lib/api';
 import ImageGallery from '@/components/ImageGallery';
 import ShareButton from '@/components/ShareButton';
 import ProductActions from './ProductActions';
+import ProductCard from '@/components/ProductCard';
 
 // ---------- Static Params ----------
 // If build-time fetch fails (CF blocks Vercel build IP), returns [].
@@ -102,6 +103,12 @@ export default async function ProductPage({ params }: PageProps) {
   const categoryName = product.categories?.[0]?.name || 'Catálogo';
   const categoryId = product.categories?.[0]?.id || '';
   const canonicalUrl = `https://gsmgc.es/producto/${id}/${expectedSlug}`;
+
+  // Related products: same category, exclude self, max 6
+  const allProducts = await fetchProducts();
+  const related = allProducts
+    .filter(p => p.categories?.[0]?.id === categoryId && p.id !== parseInt(id) && p.status === 'publish')
+    .slice(0, 6);
 
   // WhatsApp message
   const waMsg = encodeURIComponent(
@@ -339,6 +346,26 @@ export default async function ProductPage({ params }: PageProps) {
             )}
           </div>
         </div>
+
+        {/* Related products */}
+        {related.length > 0 && (
+          <div className="mt-16">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-black text-gray-900">Productos relacionados</h2>
+              {product.categories?.[0] && (
+                <Link
+                  href={`/tienda?category=${product.categories[0].id}`}
+                  className="text-sm text-[#2563eb] font-semibold hover:underline flex items-center gap-1"
+                >
+                  Ver todos <ChevronRight size={15} />
+                </Link>
+              )}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              {related.map(p => <ProductCard key={p.id} product={p} />)}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

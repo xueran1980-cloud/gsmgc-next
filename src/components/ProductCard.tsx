@@ -93,13 +93,19 @@ export default function ProductCard({ product, compact = false }: { product: Pro
                 alt={product.name}
                 className={`max-h-full max-w-full object-contain group-hover:scale-105 transition-transform ${imgLoaded ? "" : "opacity-0"}`}
                 loading="lazy"
+                decoding="async"
                 width={300}
                 height={300}
                 onLoad={() => setImgLoaded(true)}
               />
             </>
           ) : (
-            <div className="h-12 w-auto bg-gray-200 rounded animate-pulse" />
+            <img
+              src="/product-thumb-placeholder.svg"
+              alt="Sin imagen"
+              className="h-16 w-auto object-contain opacity-70"
+              aria-hidden="true"
+            />
           )}
         </div>
         <h3 className="text-xs font-semibold text-gray-800 leading-tight line-clamp-2 mb-1.5 group-hover:text-[#2563eb] transition">
@@ -174,13 +180,19 @@ export default function ProductCard({ product, compact = false }: { product: Pro
               alt={product.name}
               className={`max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300 ${imgLoaded ? "" : "opacity-0"}`}
               loading="lazy"
+              decoding="async"
               width={300}
               height={300}
               onLoad={() => setImgLoaded(true)}
             />
           </>
         ) : (
-          <div className="max-h-full max-w-full object-contain opacity-60 text-gray-300 text-2xl">📦</div>
+            <img
+              src="/product-placeholder.svg"
+              alt="Sin imagen"
+              className="max-h-full max-w-full object-contain opacity-60"
+              aria-hidden="true"
+            />
         )}
       </div>
 
