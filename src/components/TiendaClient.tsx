@@ -225,15 +225,17 @@ export default function TiendaClient({ products, categories: categoriesProp }: T
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex gap-6">
           {/* Sidebar filters (desktop only) — 对齐现站：Marcas + Tipo de Producto */}
-          <aside className="hidden lg:block w-56 shrink-0">
-            <div className="bg-white rounded-xl border border-gray-100 p-4">
-              {/* Marcas 分组 */}
-              <h3 className="font-bold text-sm mb-3">Marcas</h3>
-              <div className="mb-4">
+          <aside className="hidden lg:block w-60 shrink-0">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sticky top-[calc(var(--header-offset,64px)+1rem)]">
+              {/* Marcas 分组 — 对齐现站：flex-wrap 网格布局 + rounded-full 胶囊按钮 */}
+              <h3 className="font-bold text-sm text-gray-800 mb-2.5 tracking-tight">Marcas</h3>
+              <div className="flex flex-wrap gap-1.5 mb-3 max-h-[calc(100vh-18rem)] overflow-y-auto pr-0.5">
                 <button
                   onClick={() => updateParam('category', '')}
-                  className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition mb-1 ${
-                    !categoryParam ? 'bg-[#2563eb] text-white font-semibold' : 'text-gray-600 hover:bg-gray-50'
+                  className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 whitespace-nowrap ${
+                    !categoryParam
+                      ? 'font-semibold bg-[#2563eb] text-white shadow-md shadow-blue-200 scale-105'
+                      : 'bg-gray-50 text-gray-600 hover:bg-blue-50 hover:text-[#2563eb]'
                   }`}
                 >
                   Todas
@@ -242,10 +244,10 @@ export default function TiendaClient({ products, categories: categoriesProp }: T
                   <button
                     key={cat.id}
                     onClick={() => updateParam('category', String(cat.id))}
-                    className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition mb-1 ${
+                    className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 whitespace-nowrap ${
                       String(cat.id) === categoryParam
-                        ? 'bg-[#2563eb] text-white font-semibold'
-                        : 'text-gray-600 hover:bg-gray-50'
+                        ? 'font-semibold bg-[#2563eb] text-white shadow-md shadow-blue-200 scale-105'
+                        : 'bg-gray-50 text-gray-600 hover:bg-blue-50 hover:text-[#2563eb]'
                     }`}
                   >
                     {cat.name}
@@ -253,21 +255,25 @@ export default function TiendaClient({ products, categories: categoriesProp }: T
                 ))}
               </div>
 
-              {/* Tipo de Producto 分组 */}
-              <h3 className="font-bold text-sm mb-3">📋 Tipo de Producto</h3>
-              <div>
+              {/* Tipo de Producto 分组 — 对齐现站：purple 主题 + rounded-xl 列表 */}
+              <h3 className="font-bold text-sm text-purple-700 mb-2.5 tracking-tight flex items-center gap-1.5">
+                <span>📋</span> Tipo de Producto
+              </h3>
+              <div className="max-h-[320px] overflow-y-auto pr-0.5 space-y-2">
                 {categories.filter(c => !BRAND_IDS.has(c.id) && (c.count || 0) > 0).map(cat => (
                   <button
                     key={cat.id}
                     onClick={() => updateParam('category', String(cat.id))}
-                    className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition mb-1 flex items-center gap-1.5 ${
+                    className={`w-full text-left px-2.5 py-2 rounded-xl transition-all duration-200 flex items-center gap-2 ${
                       String(cat.id) === categoryParam
-                        ? 'bg-[#2563eb] text-white font-semibold'
-                        : 'text-gray-600 hover:bg-gray-50'
+                        ? 'bg-[#2563eb] text-white font-semibold shadow-md shadow-blue-200'
+                        : 'bg-gray-50 text-gray-600 hover:bg-purple-50 hover:text-purple-700'
                     }`}
                   >
-                    {TYPE_EMOJI[cat.name] && <span>{TYPE_EMOJI[cat.name]}</span>}
-                    {cat.name}
+                    <span className="text-base leading-none shrink-0">{TYPE_EMOJI[cat.name] || ''}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-medium truncate leading-tight">{cat.name}</div>
+                    </div>
                   </button>
                 ))}
               </div>
