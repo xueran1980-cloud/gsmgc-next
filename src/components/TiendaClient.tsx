@@ -8,24 +8,23 @@ import ProductCard from '@/components/ProductCard';
 
 const PER_PAGE = 24;
 
-// 品牌分类 ID — 对齐现站线上 DOM 侧边栏 "Marcas" 分组
-const BRAND_IDS = new Set([17, 18, 41, 30, 19, 20, 28, 21, 33, 38, 22, 35, 27, 37, 26]);
-
-// 品牌 emoji 映射 — 对齐现站（品牌无 emoji，产品类型有）
-const BRAND_EMOJI: Record<string, string> = {};
+// 品牌分类 ID — 对齐现站线上 DOM 侧边栏 "Marcas" 分组（含所有手机品牌）
+const BRAND_IDS = new Set([17, 18, 41, 30, 19, 20, 28, 21, 33, 38, 22, 35, 27, 37, 52, 53, 54]);
 
 // 产品类型 emoji 映射 — 对齐现站线上 DOM
 const TYPE_EMOJI: Record<string, string> = {
   'Pantallas': '📺',
+  'cable de datos': '🔌',
   'Baterias': '🔋',
   'Audio': '🎧',
   'Accesorios': '📦',
   'Cargadores': '🔌',
-  'Cables': '🔌',
   'Herramientas': '🛠️',
   'Fundas': '📱',
-  'Protectores': '📺',
-  'Otros': '📷',
+  'protector de pantalla': '📺',
+  'bateria externa': '🔋',
+  'camara': '📷',
+  'Cables y Cargadores': '🔌',
   'Sin categorizar': '',
 };
 
@@ -38,11 +37,27 @@ interface TiendaClientProps {
   categories: CategoryWithCount[];
 }
 
-export default function TiendaClient({ products, categories }: TiendaClientProps) {
+export default function TiendaClient({ products, categories: categoriesProp }: TiendaClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const [filterOpen, setFilterOpen] = useState(false);
+
+  // 从 products 动态提取完整分类列表（wc_categories.json 可能缺少部分分类）
+  const categories = useMemo(() => {
+    const catMap = new Map<number, ProductCategory & { count: number }>();
+    for (const p of products) {
+      for (const c of p.categories || []) {
+        const existing = catMap.get(c.id);
+        if (existing) {
+          existing.count = (existing.count || 0) + 1;
+        } else {
+          catMap.set(c.id, { ...c, count: 1 });
+        }
+      }
+    }
+    return Array.from(catMap.values()).sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  }, [products]);
 
   // Read params from URL — aligned with old site (orderby + order, not sort)
   // 现站默认排序：Precio: mayor a menor
