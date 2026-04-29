@@ -110,7 +110,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
             />
           )}
         </div>
-        <h3 className="text-xs font-semibold text-gray-800 leading-tight line-clamp-2 mb-1.5 group-hover:text-[#2563eb] transition">
+        <h3 className="text-xs font-semibold text-gray-800 leading-tight mb-1.5 group-hover:text-[#2563eb] transition">
           {product.name}
         </h3>
         {product.sku && (
@@ -213,7 +213,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
 
       {/* Content */}
       <div className="flex-1 flex flex-col">
-        <h3 className="font-semibold text-gray-800 leading-tight line-clamp-2 mb-1 group-hover:text-[#2563eb] transition text-sm">
+        <h3 className="font-semibold text-gray-800 leading-tight mb-1 group-hover:text-[#2563eb] transition text-sm">
           {product.name}
         </h3>
         {product.sku && (

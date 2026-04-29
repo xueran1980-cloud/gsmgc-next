@@ -15,7 +15,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "GSMGC - Repuestos para Móviles al Por Mayor | Canarias",
+    default: "GSMGC - Mayorista Accesorios Móviles Canarias | B2B",
     template: "%s | GSMGC Canarias",
   },
   description: "Distribuidor mayorista de accesorios y repuestos para móviles en Canarias. +2.100 referencias, precios competitivos, envío en 24h. Pantallas, baterías, fundas, cables y más.",
@@ -26,13 +26,13 @@ export const metadata: Metadata = {
     locale: "es_ES",
     url: "https://gsmgc.es",
     siteName: "GSMGC Accesorios Móvil",
-    title: "GSMGC - Repuestos para Móviles al Por Mayor",
+    title: "GSMGC - Mayorista Accesorios Móviles Canarias",
     description: "Distribuidor mayorista de accesorios y repuestos para móviles en Canarias.",
     images: [{ url: "/og-image.png", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "GSMGC - Repuestos para Móviles al Por Mayor",
+    title: "GSMGC - Mayorista Accesorios Móviles Canarias",
     description: "Distribuidor mayorista de accesorios y repuestos para móviles en Canarias.",
     images: ["/og-image.png"],
   },
@@ -48,8 +48,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={inter.variable}>
-      <body className="font-sans antialiased">
+    <html lang="es">
+      <body className={`${inter.className} font-sans antialiased`}>
         <AuthProvider>
           <CartProvider>
             <Header />
