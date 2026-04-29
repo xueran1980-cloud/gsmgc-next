@@ -65,7 +65,7 @@ function MiCuentaContent() {
               <p className="font-semibold mb-1">¿Qué incluye la cuenta B2B?</p>
               <ul className="space-y-1 text-blue-700">
                 <li>✓ Precios mayorista exclusivos</li>
-                <li>✓ Acceso a catálogo completo (2.118 productos)</li>
+                <li>✓ Acceso a catálogo completo (2.077 productos)</li>
                 <li>✓ Pedidos con pago por transferencia</li>
                 <li>✓ Historial de pedidos</li>
               </ul>
