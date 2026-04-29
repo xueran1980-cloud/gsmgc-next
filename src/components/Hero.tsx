@@ -14,7 +14,7 @@ const TRUST_ITEMS = [
   { icon: Truck, text: "Envío en 24h a Canarias" },
   { icon: ShieldCheck, text: "Garantía de 6 meses" },
   { icon: MapPin, text: "Recogida en local" },
-  { icon: Clock, text: "Soporte L-V 9:00-18:00" },
+  { icon: Clock, text: "Soporte L-V 10:00-14:00" },
 ];
 
 const HOT_CATS = ["iPhone", "Samsung", "Xiaomi", "Cables", "Baterías"];

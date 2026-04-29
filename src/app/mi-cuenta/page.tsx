@@ -118,7 +118,7 @@ function MiCuentaContent() {
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-2 pl-13 ml-13">
-                Las solicitudes se procesan de L a V entre 9:00 y 18:00 (hora Canarias)
+                Las solicitudes se procesan de L a V entre 10:00 y 14:00 (hora Canarias)
               </p>
             </div>
 
