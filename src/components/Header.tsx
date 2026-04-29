@@ -24,7 +24,7 @@ const NAV_LINKS = [
       { label: 'Cables y cargadores', href: '/tienda?category=39', icon: Cable, desc: 'USB-C, Lightning...' },
       { label: 'Audio', href: '/tienda?category=24', icon: Headphones, desc: 'Auriculares y altavoces' },
       { label: 'Herramientas', href: '/tienda?category=29', icon: Wrench, desc: 'Reparación y herramientas' },
-      { label: 'Novedades', href: '/tienda?orderby=date&order=desc', icon: Package, desc: 'Últimas llegadas' },
+      { label: 'Novedades', href: '/tienda?sort=date-desc', icon: Package, desc: 'Últimas llegadas' },
     ],
   },
   { label: 'Nosotros', href: '/sobre-nosotros' },

@@ -1,11 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { SlidersHorizontal, X, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product, ProductCategory } from '@/lib/api';
-import { formatPrice, generateSlug } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
 
 const PER_PAGE = 24;
@@ -23,8 +21,9 @@ interface TiendaClientProps {
 
 export default function TiendaClient({ products, categories }: TiendaClientProps) {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [filterOpen, setFilterOpen] = useState(false);
-  const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
 
   // Read params from URL
   const categoryParam = searchParams.get('category') || '';
@@ -82,19 +81,15 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
     return { paginated, totalCount, totalPages, page };
   }, [products, categoryParam, searchParam, sortParam, pageParam]);
 
-  // Update URL params
-  function updateParam(key: string, val: string) {
+  // Update URL params — SPA-style navigation (no full page reload)
+  const updateParam = useCallback((key: string, val: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (val) params.set(key, val);
     else params.delete(key);
     if (key !== 'page') params.delete('page');
-    window.location.href = `/tienda?${params.toString()}`;
-  }
-
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    updateParam('search', searchInput.trim());
-  }
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [searchParams, pathname, router]);
 
   // Smart page numbers with ellipsis
   function renderPagination() {
@@ -130,13 +125,13 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top bar */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
+      {/* Top bar — sticky below header (header is ~56px) */}
+      <div className="bg-white border-b border-gray-100 sticky top-[56px] z-10">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             {/* Breadcrumb */}
             <div className="text-sm">
-              <Link href="/" className="text-gray-400 hover:text-gray-600 transition">Inicio</Link>
+              <span className="text-gray-400">Inicio</span>
               <span className="text-gray-300 mx-1.5">/</span>
               <span className="font-semibold text-gray-800">
                 {activeCategory ? activeCategory.name : searchParam ? `Buscar: "${searchParam}"` : 'Catálogo'}
@@ -144,20 +139,6 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Search (desktop) */}
-              <form onSubmit={handleSearch} className="hidden md:flex items-center">
-                <div className="relative">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchInput}
-                    onChange={e => setSearchInput(e.target.value)}
-                    placeholder="Buscar..."
-                    className="text-sm border border-gray-200 rounded-lg pl-8 pr-3 py-2 w-48 focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent"
-                  />
-                </div>
-              </form>
-
               {/* Sort */}
               <select
                 value={sortParam}
@@ -184,7 +165,7 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
 
           {/* Active filters */}
           {(categoryParam || searchParam) && (
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <div className="flex items-center gap-2 mt-2">
               {activeCategory && (
                 <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full">
                   {activeCategory.name}
@@ -193,7 +174,7 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
               )}
               {searchParam && (
                 <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full">
-                  &ldquo;{searchParam}&rdquo;
+                  &quot;{searchParam}&quot;
                   <button onClick={() => updateParam('search', '')}><X size={12} /></button>
                 </span>
               )}
@@ -204,14 +185,8 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex gap-6">
-          {/* Sidebar filters (desktop) */}
-          <aside className={`lg:block w-56 shrink-0 ${filterOpen ? 'fixed inset-0 z-50 bg-white p-4 overflow-y-auto' : 'hidden'}`}>
-            {filterOpen && (
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold">Filtros</h3>
-                <button onClick={() => setFilterOpen(false)} className="lg:hidden"><X size={20} /></button>
-              </div>
-            )}
+          {/* Sidebar filters (desktop only) */}
+          <aside className="hidden lg:block w-56 shrink-0">
             <div className="bg-white rounded-xl border border-gray-100 p-4">
               <h3 className="font-bold text-sm mb-3">Categorías</h3>
               <ul className="space-y-1">
@@ -244,22 +219,6 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
                 ))}
               </ul>
             </div>
-
-            {/* Mobile search */}
-            <div className="md:hidden mt-4">
-              <form onSubmit={handleSearch}>
-                <div className="relative">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchInput}
-                    onChange={e => setSearchInput(e.target.value)}
-                    placeholder="Buscar productos..."
-                    className="w-full text-sm border border-gray-200 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
-                  />
-                </div>
-              </form>
-            </div>
           </aside>
 
           {/* Product grid */}
@@ -278,12 +237,12 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
                 <div className="text-6xl mb-4">🔍</div>
                 <h2 className="text-xl font-bold text-gray-800 mb-2">No se encontraron productos</h2>
                 <p className="text-gray-500 mb-4">Prueba con otros filtros o categorías</p>
-                <Link
-                  href="/tienda"
-                  className="bg-[#2563eb] text-white font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition"
+                <button
+                  onClick={() => router.push('/tienda')}
+                  className="bg-[#2563eb] text-white font-bold px-6 py-3 rounded-xl"
                 >
                   Ver todo
-                </Link>
+                </button>
               </div>
             ) : (
               <>
