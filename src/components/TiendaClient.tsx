@@ -8,8 +8,6 @@ import ProductCard from '@/components/ProductCard';
 
 const PER_PAGE = 24;
 
-type SortOption = 'date-desc' | 'popularity-desc' | 'price-asc' | 'price-desc' | 'name-asc';
-
 interface CategoryWithCount extends ProductCategory {
   count?: number;
 }
@@ -25,11 +23,12 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
   const pathname = usePathname();
   const [filterOpen, setFilterOpen] = useState(false);
 
-  // Read params from URL
+  // Read params from URL — aligned with old site (orderby + order, not sort)
   const categoryParam = searchParams.get('category') || '';
   const searchParam = searchParams.get('search') || '';
   const pageParam = parseInt(searchParams.get('page') || '1');
-  const sortParam = (searchParams.get('sort') || 'date-desc') as SortOption;
+  const orderby = searchParams.get('orderby') || 'date';
+  const order = searchParams.get('order') || 'desc';
 
   const activeCategory = categories.find(c => String(c.id) === categoryParam);
 
@@ -54,8 +53,7 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
       );
     }
 
-    // Sort
-    const [orderby, order] = sortParam.split('-');
+    // Sort — aligned with old site
     const mult = order === 'asc' ? 1 : -1;
     filtered.sort((a, b) => {
       switch (orderby) {
@@ -65,7 +63,7 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
           return mult * ((b.total_sales || 0) - (a.total_sales || 0));
         case 'price':
           return mult * (parseFloat(a.price || '0') - parseFloat(b.price || '0'));
-        case 'name':
+        case 'title':
           return mult * a.name.localeCompare(b.name, 'es');
         default:
           return 0;
@@ -79,7 +77,7 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
     const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
     return { paginated, totalCount, totalPages, page };
-  }, [products, categoryParam, searchParam, sortParam, pageParam]);
+  }, [products, categoryParam, searchParam, orderby, order, pageParam]);
 
   // Update URL params — SPA-style navigation (no full page reload)
   const updateParam = useCallback((key: string, val: string) => {
@@ -139,17 +137,21 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Sort */}
+              {/* Sort — aligned with old site (orderby-order value, two params on change) */}
               <select
-                value={sortParam}
-                onChange={e => updateParam('sort', e.target.value)}
+                value={`${orderby}-${order}`}
+                onChange={e => {
+                  const [ob, or] = e.target.value.split('-');
+                  updateParam('orderby', ob);
+                  updateParam('order', or);
+                }}
                 className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
               >
                 <option value="date-desc">Más nuevos</option>
                 <option value="popularity-desc">Más vendidos</option>
                 <option value="price-asc">Precio: menor a mayor</option>
                 <option value="price-desc">Precio: mayor a menor</option>
-                <option value="name-asc">Nombre A-Z</option>
+                <option value="title-asc">Nombre A-Z</option>
               </select>
 
               {/* Mobile filter toggle */}

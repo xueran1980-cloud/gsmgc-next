@@ -6,7 +6,7 @@ const FOOTER_LINKS: Record<string, { label: string; href: string }[]> = {
     { label: "Inicio", href: "/" },
     { label: "Catálogo", href: "/tienda" },
     { label: "Marcas", href: "/tienda?sort=brand" },
-    { label: "Novedades", href: "/tienda?sort=date-desc" },
+    { label: "Novedades", href: "/tienda?orderby=date" },
   ],
   Legal: [
     { label: "Condiciones de venta", href: "/condiciones-de-venta" },
@@ -67,7 +67,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-2">
                 <Mail size={14} className="text-blue-400" />
-                <a href="mailto:gsmyoucanarias@gmail.com" className="hover:text-white transition">gsmyoucanarias@gmail.com</a>
+                <a href="mailto:info@gsmgc.es" className="hover:text-white transition">info@gsmgc.es</a>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin size={14} className="text-blue-400" />
@@ -75,7 +75,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-2">
                 <Clock size={14} className="text-blue-400" />
-                <span>L-V 9:00-18:00</span>
+                <span>L-V 10:00-14:00</span>
               </div>
               <div className="flex items-center gap-3 mt-3">
                 <a
