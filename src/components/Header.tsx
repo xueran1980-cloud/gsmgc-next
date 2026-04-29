@@ -240,7 +240,7 @@ export default function Header() {
               {isAuthenticated && accountMenuOpen && (
                 <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 py-2">
                   <div className="px-4 py-2 border-b border-gray-50">
-                    <p className="text-sm font-bold text-gray-900 truncate">{user?.display_name || user?.email}</p>
+                    <p className="text-sm font-bold text-gray-900 truncate">{user?.displayName || user?.email}</p>
                     <p className="text-xs text-gray-400 truncate">{user?.company || ''}</p>
                   </div>
                   <Link

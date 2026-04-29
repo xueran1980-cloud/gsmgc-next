@@ -76,17 +76,17 @@ export default function CheckoutPage() {
     if (user) {
       setForm((f) => ({
         ...f,
-        first_name: user.first_name || '',
-        last_name: user.last_name || '',
+        first_name: user.firstName || '',
+        last_name: user.lastName || '',
         email: user.email || '',
         phone: user.phone || '',
         company: user.company || '',
-        cif_nif: user.cif_nif || '',
+        cif_nif: user.cifNif || '',
         address_1: user.address_1 || '',
-        address_2: user.address_2 || '',
+        address_2: '',
         city: user.city || '',
         postcode: user.postcode || '',
-        state: user.state || 'GC',
+        state: 'GC',
       }));
     }
   }, [user]);

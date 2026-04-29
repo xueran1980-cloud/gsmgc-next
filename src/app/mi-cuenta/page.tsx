@@ -60,22 +60,23 @@ function MiCuentaContent() {
       setError('Las contraseñas no coinciden');
       return;
     }
-    if (regForm.password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+    if (regForm.password.length < 8 || !/[A-Z]/.test(regForm.password) || !/[0-9]/.test(regForm.password)) {
+      setError('La contraseña debe tener al menos 8 caracteres, incluir una mayúscula y un número.');
       return;
     }
 
     setLoading(true);
     try {
       await register({
+        firstName: regForm.first_name,
+        lastName: regForm.last_name,
         email: regForm.email,
         password: regForm.password,
-        first_name: regForm.first_name,
-        last_name: regForm.last_name,
+        confirmPassword: regForm.confirm_password,
         phone: regForm.phone,
         company: regForm.company,
-        cif_nif: regForm.cif_nif,
-        address_1: regForm.address_1,
+        cifNif: regForm.cif_nif,
+        address: regForm.address_1,
         city: regForm.city,
         postcode: regForm.postcode,
         province: regForm.province,
@@ -232,11 +233,11 @@ function MiCuentaContent() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Contraseña *</label>
-                <input type="password" required minLength={6} value={regForm.password} onChange={updateReg('password')} placeholder="••••••" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/30 focus:border-[#2563eb]" />
+                <input type="password" required minLength={8} value={regForm.password} onChange={updateReg('password')} placeholder="••••••" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/30 focus:border-[#2563eb]" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Confirmar *</label>
-                <input type="password" required minLength={6} value={regForm.confirm_password} onChange={updateReg('confirm_password')} placeholder="••••••" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/30 focus:border-[#2563eb]" />
+                <input type="password" required minLength={8} value={regForm.confirm_password} onChange={updateReg('confirm_password')} placeholder="••••••" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/30 focus:border-[#2563eb]" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

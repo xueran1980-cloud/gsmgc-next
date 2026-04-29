@@ -1,28 +1,29 @@
 // GSMGC Next.js - Auth API 层
 // Bearer Token 认证，对接 gsmgc/v1 后端
+// v2: 修复字段映射 — 前端适配后端 camelCase 返回格式
 
 const API_BASE = 'https://api.gsmgc.es/wp-json/gsmgc/v1';
 const TOKEN_KEY = 'gsmgc_token';
 
 // ---------- 类型定义 ----------
 
+// 对齐后端 _gsmgc_format_user() 返回的字段（camelCase）
 export interface User {
   id: number;
+  username: string;
   email: string;
-  first_name: string;
-  last_name: string;
-  display_name: string;
-  phone: string;
+  displayName: string;
+  firstName: string;
+  lastName: string;
   company: string;
-  cif_nif: string;
+  phone: string;
+  cifNif: string;
   address_1: string;
-  address_2: string;
   city: string;
   postcode: string;
-  state: string;
-  country: string;
-  roles: string[];
-  approved: boolean;
+  role: string;
+  accountStatus: string;
+  isPending: boolean;
 }
 
 interface LoginRequest {
@@ -30,25 +31,20 @@ interface LoginRequest {
   password: string;
 }
 
+// 对齐后端 gsmgc_register_customer() 期望的字段（camelCase）
 interface RegisterRequest {
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
-  first_name: string;
-  last_name: string;
+  confirmPassword: string;
   phone?: string;
   company?: string;
-  cif_nif?: string;
-  address_1?: string;
+  cifNif?: string;
+  address?: string;
   city?: string;
   postcode?: string;
   province?: string;
-}
-
-interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  token?: string;
 }
 
 interface StockCheckItem {
@@ -70,6 +66,9 @@ interface StockCheckResponse {
 interface CreateOrderResponse {
   success: boolean;
   order_id?: number;
+  order_number?: string;
+  total?: string;
+  status?: string;
   message?: string;
 }
 
@@ -130,18 +129,29 @@ async function authFetch<T = unknown>(endpoint: string, options: RequestInit = {
 
 // ---------- Auth API ----------
 
+// 后端返回 auth_token（非 token），需兼容两种字段名
+interface LoginResponse {
+  success: boolean;
+  auth_token?: string;
+  token?: string;
+  user?: User;
+  message?: string;
+}
+
 export async function login(email: string, password: string): Promise<{ user: User; token: string }> {
-  const res = await authFetch<{ success: boolean; token?: string; user?: User; message?: string }>('/login', {
+  const res = await authFetch<LoginResponse>('/login', {
     method: 'POST',
     body: JSON.stringify({ email, password } satisfies LoginRequest),
   });
 
-  if (!res.success || !res.token || !res.user) {
+  // 后端返回 auth_token，兼容 token
+  const token = res.auth_token || res.token;
+  if (!res.success || !token || !res.user) {
     throw new Error(res.message || 'Credenciales incorrectas');
   }
 
-  setToken(res.token);
-  return { user: res.user, token: res.token };
+  setToken(token);
+  return { user: res.user, token };
 }
 
 export async function register(data: RegisterRequest): Promise<{ success: boolean; message: string }> {
