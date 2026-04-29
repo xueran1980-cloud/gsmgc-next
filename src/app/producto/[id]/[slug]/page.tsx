@@ -324,23 +324,23 @@ export default async function ProductPage({ params }: PageProps) {
               ))}
             </div>
 
-            {/* Short description */}
-            {product.short_description && (
-              <div className="border-t border-gray-100 pt-4">
-                <div
-                  className="text-sm text-gray-500 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: product.short_description }}
-                />
-              </div>
-            )}
-
             {/* Description */}
             {product.description && (
-              <div className="border-t border-gray-100 pt-6 mt-4">
+              <div className="border-t border-gray-100 pt-6">
                 <h2 className="font-bold text-base mb-3 text-gray-900">Descripción del producto</h2>
                 <div
                   className="text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none"
                   dangerouslySetInnerHTML={{ __html: product.description }}
+                />
+              </div>
+            )}
+
+            {/* Short description */}
+            {product.short_description && (
+              <div className="border-t border-gray-100 pt-4 mt-4">
+                <div
+                  className="text-sm text-gray-500 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: product.short_description }}
                 />
               </div>
             )}
