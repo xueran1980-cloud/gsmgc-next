@@ -41,7 +41,7 @@ function StockBadge({ stock_status, stock_quantity }: { stock_status: string; st
   if (stock_quantity !== null && stock_quantity !== undefined && stock_quantity <= 5) {
     return (
       <span className="absolute top-2 right-2 z-10 bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm">
-        ¡Últimas {stock_quantity}!
+        ¡Última{stock_quantity > 1 ? 's' : ''}!
       </span>
     );
   }
