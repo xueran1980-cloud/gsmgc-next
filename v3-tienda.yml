@@ -1,0 +1,584 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - img [ref=e5]
+      - link "688 560 560" [ref=e7] [cursor=pointer]:
+        - /url: tel:+34688560560
+    - generic [ref=e8]: 🇮🇨 Envío en 24h a Canarias · Garantía 6 meses · Solo mayoristas
+    - generic [ref=e9]:
+      - link "Acceso" [ref=e10] [cursor=pointer]:
+        - /url: /mi-cuenta
+        - img [ref=e11]
+        - text: Acceso
+      - link "Solicitar cuenta" [ref=e14] [cursor=pointer]:
+        - /url: https://gsmgc.es/mi-cuenta/?action=register
+  - banner [ref=e15]:
+    - generic [ref=e16]:
+      - link "GS GSMGC Accesorios Móvil" [ref=e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e19]: GS
+        - generic [ref=e20]:
+          - generic [ref=e21]: GSMGC
+          - generic [ref=e22]: Accesorios Móvil
+      - navigation [ref=e23]:
+        - link "Inicio" [ref=e25] [cursor=pointer]:
+          - /url: /
+        - link "Catálogo" [ref=e27] [cursor=pointer]:
+          - /url: /tienda
+          - text: Catálogo
+          - img [ref=e28]
+        - link "Nosotros" [ref=e31] [cursor=pointer]:
+          - /url: /sobre-nosotros
+        - link "Contacto" [ref=e33] [cursor=pointer]:
+          - /url: /contacto
+      - generic [ref=e35]:
+        - textbox "Buscar producto, marca, modelo..." [ref=e36]
+        - img [ref=e37]
+      - generic [ref=e40]:
+        - link "Mi cuenta" [ref=e42] [cursor=pointer]:
+          - /url: /mi-cuenta
+          - img [ref=e43]
+        - button "Carrito" [ref=e46]:
+          - img [ref=e47]
+  - generic [ref=e51]:
+    - generic [ref=e52]:
+      - generic [ref=e53]:
+        - img [ref=e54]
+        - heading "Carrito" [level=2] [ref=e57]
+        - generic [ref=e58]: "0"
+      - button [ref=e59]:
+        - img [ref=e60]
+    - generic [ref=e64]:
+      - generic [ref=e65]: 🛒
+      - paragraph [ref=e66]: Tu carrito está vacío
+      - link "Ver catálogo" [ref=e67] [cursor=pointer]:
+        - /url: /tienda
+  - main [ref=e68]:
+    - generic [ref=e292]:
+      - generic [ref=e295]:
+        - generic [ref=e296]: Inicio/Catálogo
+        - combobox [ref=e298]:
+          - 'option "Precio: mayor a menor" [selected]'
+          - 'option "Precio: menor a mayor"'
+          - option "Más nuevos"
+          - option "Más vendidos"
+          - option "Nombre A-Z"
+      - generic [ref=e300]:
+        - complementary [ref=e301]:
+          - generic [ref=e302]:
+            - heading "Marcas" [level=3] [ref=e303]
+            - generic [ref=e304]:
+              - button "Todas" [ref=e305]
+              - button "Alcatel" [ref=e306]
+              - button "Huawei" [ref=e307]
+              - button "Ipad" [ref=e308]
+              - button "Iphone" [ref=e309]
+              - button "Lenovo" [ref=e310]
+              - button "LG" [ref=e311]
+              - button "Motorola" [ref=e312]
+              - button "one plus" [ref=e313]
+              - button "Oppo" [ref=e314]
+              - button "panasonic" [ref=e315]
+              - button "philipis" [ref=e316]
+              - button "Samsung" [ref=e317]
+              - button "Sony" [ref=e318]
+              - button "TCL" [ref=e319]
+              - button "Vivo" [ref=e320]
+              - button "Xiaomi" [ref=e321]
+              - button "ZTE" [ref=e322]
+            - heading "📋 Tipo de Producto" [level=3] [ref=e323]
+            - generic [ref=e324]:
+              - button "📦 Accesorios" [ref=e325]:
+                - generic [ref=e326]: 📦
+                - text: Accesorios
+              - button "🎧 Audio" [ref=e327]:
+                - generic [ref=e328]: 🎧
+                - text: Audio
+              - button "🔋 bateria externa" [ref=e329]:
+                - generic [ref=e330]: 🔋
+                - text: bateria externa
+              - button "🔋 Baterias" [ref=e331]:
+                - generic [ref=e332]: 🔋
+                - text: Baterias
+              - button "🔌 cable de datos" [ref=e333]:
+                - generic [ref=e334]: 🔌
+                - text: cable de datos
+              - button "📷 camara" [ref=e335]:
+                - generic [ref=e336]: 📷
+                - text: camara
+              - button "🔌 Cargadores" [ref=e337]:
+                - generic [ref=e338]: 🔌
+                - text: Cargadores
+              - button "📱 Fundas" [ref=e339]:
+                - generic [ref=e340]: 📱
+                - text: Fundas
+              - button "🛠️ Herramientas" [ref=e341]:
+                - generic [ref=e342]: 🛠️
+                - text: Herramientas
+              - button "📺 Pantallas" [ref=e343]:
+                - generic [ref=e344]: 📺
+                - text: Pantallas
+              - button "📺 protector de pantalla" [ref=e345]:
+                - generic [ref=e346]: 📺
+                - text: protector de pantalla
+            - paragraph [ref=e347]: 2077 productos
+        - main [ref=e348]:
+          - heading "Catálogo de Accesorios Móviles al Mayor" [level=1] [ref=e349]
+          - paragraph [ref=e350]: 2077 productos
+          - generic [ref=e351]:
+            - 'link "Sin stock PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S23 ULTRA S918 PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S23 ULTRA S918 SKU: 97119 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e352] [cursor=pointer]':
+              - /url: /producto/7498/pantalla-con-marco-negro-service-pack-samsung-s23-ultra-s918
+              - generic [ref=e354]: Sin stock
+              - img "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S23 ULTRA S918" [ref=e356]
+              - generic [ref=e357]:
+                - heading "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S23 ULTRA S918" [level=3] [ref=e358]
+                - generic [ref=e359]: "SKU: 97119"
+              - generic [ref=e361]:
+                - link "Registrate para ver precio" [ref=e362]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e363]
+                  - text: Registrate para ver precio
+                - generic [ref=e366]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e367]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "Sin stock PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S21 ULTRA G998 PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S21 ULTRA G998 SKU: 96870 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e368] [cursor=pointer]':
+              - /url: /producto/7874/pantalla-con-marco-negro-service-pack-samsung-s21-ultra-g998
+              - generic [ref=e370]: Sin stock
+              - img "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S21 ULTRA G998" [ref=e372]
+              - generic [ref=e373]:
+                - heading "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S21 ULTRA G998" [level=3] [ref=e374]
+                - generic [ref=e375]: "SKU: 96870"
+              - generic [ref=e377]:
+                - link "Registrate para ver precio" [ref=e378]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e379]
+                  - text: Registrate para ver precio
+                - generic [ref=e382]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e383]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Última! PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S22 ULTRA 5G S908 PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S22 ULTRA 5G S908 SKU: 96869 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e384] [cursor=pointer]':
+              - /url: /producto/7237/pantalla-con-marco-negro-service-pack-samsung-s22-ultra-5g-s908
+              - generic [ref=e385]: ¡Última!
+              - img "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S22 ULTRA 5G S908" [ref=e387]
+              - generic [ref=e388]:
+                - heading "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S22 ULTRA 5G S908" [level=3] [ref=e389]
+                - generic [ref=e390]: "SKU: 96869"
+              - generic [ref=e392]:
+                - link "Registrate para ver precio" [ref=e393]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e394]
+                  - text: Registrate para ver precio
+                - generic [ref=e397]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e398]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Últimas! PANTALLA SIN MARCO SERVICE PACK SAMSUNG S26 ULTRA S948 PANTALLA SIN MARCO SERVICE PACK SAMSUNG S26 ULTRA S948 SKU: 98101 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e399] [cursor=pointer]':
+              - /url: /producto/9518/pantalla-sin-marco-service-pack-samsung-s26-ultra-s948
+              - generic [ref=e400]: ¡Últimas!
+              - img "PANTALLA SIN MARCO SERVICE PACK SAMSUNG S26 ULTRA S948" [ref=e402]
+              - generic [ref=e403]:
+                - heading "PANTALLA SIN MARCO SERVICE PACK SAMSUNG S26 ULTRA S948" [level=3] [ref=e404]
+                - generic [ref=e405]: "SKU: 98101"
+              - generic [ref=e407]:
+                - link "Registrate para ver precio" [ref=e408]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e409]
+                  - text: Registrate para ver precio
+                - generic [ref=e412]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e413]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Últimas! PANTALLA SIN MARCO SERVICE PACK SAMSUNG S23 ULTRA S918 PANTALLA SIN MARCO SERVICE PACK SAMSUNG S23 ULTRA S918 SKU: 97654 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e414] [cursor=pointer]':
+              - /url: /producto/7653/pantalla-sin-marco-service-pack-samsung-s23-ultra-s918
+              - generic [ref=e415]: ¡Últimas!
+              - img "PANTALLA SIN MARCO SERVICE PACK SAMSUNG S23 ULTRA S918" [ref=e417]
+              - generic [ref=e418]:
+                - heading "PANTALLA SIN MARCO SERVICE PACK SAMSUNG S23 ULTRA S918" [level=3] [ref=e419]
+                - generic [ref=e420]: "SKU: 97654"
+              - generic [ref=e422]:
+                - link "Registrate para ver precio" [ref=e423]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e424]
+                  - text: Registrate para ver precio
+                - generic [ref=e427]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e428]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Últimas! PANTALLA SIN MARCO SERVICE PACK SAMSUNG S24 ULTRA S928 PANTALLA SIN MARCO SERVICE PACK SAMSUNG S24 ULTRA S928 SKU: 97536 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e429] [cursor=pointer]':
+              - /url: /producto/7583/pantalla-sin-marco-service-pack-samsung-s24-ultra-s928
+              - generic [ref=e430]: ¡Últimas!
+              - img "PANTALLA SIN MARCO SERVICE PACK SAMSUNG S24 ULTRA S928" [ref=e432]
+              - generic [ref=e433]:
+                - heading "PANTALLA SIN MARCO SERVICE PACK SAMSUNG S24 ULTRA S928" [level=3] [ref=e434]
+                - generic [ref=e435]: "SKU: 97536"
+              - generic [ref=e437]:
+                - link "Registrate para ver precio" [ref=e438]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e439]
+                  - text: Registrate para ver precio
+                - generic [ref=e442]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e443]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Última! ONE PLUS 6 8GB 128GB BLANCO SEGUNDA MANO ONE PLUS 6 8GB 128GB BLANCO SEGUNDA MANO SKU: GSM-6769 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e444] [cursor=pointer]':
+              - /url: /producto/6928/one-plus-6-8gb-128gb-blanco-segunda-mano
+              - generic [ref=e445]: ¡Última!
+              - img "ONE PLUS 6 8GB 128GB BLANCO SEGUNDA MANO" [ref=e447]
+              - generic [ref=e448]:
+                - heading "ONE PLUS 6 8GB 128GB BLANCO SEGUNDA MANO" [level=3] [ref=e449]
+                - generic [ref=e450]: "SKU: GSM-6769"
+              - generic [ref=e452]:
+                - link "Registrate para ver precio" [ref=e453]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e454]
+                  - text: Registrate para ver precio
+                - generic [ref=e457]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e458]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Últimas! SETOOL BOX SETOOL BOX SKU: 3418 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e459] [cursor=pointer]':
+              - /url: /producto/6656/setool-box
+              - generic [ref=e460]: ¡Últimas!
+              - img "SETOOL BOX" [ref=e462]
+              - generic [ref=e463]:
+                - heading "SETOOL BOX" [level=3] [ref=e464]
+                - generic [ref=e465]: "SKU: 3418"
+              - generic [ref=e467]:
+                - link "Registrate para ver precio" [ref=e468]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e469]
+                  - text: Registrate para ver precio
+                - generic [ref=e472]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e473]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "Sin stock PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S24 PLUS 5G S926 PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S24 PLUS 5G S926 SKU: 98051 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e474] [cursor=pointer]':
+              - /url: /producto/7881/pantalla-con-marco-negro-service-pack-samsung-s24-plus-5g-s926
+              - generic [ref=e476]: Sin stock
+              - img "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S24 PLUS 5G S926" [ref=e478]
+              - generic [ref=e479]:
+                - heading "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S24 PLUS 5G S926" [level=3] [ref=e480]
+                - generic [ref=e481]: "SKU: 98051"
+              - generic [ref=e483]:
+                - link "Registrate para ver precio" [ref=e484]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e485]
+                  - text: Registrate para ver precio
+                - generic [ref=e488]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e489]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Última! PANTALLA SIN MARCO SERVICE PACK SAMSUNG S25 ULTRA S938 PANTALLA SIN MARCO SERVICE PACK SAMSUNG S25 ULTRA S938 SKU: 97721 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e490] [cursor=pointer]':
+              - /url: /producto/7682/pantalla-sin-marco-service-pack-samsung-s25-ultra-s938
+              - generic [ref=e491]: ¡Última!
+              - img "PANTALLA SIN MARCO SERVICE PACK SAMSUNG S25 ULTRA S938" [ref=e493]
+              - generic [ref=e494]:
+                - heading "PANTALLA SIN MARCO SERVICE PACK SAMSUNG S25 ULTRA S938" [level=3] [ref=e495]
+                - generic [ref=e496]: "SKU: 97721"
+              - generic [ref=e498]:
+                - link "Registrate para ver precio" [ref=e499]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e500]
+                  - text: Registrate para ver precio
+                - generic [ref=e503]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e504]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "Sin stock PANTALLA OLED (FLEXIBLE IC CAMBIABLE) RUIJU IPHONE 17 PRO PANTALLA OLED (FLEXIBLE IC CAMBIABLE) RUIJU IPHONE 17 PRO SKU: 98069 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e505] [cursor=pointer]':
+              - /url: /producto/7897/pantalla-oled-flexible-ic-cambiable-ruiju-iphone-17-pro
+              - generic [ref=e507]: Sin stock
+              - img "PANTALLA OLED (FLEXIBLE IC CAMBIABLE) RUIJU IPHONE 17 PRO" [ref=e509]
+              - generic [ref=e510]:
+                - heading "PANTALLA OLED (FLEXIBLE IC CAMBIABLE) RUIJU IPHONE 17 PRO" [level=3] [ref=e511]
+                - generic [ref=e512]: "SKU: 98069"
+              - generic [ref=e514]:
+                - link "Registrate para ver precio" [ref=e515]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e516]
+                  - text: Registrate para ver precio
+                - generic [ref=e519]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e520]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "Sin stock PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S24 5G S921 PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S24 5G S921 SKU: 98052 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e521] [cursor=pointer]':
+              - /url: /producto/7882/pantalla-con-marco-negro-service-pack-samsung-s24-5g-s921
+              - generic [ref=e523]: Sin stock
+              - img "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S24 5G S921" [ref=e525]
+              - generic [ref=e526]:
+                - heading "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S24 5G S921" [level=3] [ref=e527]
+                - generic [ref=e528]: "SKU: 98052"
+              - generic [ref=e530]:
+                - link "Registrate para ver precio" [ref=e531]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e532]
+                  - text: Registrate para ver precio
+                - generic [ref=e535]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e536]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Última! PANTALLA SIN MARCO SERVICE PACK XIAOMI 13 ULTRA PANTALLA SIN MARCO SERVICE PACK XIAOMI 13 ULTRA SKU: 97504 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e537] [cursor=pointer]':
+              - /url: /producto/7562/pantalla-sin-marco-service-pack-xiaomi-13-ultra
+              - generic [ref=e538]: ¡Última!
+              - img "PANTALLA SIN MARCO SERVICE PACK XIAOMI 13 ULTRA" [ref=e540]
+              - generic [ref=e541]:
+                - heading "PANTALLA SIN MARCO SERVICE PACK XIAOMI 13 ULTRA" [level=3] [ref=e542]
+                - generic [ref=e543]: "SKU: 97504"
+              - generic [ref=e545]:
+                - link "Registrate para ver precio" [ref=e546]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e547]
+                  - text: Registrate para ver precio
+                - generic [ref=e550]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e551]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "Sin stock PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S23 S911 PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S23 S911 SKU: 97253 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e552] [cursor=pointer]':
+              - /url: /producto/7461/pantalla-con-marco-negro-service-pack-samsung-s23-s911
+              - generic [ref=e554]: Sin stock
+              - img "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S23 S911" [ref=e556]
+              - generic [ref=e557]:
+                - heading "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S23 S911" [level=3] [ref=e558]
+                - generic [ref=e559]: "SKU: 97253"
+              - generic [ref=e561]:
+                - link "Registrate para ver precio" [ref=e562]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e563]
+                  - text: Registrate para ver precio
+                - generic [ref=e566]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e567]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "Sin stock PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S22 5G S901 PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S22 5G S901 SKU: 96711 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e568] [cursor=pointer]':
+              - /url: /producto/5469/pantalla-con-marco-negro-service-pack-samsung-s22-5g-s901
+              - generic [ref=e570]: Sin stock
+              - img "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S22 5G S901" [ref=e572]
+              - generic [ref=e573]:
+                - heading "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S22 5G S901" [level=3] [ref=e574]
+                - generic [ref=e575]: "SKU: 96711"
+              - generic [ref=e577]:
+                - link "Registrate para ver precio" [ref=e578]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e579]
+                  - text: Registrate para ver precio
+                - generic [ref=e582]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e583]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Última! PANTALLA SIN MARCO SERVICE PACK XIAOMI 13 PRO 5G PANTALLA SIN MARCO SERVICE PACK XIAOMI 13 PRO 5G SKU: 97575 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e584] [cursor=pointer]':
+              - /url: /producto/7612/pantalla-sin-marco-service-pack-xiaomi-13-pro-5g
+              - generic [ref=e585]: ¡Última!
+              - img "PANTALLA SIN MARCO SERVICE PACK XIAOMI 13 PRO 5G" [ref=e587]
+              - generic [ref=e588]:
+                - heading "PANTALLA SIN MARCO SERVICE PACK XIAOMI 13 PRO 5G" [level=3] [ref=e589]
+                - generic [ref=e590]: "SKU: 97575"
+              - generic [ref=e592]:
+                - link "Registrate para ver precio" [ref=e593]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e594]
+                  - text: Registrate para ver precio
+                - generic [ref=e597]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e598]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Última! PANTALLA SIN MARCO SERVICE PACK SAMSUNG S24 PLUS 5G S926 PANTALLA SIN MARCO SERVICE PACK SAMSUNG S24 PLUS 5G S926 SKU: 98073 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e599] [cursor=pointer]':
+              - /url: /producto/6375/pantalla-sin-marco-service-pack-samsung-s24-plus-5g-s926
+              - generic [ref=e600]: ¡Última!
+              - img "PANTALLA SIN MARCO SERVICE PACK SAMSUNG S24 PLUS 5G S926" [ref=e602]
+              - generic [ref=e603]:
+                - heading "PANTALLA SIN MARCO SERVICE PACK SAMSUNG S24 PLUS 5G S926" [level=3] [ref=e604]
+                - generic [ref=e605]: "SKU: 98073"
+              - generic [ref=e607]:
+                - link "Registrate para ver precio" [ref=e608]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e609]
+                  - text: Registrate para ver precio
+                - generic [ref=e612]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e613]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Última! PANTALLA FOG (OLED FLEXIBLE IC CAMBIABLE 120HZ) STRONE IPHONE 17 PRO MAX PANTALLA FOG (OLED FLEXIBLE IC CAMBIABLE 120HZ) STRONE IPHONE 17 PRO MAX SKU: 98068 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e614] [cursor=pointer]':
+              - /url: /producto/7896/pantalla-fog-oled-flexible-ic-cambiable-120hz-strone-iphone-17-pro-max
+              - generic [ref=e615]: ¡Última!
+              - img "PANTALLA FOG (OLED FLEXIBLE IC CAMBIABLE 120HZ) STRONE IPHONE 17 PRO MAX" [ref=e617]
+              - generic [ref=e618]:
+                - heading "PANTALLA FOG (OLED FLEXIBLE IC CAMBIABLE 120HZ) STRONE IPHONE 17 PRO MAX" [level=3] [ref=e619]
+                - generic [ref=e620]: "SKU: 98068"
+              - generic [ref=e622]:
+                - link "Registrate para ver precio" [ref=e623]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e624]
+                  - text: Registrate para ver precio
+                - generic [ref=e627]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e628]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Última! PANTALLA SIN MARCO SERVICE PACK XIAOMI 14 PRO / MI 14 PRO PANTALLA SIN MARCO SERVICE PACK XIAOMI 14 PRO / MI 14 PRO SKU: 97503 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e629] [cursor=pointer]':
+              - /url: /producto/7561/pantalla-sin-marco-service-pack-xiaomi-14-pro-mi-14-pro
+              - generic [ref=e630]: ¡Última!
+              - img "PANTALLA SIN MARCO SERVICE PACK XIAOMI 14 PRO / MI 14 PRO" [ref=e632]
+              - generic [ref=e633]:
+                - heading "PANTALLA SIN MARCO SERVICE PACK XIAOMI 14 PRO / MI 14 PRO" [level=3] [ref=e634]
+                - generic [ref=e635]: "SKU: 97503"
+              - generic [ref=e637]:
+                - link "Registrate para ver precio" [ref=e638]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e639]
+                  - text: Registrate para ver precio
+                - generic [ref=e642]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e643]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Última! PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S22 PLUS 5G S906 PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S22 PLUS 5G S906 SKU: 96698 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e644] [cursor=pointer]':
+              - /url: /producto/7161/pantalla-con-marco-negro-service-pack-samsung-s22-plus-5g-s906
+              - generic [ref=e645]: ¡Última!
+              - img "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S22 PLUS 5G S906" [ref=e647]
+              - generic [ref=e648]:
+                - heading "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S22 PLUS 5G S906" [level=3] [ref=e649]
+                - generic [ref=e650]: "SKU: 96698"
+              - generic [ref=e652]:
+                - link "Registrate para ver precio" [ref=e653]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e654]
+                  - text: Registrate para ver precio
+                - generic [ref=e657]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e658]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "Sin stock PANTALLA FOG (OLED FLEXIBLE IC CAMBIABLE 120HZ) STRONE IPHONE 17 PANTALLA FOG (OLED FLEXIBLE IC CAMBIABLE 120HZ) STRONE IPHONE 17 SKU: 98070 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e659] [cursor=pointer]':
+              - /url: /producto/6371/pantalla-fog-oled-flexible-ic-cambiable-120hz-strone-iphone-17
+              - generic [ref=e661]: Sin stock
+              - img "PANTALLA FOG (OLED FLEXIBLE IC CAMBIABLE 120HZ) STRONE IPHONE 17" [ref=e664]
+              - generic [ref=e665]:
+                - heading "PANTALLA FOG (OLED FLEXIBLE IC CAMBIABLE 120HZ) STRONE IPHONE 17" [level=3] [ref=e666]
+                - generic [ref=e667]: "SKU: 98070"
+              - generic [ref=e669]:
+                - link "Registrate para ver precio" [ref=e670]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e671]
+                  - text: Registrate para ver precio
+                - generic [ref=e674]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e675]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Últimas! PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S23 PLUS S23+ S916 PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S23 PLUS S23+ S916 SKU: 97266 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e676] [cursor=pointer]':
+              - /url: /producto/7472/pantalla-con-marco-negro-service-pack-samsung-s23-plus-s23-s916
+              - generic [ref=e677]: ¡Últimas!
+              - img "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S23 PLUS S23+ S916" [ref=e680]
+              - generic [ref=e681]:
+                - heading "PANTALLA CON MARCO NEGRO SERVICE PACK SAMSUNG S23 PLUS S23+ S916" [level=3] [ref=e682]
+                - generic [ref=e683]: "SKU: 97266"
+              - generic [ref=e685]:
+                - link "Registrate para ver precio" [ref=e686]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e687]
+                  - text: Registrate para ver precio
+                - generic [ref=e690]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e691]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Última! LCD IPAD 2022 (10th Gen) IPAD 10 / IPAD 2025 (11th Gen) IPAD 11 LCD IPAD 2022 (10th Gen) IPAD 10 / IPAD 2025 (11th Gen) IPAD 11 SKU: 97558 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e692] [cursor=pointer]':
+              - /url: /producto/7599/lcd-ipad-2022-10th-gen-ipad-10-ipad-2025-11th-gen-ipad-11
+              - generic [ref=e693]: ¡Última!
+              - img "LCD IPAD 2022 (10th Gen) IPAD 10 / IPAD 2025 (11th Gen) IPAD 11" [ref=e696]
+              - generic [ref=e697]:
+                - heading "LCD IPAD 2022 (10th Gen) IPAD 10 / IPAD 2025 (11th Gen) IPAD 11" [level=3] [ref=e698]
+                - generic [ref=e699]: "SKU: 97558"
+              - generic [ref=e701]:
+                - link "Registrate para ver precio" [ref=e702]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e703]
+                  - text: Registrate para ver precio
+                - generic [ref=e706]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e707]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Última! PANTALLA SIN MARCO SERVICE PACK SAMSUNG S23 S911 PANTALLA SIN MARCO SERVICE PACK SAMSUNG S23 S911 SKU: 98097 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e708] [cursor=pointer]':
+              - /url: /producto/9522/pantalla-sin-marco-service-pack-samsung-s23-s911
+              - generic [ref=e709]: ¡Última!
+              - img "PANTALLA SIN MARCO SERVICE PACK SAMSUNG S23 S911" [ref=e711]
+              - generic [ref=e712]:
+                - heading "PANTALLA SIN MARCO SERVICE PACK SAMSUNG S23 S911" [level=3] [ref=e713]
+                - generic [ref=e714]: "SKU: 98097"
+              - generic [ref=e716]:
+                - link "Registrate para ver precio" [ref=e717]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e718]
+                  - text: Registrate para ver precio
+                - generic [ref=e721]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e722]:
+                  - /url: /mi-cuenta?register=1
+          - generic [ref=e723]:
+            - button [disabled] [ref=e724]:
+              - img [ref=e725]
+            - button "1" [ref=e727]
+            - button "2" [ref=e728]
+            - button "3" [ref=e729]
+            - generic [ref=e730]: …
+            - button "87" [ref=e731]
+            - button [ref=e732]:
+              - img [ref=e733]
+  - contentinfo [ref=e198]:
+    - generic [ref=e200]:
+      - generic [ref=e201]:
+        - img [ref=e202]
+        - generic [ref=e207]: Envío en 24h a Canarias
+      - generic [ref=e208]:
+        - img [ref=e209]
+        - generic [ref=e212]: Garantía de 6 meses
+      - generic [ref=e213]:
+        - img [ref=e214]
+        - generic [ref=e217]: Recogida en local
+    - generic [ref=e219]:
+      - generic [ref=e220]:
+        - generic [ref=e221]:
+          - generic [ref=e223]: GS
+          - generic [ref=e224]:
+            - generic [ref=e225]: GSMGC
+            - generic [ref=e226]: Accesorios Móvil Canarias
+        - paragraph [ref=e227]: Distribuidor mayorista de accesorios y repuestos para móviles. Las mejores marcas, precios competitivos, servicio rápido en Canarias.
+        - generic [ref=e228]:
+          - generic [ref=e229]:
+            - img [ref=e230]
+            - link "688 560 560" [ref=e232] [cursor=pointer]:
+              - /url: tel:+34688560560
+          - generic [ref=e233]:
+            - img [ref=e234]
+            - link "info@gsmgc.es" [ref=e237] [cursor=pointer]:
+              - /url: mailto:info@gsmgc.es
+          - generic [ref=e238]:
+            - img [ref=e239]
+            - generic [ref=e242]: Las Palmas de GC, Canarias
+          - generic [ref=e243]:
+            - img [ref=e244]
+            - generic [ref=e247]: L-V 10:00-14:00
+          - link "WhatsApp" [ref=e249] [cursor=pointer]:
+            - /url: https://wa.me/34688560560
+            - img [ref=e250]
+      - generic [ref=e252]:
+        - heading "Tienda" [level=4] [ref=e253]
+        - list [ref=e254]:
+          - listitem [ref=e255]:
+            - link "Inicio" [ref=e256] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e257]:
+            - link "Catálogo" [ref=e258] [cursor=pointer]:
+              - /url: /tienda
+          - listitem [ref=e259]:
+            - link "Marcas" [ref=e260] [cursor=pointer]:
+              - /url: /tienda?sort=brand
+          - listitem [ref=e261]:
+            - link "Novedades" [ref=e262] [cursor=pointer]:
+              - /url: /tienda?orderby=date
+      - generic [ref=e263]:
+        - heading "Legal" [level=4] [ref=e264]
+        - list [ref=e265]:
+          - listitem [ref=e266]:
+            - link "Condiciones de venta" [ref=e267] [cursor=pointer]:
+              - /url: /condiciones-de-venta
+          - listitem [ref=e268]:
+            - link "Política de privacidad" [ref=e269] [cursor=pointer]:
+              - /url: /politica-de-privacidad
+          - listitem [ref=e270]:
+            - link "Envíos y entregas" [ref=e271] [cursor=pointer]:
+              - /url: /envios-y-entregas
+          - listitem [ref=e272]:
+            - link "Devoluciones" [ref=e273] [cursor=pointer]:
+              - /url: /devoluciones
+      - generic [ref=e274]:
+        - heading "Cuenta" [level=4] [ref=e275]
+        - list [ref=e276]:
+          - listitem [ref=e277]:
+            - link "Iniciar sesión" [ref=e278] [cursor=pointer]:
+              - /url: /mi-cuenta
+          - listitem [ref=e279]:
+            - link "Registrarse" [ref=e280] [cursor=pointer]:
+              - /url: /mi-cuenta?register=1
+          - listitem [ref=e281]:
+            - link "Recuperar contraseña" [ref=e282] [cursor=pointer]:
+              - /url: /mi-cuenta?forgot=1
+    - generic [ref=e284]:
+      - generic [ref=e285]: © 2026 GSMGC Accesorios Móvil. Todos los derechos reservados.
+      - generic [ref=e286]: Las Palmas de Gran Canaria, Canarias, España
+  - link "Contactar por WhatsApp" [ref=e288] [cursor=pointer]:
+    - /url: https://wa.me/34688560560?text=Hola%2C%20me%20interesa%20el%20cat%C3%A1logo%20de%20GSMGC
+    - img [ref=e289]
+  - alert [ref=e291]

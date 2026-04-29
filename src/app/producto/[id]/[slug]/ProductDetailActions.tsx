@@ -65,6 +65,8 @@ export default function ProductDetailActions({ product, waMsg }: ProductDetailAc
             Registrarse para ver precios
           </Link>
           <div className="text-sm text-gray-400 mt-1">Precio exclusivo B2B</div>
+          <div className="text-sm text-gray-400">Solo visible para clientes registrados y aprobados</div>
+          <div className="text-xs text-gray-400 mt-1">Solicitud gratuita · Aprobacion en menos de 24h laborables</div>
         </div>
 
         {/* Stock indicator */}
@@ -77,9 +79,11 @@ export default function ProductDetailActions({ product, waMsg }: ProductDetailAc
                 <span className={`text-sm font-medium ${
                   product.stock_quantity <= 5 ? 'text-amber-600' : 'text-gray-400'
                 }`}>
-                  · {product.stock_quantity <= 5
-                    ? `¡Solo quedan ${product.stock_quantity}!`
-                    : `${product.stock_quantity} unidades`
+                  · {product.stock_quantity === 1
+                    ? '¡Última unidad!'
+                    : product.stock_quantity <= 5
+                      ? `¡Solo quedan ${product.stock_quantity}!`
+                      : `${product.stock_quantity} unidades`
                   }
                 </span>
               )}
@@ -145,9 +149,11 @@ export default function ProductDetailActions({ product, waMsg }: ProductDetailAc
               <span className={`text-sm font-medium ${
                 product.stock_quantity <= 5 ? 'text-amber-600' : 'text-gray-400'
               }`}>
-                · {product.stock_quantity <= 5
-                  ? `¡Solo quedan ${product.stock_quantity}!`
-                  : `${product.stock_quantity} unidades`
+                · {product.stock_quantity === 1
+                  ? '¡Última unidad!'
+                  : product.stock_quantity <= 5
+                    ? `¡Solo quedan ${product.stock_quantity}!`
+                    : `${product.stock_quantity} unidades`
                 }
               </span>
             )}
