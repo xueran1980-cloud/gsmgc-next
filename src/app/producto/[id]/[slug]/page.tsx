@@ -6,12 +6,11 @@ import {
   Package,
   ShieldCheck,
   Truck,
-  MessageCircle,
 } from 'lucide-react';
 import { fetchProducts, generateSlug, type Product } from '@/lib/api';
 import ImageGallery from '@/components/ImageGallery';
 import ShareButton from '@/components/ShareButton';
-import ProductActions from './ProductActions';
+import ProductDetailActions from './ProductDetailActions';
 import ProductCard from '@/components/ProductCard';
 
 // ---------- Static Params ----------
@@ -242,72 +241,8 @@ export default async function ProductPage({ params }: PageProps) {
               <div className="text-sm text-gray-400 font-mono mb-4">SKU: {product.sku}</div>
             )}
 
-            {/* Price block */}
-            <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl border border-blue-100 p-5 mb-6">
-              <div className="flex items-end gap-3 flex-wrap">
-                <span className="text-4xl font-black text-[#2563eb]">
-                  €{parseFloat(product.price || '0').toFixed(2)}
-                </span>
-                {hasDiscount && (
-                  <span className="text-xl text-gray-300 line-through mb-0.5">
-                    €{parseFloat(product.regular_price).toFixed(2)}
-                  </span>
-                )}
-                <span className="text-gray-400 text-sm mb-1">+ IVA/IGIC</span>
-              </div>
-              {hasDiscount && (
-                <div className="mt-1.5 inline-flex items-center gap-1.5 bg-[#ea580c]/10 text-[#ea580c] text-sm font-bold px-3 py-1 rounded-full">
-                  Ahorras €{(parseFloat(product.regular_price) - parseFloat(product.price)).toFixed(2)} ({discountPct}% dto.)
-                </div>
-              )}
-            </div>
-
-            {/* Stock indicator */}
-            <div className="flex items-center gap-2 mb-5">
-              {inStock ? (
-                <>
-                  <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shrink-0" />
-                  <span className="text-green-700 font-semibold text-sm">En stock</span>
-                  {product.stock_quantity !== null && product.stock_quantity !== undefined && (
-                    <span className={`text-sm font-medium ${
-                      product.stock_quantity <= 5 ? 'text-amber-600' : 'text-gray-400'
-                    }`}>
-                      · {product.stock_quantity <= 5
-                        ? `¡Solo quedan ${product.stock_quantity}!`
-                        : `${product.stock_quantity} unidades`
-                      }
-                    </span>
-                  )}
-                </>
-              ) : (
-                <>
-                  <span className="w-2.5 h-2.5 bg-red-400 rounded-full shrink-0" />
-                  <span className="text-red-600 font-semibold text-sm">Sin stock</span>
-                  <span className="text-gray-400 text-sm">· Consultar disponibilidad por WhatsApp</span>
-                </>
-              )}
-            </div>
-
-            {/* Min quantity notice */}
-            {product.min_qty > 1 && inStock && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5 text-sm text-amber-800">
-                Cantidad mínima de compra: <strong>{product.min_qty} unidades</strong>
-              </div>
-            )}
-
-            {/* Add to Cart (client component) */}
-            <ProductActions product={product} />
-
-            {/* WhatsApp CTA */}
-            <a
-              href={`https://wa.me/34688560560?text=${waMsg}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-[#25d366] text-[#128c7e] font-semibold hover:bg-[#25d366]/5 transition mb-6 text-sm"
-            >
-              <MessageCircle size={18} />
-              {inStock ? 'Consultar por WhatsApp' : 'Pedir cuando haya stock'}
-            </a>
+            {/* Price + Stock + Cart — 根据登录状态显示不同内容（客户端组件） */}
+            <ProductDetailActions product={product} waMsg={waMsg} />
 
             {/* Trust badges */}
             <div className="grid grid-cols-3 gap-3 mb-6">

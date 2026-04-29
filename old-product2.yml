@@ -1,0 +1,320 @@
+- generic [ref=e3]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - img [ref=e7]
+      - link "688 560 560" [ref=e9] [cursor=pointer]:
+        - /url: tel:+34688560560
+    - generic [ref=e10]: 🇮🇨 Envío en 24h a Canarias · Garantía 6 meses · Solo mayoristas
+    - generic [ref=e11]:
+      - button "Acceso" [ref=e12]:
+        - img [ref=e13]
+        - text: Acceso
+      - button "Solicitar cuenta" [ref=e16]
+  - banner [ref=e17]:
+    - generic [ref=e18]:
+      - link "GSMGC Accesorios Móvil" [ref=e81] [cursor=pointer]:
+        - /url: /
+        - img "GSMGC Accesorios Móvil" [ref=e82]
+      - navigation [ref=e19]:
+        - link "Inicio" [ref=e21] [cursor=pointer]:
+          - /url: /
+        - link "Catálogo" [ref=e23] [cursor=pointer]:
+          - /url: /tienda
+          - text: Catálogo
+          - img [ref=e24]
+        - link "Nosotros" [ref=e27] [cursor=pointer]:
+          - /url: /sobre-nosotros
+        - link "Contacto" [ref=e29] [cursor=pointer]:
+          - /url: /contacto
+      - generic [ref=e31]:
+        - textbox "Buscar producto, marca, modelo..." [ref=e32]
+        - img [ref=e33]
+      - generic [ref=e36]:
+        - link "Mi cuenta" [ref=e37] [cursor=pointer]:
+          - /url: /mi-cuenta
+          - img [ref=e38]
+        - link "Carrito" [ref=e41] [cursor=pointer]:
+          - /url: /mi-cuenta
+          - img [ref=e42]
+  - main [ref=e46]:
+    - generic [ref=e83]:
+      - navigation [ref=e86]:
+        - link "Inicio" [ref=e87] [cursor=pointer]:
+          - /url: /
+        - img [ref=e88]
+        - link "Catálogo" [ref=e90] [cursor=pointer]:
+          - /url: /tienda
+        - img [ref=e91]
+        - link "Pantallas" [ref=e93] [cursor=pointer]:
+          - /url: /tienda?category=34
+        - img [ref=e94]
+        - generic [ref=e96]: PANTALLA SIN MARCO SERVICE PACK VIVO Y17S V2310
+      - generic [ref=e97]:
+        - generic [ref=e98]:
+          - generic [ref=e100]:
+            - img "PANTALLA SIN MARCO SERVICE PACK VIVO Y17S V2310" [ref=e102]
+            - img [ref=e104]
+          - generic [ref=e107]:
+            - generic [ref=e108]:
+              - generic [ref=e109]:
+                - link "Pantallas" [ref=e110] [cursor=pointer]:
+                  - /url: /tienda?category=34
+                - link "Vivo" [ref=e111] [cursor=pointer]:
+                  - /url: /tienda?category=20
+              - generic [ref=e112]:
+                - heading "PANTALLA SIN MARCO SERVICE PACK VIVO Y17S V2310" [level=1] [ref=e113]
+                - button "Compartir" [ref=e114]:
+                  - img [ref=e115]
+              - generic [ref=e121]: "SKU: 957004"
+              - generic [ref=e122]:
+                - generic [ref=e123]:
+                  - img [ref=e125]
+                  - generic [ref=e128]:
+                    - paragraph [ref=e129]: Precio exclusivo B2B
+                    - paragraph [ref=e130]: Solo visible para clientes registrados y aprobados
+                - link "Registrarse para ver precios" [ref=e131] [cursor=pointer]:
+                  - /url: /mi-cuenta?register=1
+                  - img [ref=e132]
+                  - text: Registrarse para ver precios
+                - paragraph [ref=e135]: Solicitud gratuita · Aprobacion en menos de 24h laborables
+              - generic [ref=e136]:
+                - generic [ref=e138]: Sin stock
+                - generic [ref=e139]: · Consultar disponibilidad por WhatsApp
+            - link "Consultar disponibilidad" [ref=e140] [cursor=pointer]:
+              - /url: https://wa.me/34688560560?text=Hola!%20Me%20interesa%20este%20producto%3A%0A%0A%F0%9F%93%B1%20PANTALLA%20SIN%20MARCO%20SERVICE%20PACK%20VIVO%20Y17S%20V2310%0A%F0%9F%92%B0%20Precio%3A%20%E2%82%AC16%0A%F0%9F%94%97%20https%3A%2F%2Fgsmgc.es%2Fproducto%2F10473%2Fpantalla-sin-marco-service-pack-vivo-y17s-v2310%0A%0A%C2%BFTienen%20stock%20disponible%3F
+              - img [ref=e141]
+              - text: Consultar disponibilidad
+            - generic [ref=e143]:
+              - generic [ref=e144]:
+                - img [ref=e145]
+                - generic [ref=e150]: Envío 24h
+                - generic [ref=e151]: a Canarias
+              - generic [ref=e152]:
+                - img [ref=e153]
+                - generic [ref=e156]: Garantía
+                - generic [ref=e157]: 6 meses
+              - generic [ref=e158]:
+                - img [ref=e159]
+                - generic [ref=e163]: Recogida
+                - generic [ref=e164]: en local
+        - generic [ref=e165]:
+          - generic [ref=e166]:
+            - heading "Productos relacionados" [level=2] [ref=e167]
+            - link "Ver todos" [ref=e168] [cursor=pointer]:
+              - /url: /tienda?category=34
+              - text: Ver todos
+              - img [ref=e169]
+          - generic [ref=e171]:
+            - 'link "¡Última! PANTALLA OLED (FUNCIONA HUELLA) VIVO V23 5G V2130 V2303 PANTALLA OLED (FUNCIONA HUELLA) VIVO V23 5G V2130 V2303 SKU: 957000 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e172] [cursor=pointer]':
+              - /url: /producto/10309/pantalla-oled-funciona-huella-vivo-v23-5g-v2130-v2303
+              - generic [ref=e173]: ¡Última!
+              - img "PANTALLA OLED (FUNCIONA HUELLA) VIVO V23 5G V2130 V2303" [ref=e175]
+              - generic [ref=e176]:
+                - heading "PANTALLA OLED (FUNCIONA HUELLA) VIVO V23 5G V2130 V2303" [level=3] [ref=e177]
+                - generic [ref=e178]: "SKU: 957000"
+              - generic [ref=e179]:
+                - generic [ref=e180]:
+                  - link "Registrate para ver precio" [ref=e181]:
+                    - /url: /mi-cuenta?register=1
+                    - img [ref=e182]
+                    - text: Registrate para ver precio
+                  - generic [ref=e185]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e186]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "Agotado PANTALLA SIN MARCO SERVICE PACK EU HUAWEI HONOR 400 DNY-NX9 PANTALLA SIN MARCO SERVICE PACK EU HUAWEI HONOR 400 DNY-NX9 SKU: 956999 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e187] [cursor=pointer]':
+              - /url: /producto/10307/pantalla-sin-marco-service-pack-eu-huawei-honor-400-dny-nx9
+              - generic [ref=e189]: Agotado
+              - img "PANTALLA SIN MARCO SERVICE PACK EU HUAWEI HONOR 400 DNY-NX9" [ref=e191]
+              - generic [ref=e192]:
+                - heading "PANTALLA SIN MARCO SERVICE PACK EU HUAWEI HONOR 400 DNY-NX9" [level=3] [ref=e193]
+                - generic [ref=e194]: "SKU: 956999"
+              - generic [ref=e195]:
+                - generic [ref=e196]:
+                  - link "Registrate para ver precio" [ref=e197]:
+                    - /url: /mi-cuenta?register=1
+                    - img [ref=e198]
+                    - text: Registrate para ver precio
+                  - generic [ref=e201]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e202]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "Agotado PANTALLA SIN MARCO SERVICE PACK EU HUAWEI HONOR 400 LITE ABR-NX1, ABR-N31C1 /HONOR X70I PANTALLA SIN MARCO SERVICE PACK EU HUAWEI HONOR 400 LITE ABR-NX1, ABR-N31C1 /HONOR X70I SKU: 956998 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e203] [cursor=pointer]':
+              - /url: /producto/10303/pantalla-sin-marco-service-pack-eu-huawei-honor-400-lite-abr-nx1-abr-n31c1-honor-x70i
+              - generic [ref=e205]: Agotado
+              - img "PANTALLA SIN MARCO SERVICE PACK EU HUAWEI HONOR 400 LITE ABR-NX1, ABR-N31C1 /HONOR X70I" [ref=e207]
+              - generic [ref=e208]:
+                - heading "PANTALLA SIN MARCO SERVICE PACK EU HUAWEI HONOR 400 LITE ABR-NX1, ABR-N31C1 /HONOR X70I" [level=3] [ref=e209]
+                - generic [ref=e210]: "SKU: 956998"
+              - generic [ref=e211]:
+                - generic [ref=e212]:
+                  - link "Registrate para ver precio" [ref=e213]:
+                    - /url: /mi-cuenta?register=1
+                    - img [ref=e214]
+                    - text: Registrate para ver precio
+                  - generic [ref=e217]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e218]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Última! PANTALLA SIN MARCO SERVICE PACK EU XIAOMI 15T 5G / POCO F7 5G /REDMI TURBO 4 PRO 5G PANTALLA SIN MARCO SERVICE PACK EU XIAOMI 15T 5G / POCO F7 5G /REDMI TURBO 4 PRO 5G SKU: 98103 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e219] [cursor=pointer]':
+              - /url: /producto/9977/pantalla-sin-marco-service-pack-eu-xiaomi-15t-5g-poco-f7-5g-redmi-turbo-4-pro-5g
+              - generic [ref=e220]: ¡Última!
+              - img "PANTALLA SIN MARCO SERVICE PACK EU XIAOMI 15T 5G / POCO F7 5G /REDMI TURBO 4 PRO 5G" [ref=e222]
+              - generic [ref=e223]:
+                - heading "PANTALLA SIN MARCO SERVICE PACK EU XIAOMI 15T 5G / POCO F7 5G /REDMI TURBO 4 PRO 5G" [level=3] [ref=e224]
+                - generic [ref=e225]: "SKU: 98103"
+              - generic [ref=e226]:
+                - generic [ref=e227]:
+                  - link "Registrate para ver precio" [ref=e228]:
+                    - /url: /mi-cuenta?register=1
+                    - img [ref=e229]
+                    - text: Registrate para ver precio
+                  - generic [ref=e232]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e233]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Última! PANTALLA SIN MARCO SERVICE PACK SAMSUNG S23 FE S711 PANTALLA SIN MARCO SERVICE PACK SAMSUNG S23 FE S711 SKU: 98098 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e234] [cursor=pointer]':
+              - /url: /producto/9524/pantalla-sin-marco-service-pack-samsung-s23-fe-s711
+              - generic [ref=e235]: ¡Última!
+              - img "PANTALLA SIN MARCO SERVICE PACK SAMSUNG S23 FE S711" [ref=e237]
+              - generic [ref=e238]:
+                - heading "PANTALLA SIN MARCO SERVICE PACK SAMSUNG S23 FE S711" [level=3] [ref=e239]
+                - generic [ref=e240]: "SKU: 98098"
+              - generic [ref=e241]:
+                - generic [ref=e242]:
+                  - link "Registrate para ver precio" [ref=e243]:
+                    - /url: /mi-cuenta?register=1
+                    - img [ref=e244]
+                    - text: Registrate para ver precio
+                  - generic [ref=e247]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e248]:
+                  - /url: /mi-cuenta?register=1
+            - 'link "¡Última! PANTALLA SIN MARCO SERVICE PACK SAMSUNG S25 S931 PANTALLA SIN MARCO SERVICE PACK SAMSUNG S25 S931 SKU: 98099 Registrate para ver precio Precio exclusivo B2B Registrarse" [ref=e249] [cursor=pointer]':
+              - /url: /producto/9526/pantalla-sin-marco-service-pack-samsung-s25-s931
+              - generic [ref=e250]: ¡Última!
+              - img "PANTALLA SIN MARCO SERVICE PACK SAMSUNG S25 S931" [ref=e252]
+              - generic [ref=e253]:
+                - heading "PANTALLA SIN MARCO SERVICE PACK SAMSUNG S25 S931" [level=3] [ref=e254]
+                - generic [ref=e255]: "SKU: 98099"
+              - generic [ref=e256]:
+                - generic [ref=e257]:
+                  - link "Registrate para ver precio" [ref=e258]:
+                    - /url: /mi-cuenta?register=1
+                    - img [ref=e259]
+                    - text: Registrate para ver precio
+                  - generic [ref=e262]: Precio exclusivo B2B
+                - link "Registrarse" [ref=e263]:
+                  - /url: /mi-cuenta?register=1
+      - generic [ref=e264]:
+        - generic [ref=e266]:
+          - generic [ref=e267]:
+            - img [ref=e268]
+            - generic [ref=e273]: Envío en 24h a Canarias
+          - generic [ref=e274]:
+            - img [ref=e275]
+            - generic [ref=e278]: Garantía de 6 meses
+          - generic [ref=e279]:
+            - img [ref=e280]
+            - generic [ref=e283]: Recogida en local
+        - generic [ref=e285]:
+          - generic [ref=e286]:
+            - generic [ref=e287]:
+              - generic [ref=e289]: GS
+              - generic [ref=e290]:
+                - generic [ref=e291]: GSMGC
+                - generic [ref=e292]: Accesorios Móvil Canarias
+            - paragraph [ref=e293]: Distribuidor mayorista de accesorios y repuestos para móviles. Las mejores marcas, precios competitivos, servicio rápido en Canarias.
+            - generic [ref=e294]:
+              - generic [ref=e295]:
+                - img [ref=e296]
+                - link "688 560 560" [ref=e298] [cursor=pointer]:
+                  - /url: tel:+34688560560
+              - generic [ref=e299]:
+                - img [ref=e300]
+                - link "info@gsmgc.es" [ref=e303] [cursor=pointer]:
+                  - /url: mailto:info@gsmgc.es
+              - generic [ref=e304]:
+                - img [ref=e305]
+                - generic [ref=e308]: Las Palmas de GC, Canarias
+              - generic [ref=e309]:
+                - img [ref=e310]
+                - generic [ref=e313]: L-V 10:00-14:00
+              - link "WhatsApp" [ref=e315] [cursor=pointer]:
+                - /url: https://wa.me/34688560560
+                - img [ref=e316]
+          - generic [ref=e318]:
+            - heading "Tienda" [level=4] [ref=e319]
+            - list [ref=e320]:
+              - listitem [ref=e321]:
+                - link "Inicio" [ref=e322] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=e323]:
+                - link "Catálogo" [ref=e324] [cursor=pointer]:
+                  - /url: /tienda
+              - listitem [ref=e325]:
+                - link "Marcas" [ref=e326] [cursor=pointer]:
+                  - /url: /tienda?sort=brand
+              - listitem [ref=e327]:
+                - link "Novedades" [ref=e328] [cursor=pointer]:
+                  - /url: /tienda?orderby=date
+          - generic [ref=e329]:
+            - heading "Legal" [level=4] [ref=e330]
+            - list [ref=e331]:
+              - listitem [ref=e332]:
+                - link "Condiciones de venta" [ref=e333] [cursor=pointer]:
+                  - /url: /condiciones-de-venta
+              - listitem [ref=e334]:
+                - link "Política de privacidad" [ref=e335] [cursor=pointer]:
+                  - /url: /politica-de-privacidad
+              - listitem [ref=e336]:
+                - link "Envíos y entregas" [ref=e337] [cursor=pointer]:
+                  - /url: /envios-y-entregas
+              - listitem [ref=e338]:
+                - link "Devoluciones" [ref=e339] [cursor=pointer]:
+                  - /url: /devoluciones
+          - generic [ref=e340]:
+            - heading "Cuenta" [level=4] [ref=e341]
+            - list [ref=e342]:
+              - listitem [ref=e343]:
+                - link "Iniciar sesión" [ref=e344] [cursor=pointer]:
+                  - /url: /mi-cuenta
+              - listitem [ref=e345]:
+                - link "Registrarse" [ref=e346] [cursor=pointer]:
+                  - /url: /mi-cuenta?register=1
+              - listitem [ref=e347]:
+                - link "Recuperar contraseña" [ref=e348] [cursor=pointer]:
+                  - /url: /mi-cuenta?forgot=1
+        - generic [ref=e350]:
+          - generic [ref=e351]: © 2026 GSMGC Accesorios Móvil. Todos los derechos reservados.
+          - generic [ref=e352]: Las Palmas de Gran Canaria, Canarias, España
+  - generic [ref=e57]:
+    - generic [ref=e58]:
+      - generic [ref=e59]:
+        - img [ref=e60]
+        - heading "Tu carrito" [level=2] [ref=e64]
+        - generic [ref=e65]: "0"
+      - button [ref=e66]:
+        - img [ref=e67]
+    - generic [ref=e72]:
+      - generic [ref=e73]: 🛒
+      - paragraph [ref=e74]: Tu carrito está vacío
+      - link "Ver catálogo" [ref=e75] [cursor=pointer]:
+        - /url: /tienda
+  - generic [ref=e76]:
+    - link "Fuera de horario laboral" [ref=e77] [cursor=pointer]:
+      - /url: https://wa.me/34688560560?text=Hola!%20Soy%20distribuidor%2Ftaller%20y%20me%20interesa%20vuestro%20cat%C3%A1logo%20B2B%20de%20accesorios%20m%C3%B3viles.%20%C2%BFPodr%C3%ADan%20enviarme%20informaci%C3%B3n%3F
+      - img [ref=e78]
+    - generic "Fuera de horario" [ref=e80]
+  - dialog "Cookie consent" [ref=e353]:
+    - generic [ref=e354]:
+      - img [ref=e356]
+      - generic [ref=e358]:
+        - heading "Cookies y privacidad" [level=3] [ref=e359]
+        - button "Cerrar" [ref=e360]:
+          - img [ref=e361]
+    - paragraph [ref=e364]:
+      - text: Utilizamos cookies propias y de terceros para mejorar tu experiencia de navegación, analizar el uso del sitio y mostrar contenido personalizado. Puedes aceptar todas o rechazar las no esenciales.
+      - link "Política de cookies" [ref=e365] [cursor=pointer]:
+        - /url: /politica-de-privacidad
+      - text: .
+    - generic [ref=e366]:
+      - button "Rechazar" [ref=e367] [cursor=pointer]
+      - button "Aceptar todo" [ref=e368] [cursor=pointer]:
+        - img [ref=e369]
+        - text: Aceptar todo

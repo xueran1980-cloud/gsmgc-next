@@ -1,0 +1,672 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - img [ref=e5]
+      - link "688 560 560" [ref=e7] [cursor=pointer]:
+        - /url: tel:+34688560560
+    - generic [ref=e8]: 🇮🇨 Envío en 24h a Canarias · Garantía 6 meses · Solo mayoristas
+    - generic [ref=e9]:
+      - link "Acceso" [ref=e10] [cursor=pointer]:
+        - /url: /mi-cuenta
+        - img [ref=e11]
+        - text: Acceso
+      - link "Solicitar cuenta" [ref=e14] [cursor=pointer]:
+        - /url: https://gsmgc.es/mi-cuenta/?action=register
+  - banner [ref=e15]:
+    - generic [ref=e16]:
+      - link "GS GSMGC Accesorios Móvil" [ref=e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e19]: GS
+        - generic [ref=e20]:
+          - generic [ref=e21]: GSMGC
+          - generic [ref=e22]: Accesorios Móvil
+      - navigation [ref=e23]:
+        - link "Inicio" [ref=e25] [cursor=pointer]:
+          - /url: /
+        - link "Catálogo" [ref=e27] [cursor=pointer]:
+          - /url: /tienda
+          - text: Catálogo
+          - img [ref=e28]
+        - link "Nosotros" [ref=e31] [cursor=pointer]:
+          - /url: /sobre-nosotros
+        - link "Contacto" [ref=e33] [cursor=pointer]:
+          - /url: /contacto
+      - generic [ref=e35]:
+        - textbox "Buscar producto, marca, modelo..." [ref=e36]
+        - img [ref=e37]
+      - generic [ref=e40]:
+        - link "Mi cuenta" [ref=e42] [cursor=pointer]:
+          - /url: /mi-cuenta
+          - img [ref=e43]
+        - button "Carrito" [ref=e46]:
+          - img [ref=e47]
+  - generic [ref=e51]:
+    - generic [ref=e52]:
+      - generic [ref=e53]:
+        - img [ref=e54]
+        - heading "Carrito" [level=2] [ref=e57]
+        - generic [ref=e58]: "0"
+      - button [ref=e59]:
+        - img [ref=e60]
+    - generic [ref=e64]:
+      - generic [ref=e65]: 🛒
+      - paragraph [ref=e66]: Tu carrito está vacío
+      - link "Ver catálogo" [ref=e67] [cursor=pointer]:
+        - /url: /tienda
+  - main [ref=e68]:
+    - generic [ref=e69]:
+      - generic [ref=e72]:
+        - generic [ref=e73]: Inicio/Catálogo
+        - combobox [ref=e75]:
+          - option "Más nuevos" [selected]
+          - option "Más vendidos"
+          - 'option "Precio: menor a mayor"'
+          - 'option "Precio: mayor a menor"'
+          - option "Nombre A-Z"
+      - generic [ref=e77]:
+        - complementary [ref=e78]:
+          - generic [ref=e79]:
+            - heading "Categorías" [level=3] [ref=e80]
+            - list [ref=e81]:
+              - listitem [ref=e82]:
+                - button "Todas" [ref=e83]
+              - listitem [ref=e84]:
+                - button "Pantallas 433" [ref=e85]:
+                  - generic [ref=e86]: Pantallas
+                  - generic [ref=e87]: "433"
+              - listitem [ref=e88]:
+                - button "Cables 413" [ref=e89]:
+                  - generic [ref=e90]: Cables
+                  - generic [ref=e91]: "413"
+              - listitem [ref=e92]:
+                - button "Baterias 252" [ref=e93]:
+                  - generic [ref=e94]: Baterias
+                  - generic [ref=e95]: "252"
+              - listitem [ref=e96]:
+                - button "Iphone 217" [ref=e97]:
+                  - generic [ref=e98]: Iphone
+                  - generic [ref=e99]: "217"
+              - listitem [ref=e100]:
+                - button "Samsung 201" [ref=e101]:
+                  - generic [ref=e102]: Samsung
+                  - generic [ref=e103]: "201"
+              - listitem [ref=e104]:
+                - button "Accesorios 193" [ref=e105]:
+                  - generic [ref=e106]: Accesorios
+                  - generic [ref=e107]: "193"
+              - listitem [ref=e108]:
+                - button "Xiaomi 148" [ref=e109]:
+                  - generic [ref=e110]: Xiaomi
+                  - generic [ref=e111]: "148"
+              - listitem [ref=e112]:
+                - button "Oppo 60" [ref=e113]:
+                  - generic [ref=e114]: Oppo
+                  - generic [ref=e115]: "60"
+              - listitem [ref=e116]:
+                - button "Audio 52" [ref=e117]:
+                  - generic [ref=e118]: Audio
+                  - generic [ref=e119]: "52"
+              - listitem [ref=e120]:
+                - button "Huawei 41" [ref=e121]:
+                  - generic [ref=e122]: Huawei
+                  - generic [ref=e123]: "41"
+              - listitem [ref=e124]:
+                - button "Cargadores 22" [ref=e125]:
+                  - generic [ref=e126]: Cargadores
+                  - generic [ref=e127]: "22"
+              - listitem [ref=e128]:
+                - button "Ipad 15" [ref=e129]:
+                  - generic [ref=e130]: Ipad
+                  - generic [ref=e131]: "15"
+              - listitem [ref=e132]:
+                - button "Herramientas 11" [ref=e133]:
+                  - generic [ref=e134]: Herramientas
+                  - generic [ref=e135]: "11"
+              - listitem [ref=e136]:
+                - button "Sony 11" [ref=e137]:
+                  - generic [ref=e138]: Sony
+                  - generic [ref=e139]: "11"
+              - listitem [ref=e140]:
+                - button "Vivo 10" [ref=e141]:
+                  - generic [ref=e142]: Vivo
+                  - generic [ref=e143]: "10"
+              - listitem [ref=e144]:
+                - button "TCL 9" [ref=e145]:
+                  - generic [ref=e146]: TCL
+                  - generic [ref=e147]: "9"
+              - listitem [ref=e148]:
+                - button "Motorola 7" [ref=e149]:
+                  - generic [ref=e150]: Motorola
+                  - generic [ref=e151]: "7"
+              - listitem [ref=e152]:
+                - button "Fundas 6" [ref=e153]:
+                  - generic [ref=e154]: Fundas
+                  - generic [ref=e155]: "6"
+              - listitem [ref=e156]:
+                - button "Lenovo 4" [ref=e157]:
+                  - generic [ref=e158]: Lenovo
+                  - generic [ref=e159]: "4"
+              - listitem [ref=e160]:
+                - button "ZTE 4" [ref=e161]:
+                  - generic [ref=e162]: ZTE
+                  - generic [ref=e163]: "4"
+              - listitem [ref=e164]:
+                - button "Sin categorizar 3" [ref=e165]:
+                  - generic [ref=e166]: Sin categorizar
+                  - generic [ref=e167]: "3"
+              - listitem [ref=e168]:
+                - button "LG 3" [ref=e169]:
+                  - generic [ref=e170]: LG
+                  - generic [ref=e171]: "3"
+              - listitem [ref=e172]:
+                - button "Alcatel 3" [ref=e173]:
+                  - generic [ref=e174]: Alcatel
+                  - generic [ref=e175]: "3"
+        - main [ref=e176]:
+          - heading "Catálogo de Accesorios Móviles al Mayor" [level=1] [ref=e177]
+          - paragraph [ref=e178]: 2077 productos
+          - generic [ref=e179]:
+            - 'link "¡Últimas 1! FLEX DE CARGA PARA IPAD 2 FLEX DE CARGA PARA IPAD 2 SKU: 788 €3.00 + IVA/IGIC" [ref=e180] [cursor=pointer]':
+              - /url: /producto/5211/flex-de-carga-para-ipad-2
+              - generic [ref=e181]: ¡Últimas 1!
+              - img "FLEX DE CARGA PARA IPAD 2" [ref=e183]
+              - generic [ref=e184]:
+                - heading "FLEX DE CARGA PARA IPAD 2" [level=3] [ref=e185]
+                - generic [ref=e186]: "SKU: 788"
+              - generic [ref=e187]:
+                - generic [ref=e188]:
+                  - generic [ref=e189]: €3.00
+                  - generic [ref=e190]: + IVA/IGIC
+                - generic [ref=e191]:
+                  - button "Añadir al carrito" [ref=e192]:
+                    - img [ref=e193]
+                  - link "Ver detalles" [ref=e197]:
+                    - /url: /producto/5211/flex-de-carga-para-ipad-2
+                    - img [ref=e198]
+            - 'link "¡Últimas 4! ALTAVOZ BLUETOOTH YST-289 ROJO ALTAVOZ BLUETOOTH YST-289 ROJO SKU: 89031 €9.00 + IVA/IGIC" [ref=e201] [cursor=pointer]':
+              - /url: /producto/5213/altavoz-bluetooth-yst-289-rojo
+              - generic [ref=e202]: ¡Últimas 4!
+              - img "ALTAVOZ BLUETOOTH YST-289 ROJO" [ref=e204]
+              - generic [ref=e205]:
+                - heading "ALTAVOZ BLUETOOTH YST-289 ROJO" [level=3] [ref=e206]
+                - generic [ref=e207]: "SKU: 89031"
+              - generic [ref=e208]:
+                - generic [ref=e209]:
+                  - generic [ref=e210]: €9.00
+                  - generic [ref=e211]: + IVA/IGIC
+                - generic [ref=e212]:
+                  - button "Añadir al carrito" [ref=e213]:
+                    - img [ref=e214]
+                  - link "Ver detalles" [ref=e218]:
+                    - /url: /producto/5213/altavoz-bluetooth-yst-289-rojo
+                    - img [ref=e219]
+            - 'link "¡Últimas 1! FLEX DE CARGA GRIS ORI IPHONE 6S FLEX DE CARGA GRIS ORI IPHONE 6S SKU: 9919 €5.00 + IVA/IGIC" [ref=e222] [cursor=pointer]':
+              - /url: /producto/5215/flex-de-carga-gris-ori-iphone-6s
+              - generic [ref=e223]: ¡Últimas 1!
+              - img "FLEX DE CARGA GRIS ORI IPHONE 6S" [ref=e225]
+              - generic [ref=e226]:
+                - heading "FLEX DE CARGA GRIS ORI IPHONE 6S" [level=3] [ref=e227]
+                - generic [ref=e228]: "SKU: 9919"
+              - generic [ref=e229]:
+                - generic [ref=e230]:
+                  - generic [ref=e231]: €5.00
+                  - generic [ref=e232]: + IVA/IGIC
+                - generic [ref=e233]:
+                  - button "Añadir al carrito" [ref=e234]:
+                    - img [ref=e235]
+                  - link "Ver detalles" [ref=e239]:
+                    - /url: /producto/5215/flex-de-carga-gris-ori-iphone-6s
+                    - img [ref=e240]
+            - 'link "¡Últimas 3! FLEX DE CARGA ORI IPHONE 6S PLUS FLEX DE CARGA ORI IPHONE 6S PLUS SKU: 93634 €6.00 + IVA/IGIC" [ref=e243] [cursor=pointer]':
+              - /url: /producto/5217/flex-de-carga-ori-iphone-6s-plus
+              - generic [ref=e244]: ¡Últimas 3!
+              - img "FLEX DE CARGA ORI IPHONE 6S PLUS" [ref=e246]
+              - generic [ref=e247]:
+                - heading "FLEX DE CARGA ORI IPHONE 6S PLUS" [level=3] [ref=e248]
+                - generic [ref=e249]: "SKU: 93634"
+              - generic [ref=e250]:
+                - generic [ref=e251]:
+                  - generic [ref=e252]: €6.00
+                  - generic [ref=e253]: + IVA/IGIC
+                - generic [ref=e254]:
+                  - button "Añadir al carrito" [ref=e255]:
+                    - img [ref=e256]
+                  - link "Ver detalles" [ref=e260]:
+                    - /url: /producto/5217/flex-de-carga-ori-iphone-6s-plus
+                    - img [ref=e261]
+            - 'link "¡Últimas 2! CAMARA FRONTAL PARA IPHONE 6S CAMARA FRONTAL PARA IPHONE 6S SKU: 93712 €5.00 + IVA/IGIC" [ref=e264] [cursor=pointer]':
+              - /url: /producto/5219/camara-frontal-para-iphone-6s
+              - generic [ref=e265]: ¡Últimas 2!
+              - img "CAMARA FRONTAL PARA IPHONE 6S" [ref=e267]
+              - generic [ref=e268]:
+                - heading "CAMARA FRONTAL PARA IPHONE 6S" [level=3] [ref=e269]
+                - generic [ref=e270]: "SKU: 93712"
+              - generic [ref=e271]:
+                - generic [ref=e272]:
+                  - generic [ref=e273]: €5.00
+                  - generic [ref=e274]: + IVA/IGIC
+                - generic [ref=e275]:
+                  - button "Añadir al carrito" [ref=e276]:
+                    - img [ref=e277]
+                  - link "Ver detalles" [ref=e281]:
+                    - /url: /producto/5219/camara-frontal-para-iphone-6s
+                    - img [ref=e282]
+            - 'link "¡Últimas 1! CAMARA TRASERA ORIGINAL PARA IPHONE 6S CAMARA TRASERA ORIGINAL PARA IPHONE 6S SKU: 93701 €10.00 + IVA/IGIC" [ref=e285] [cursor=pointer]':
+              - /url: /producto/5221/camara-trasera-original-para-iphone-6s
+              - generic [ref=e286]: ¡Últimas 1!
+              - img "CAMARA TRASERA ORIGINAL PARA IPHONE 6S" [ref=e288]
+              - generic [ref=e289]:
+                - heading "CAMARA TRASERA ORIGINAL PARA IPHONE 6S" [level=3] [ref=e290]
+                - generic [ref=e291]: "SKU: 93701"
+              - generic [ref=e292]:
+                - generic [ref=e293]:
+                  - generic [ref=e294]: €10.00
+                  - generic [ref=e295]: + IVA/IGIC
+                - generic [ref=e296]:
+                  - button "Añadir al carrito" [ref=e297]:
+                    - img [ref=e298]
+                  - link "Ver detalles" [ref=e302]:
+                    - /url: /producto/5221/camara-trasera-original-para-iphone-6s
+                    - img [ref=e303]
+            - 'link "PILA BOTON DURACELL LR44 A76 V13GA 1.5V PILA BOTON DURACELL LR44 A76 V13GA 1.5V SKU: 504424 19 disponibles €1.35 + IVA/IGIC" [ref=e306] [cursor=pointer]':
+              - /url: /producto/5223/pila-boton-duracell-lr44-a76-v13ga-1-5v
+              - img "PILA BOTON DURACELL LR44 A76 V13GA 1.5V" [ref=e308]
+              - generic [ref=e309]:
+                - heading "PILA BOTON DURACELL LR44 A76 V13GA 1.5V" [level=3] [ref=e310]
+                - generic [ref=e311]: "SKU: 504424"
+                - generic [ref=e312]: 19 disponibles
+              - generic [ref=e314]:
+                - generic [ref=e315]:
+                  - generic [ref=e316]: €1.35
+                  - generic [ref=e317]: + IVA/IGIC
+                - generic [ref=e318]:
+                  - button "Añadir al carrito" [ref=e319]:
+                    - img [ref=e320]
+                  - link "Ver detalles" [ref=e324]:
+                    - /url: /producto/5223/pila-boton-duracell-lr44-a76-v13ga-1-5v
+                    - img [ref=e325]
+            - 'link "PILA BOTON DURACELL DL2016 CR2016 BR2016 3V PILA BOTON DURACELL DL2016 CR2016 BR2016 3V SKU: 033948 44 disponibles €0.90 + IVA/IGIC" [ref=e328] [cursor=pointer]':
+              - /url: /producto/5225/pila-boton-duracell-dl2016-cr2016-br2016-3v
+              - img "PILA BOTON DURACELL DL2016 CR2016 BR2016 3V" [ref=e330]
+              - generic [ref=e331]:
+                - heading "PILA BOTON DURACELL DL2016 CR2016 BR2016 3V" [level=3] [ref=e332]
+                - generic [ref=e333]: "SKU: 033948"
+                - generic [ref=e334]: 44 disponibles
+              - generic [ref=e336]:
+                - generic [ref=e337]:
+                  - generic [ref=e338]: €0.90
+                  - generic [ref=e339]: + IVA/IGIC
+                - generic [ref=e340]:
+                  - button "Añadir al carrito" [ref=e341]:
+                    - img [ref=e342]
+                  - link "Ver detalles" [ref=e346]:
+                    - /url: /producto/5225/pila-boton-duracell-dl2016-cr2016-br2016-3v
+                    - img [ref=e347]
+            - 'link "¡Últimas 1! TACTIL BLANCO CON IC SIN BOTON HOME PARA IPAD MINI 3 MINI3 TACTIL BLANCO CON IC SIN BOTON HOME PARA IPAD MINI 3 MINI3 SKU: 2406 €11.00 + IVA/IGIC" [ref=e350] [cursor=pointer]':
+              - /url: /producto/5227/tactil-blanco-con-ic-sin-boton-home-para-ipad-mini-3-mini3
+              - generic [ref=e351]: ¡Últimas 1!
+              - img "TACTIL BLANCO CON IC SIN BOTON HOME PARA IPAD MINI 3 MINI3" [ref=e353]
+              - generic [ref=e354]:
+                - heading "TACTIL BLANCO CON IC SIN BOTON HOME PARA IPAD MINI 3 MINI3" [level=3] [ref=e355]
+                - generic [ref=e356]: "SKU: 2406"
+              - generic [ref=e357]:
+                - generic [ref=e358]:
+                  - generic [ref=e359]: €11.00
+                  - generic [ref=e360]: + IVA/IGIC
+                - generic [ref=e361]:
+                  - button "Añadir al carrito" [ref=e362]:
+                    - img [ref=e363]
+                  - link "Ver detalles" [ref=e367]:
+                    - /url: /producto/5227/tactil-blanco-con-ic-sin-boton-home-para-ipad-mini-3-mini3
+                    - img [ref=e368]
+            - 'link "LDNIO DL-C21 ADAPTADOR DE COCHE 2.1A NEGRO LDNIO DL-C21 ADAPTADOR DE COCHE 2.1A NEGRO SKU: GS-0082 71 disponibles €2.95 + IVA/IGIC" [ref=e371] [cursor=pointer]':
+              - /url: /producto/5229/ldnio-dl-c21-adaptador-de-coche-2-1a-negro
+              - img "LDNIO DL-C21 ADAPTADOR DE COCHE 2.1A NEGRO" [ref=e373]
+              - generic [ref=e374]:
+                - heading "LDNIO DL-C21 ADAPTADOR DE COCHE 2.1A NEGRO" [level=3] [ref=e375]
+                - generic [ref=e376]: "SKU: GS-0082"
+                - generic [ref=e377]: 71 disponibles
+              - generic [ref=e379]:
+                - generic [ref=e380]:
+                  - generic [ref=e381]: €2.95
+                  - generic [ref=e382]: + IVA/IGIC
+                - generic [ref=e383]:
+                  - button "Añadir al carrito" [ref=e384]:
+                    - img [ref=e385]
+                  - link "Ver detalles" [ref=e389]:
+                    - /url: /producto/5229/ldnio-dl-c21-adaptador-de-coche-2-1a-negro
+                    - img [ref=e390]
+            - 'link "LDNIO DL-C21 ADAPTADOR DE COCHE 2.1A BLANCO LDNIO DL-C21 ADAPTADOR DE COCHE 2.1A BLANCO SKU: 50210 71 disponibles €2.95 + IVA/IGIC" [ref=e393] [cursor=pointer]':
+              - /url: /producto/5231/ldnio-dl-c21-adaptador-de-coche-2-1a-blanco
+              - img "LDNIO DL-C21 ADAPTADOR DE COCHE 2.1A BLANCO" [ref=e395]
+              - generic [ref=e396]:
+                - heading "LDNIO DL-C21 ADAPTADOR DE COCHE 2.1A BLANCO" [level=3] [ref=e397]
+                - generic [ref=e398]: "SKU: 50210"
+                - generic [ref=e399]: 71 disponibles
+              - generic [ref=e401]:
+                - generic [ref=e402]:
+                  - generic [ref=e403]: €2.95
+                  - generic [ref=e404]: + IVA/IGIC
+                - generic [ref=e405]:
+                  - button "Añadir al carrito" [ref=e406]:
+                    - img [ref=e407]
+                  - link "Ver detalles" [ref=e411]:
+                    - /url: /producto/5231/ldnio-dl-c21-adaptador-de-coche-2-1a-blanco
+                    - img [ref=e412]
+            - 'link "¡Últimas 1! Beper 90.388 Máquina para hacer palomitas Beper 90.388 Máquina para hacer palomitas SKU: 710200 €16.50 + IVA/IGIC" [ref=e415] [cursor=pointer]':
+              - /url: /producto/5235/beper-90-388-maquina-para-hacer-palomitas
+              - generic [ref=e416]: ¡Últimas 1!
+              - img "Beper 90.388 Máquina para hacer palomitas" [ref=e418]
+              - generic [ref=e419]:
+                - heading "Beper 90.388 Máquina para hacer palomitas" [level=3] [ref=e420]
+                - generic [ref=e421]: "SKU: 710200"
+              - generic [ref=e422]:
+                - generic [ref=e423]:
+                  - generic [ref=e424]: €16.50
+                  - generic [ref=e425]: + IVA/IGIC
+                - generic [ref=e426]:
+                  - button "Añadir al carrito" [ref=e427]:
+                    - img [ref=e428]
+                  - link "Ver detalles" [ref=e432]:
+                    - /url: /producto/5235/beper-90-388-maquina-para-hacer-palomitas
+                    - img [ref=e433]
+            - 'link "¡Últimas 2! Beper 90.341A Batidora amasadora de varilla turbo Beper 90.341A Batidora amasadora de varilla turbo SKU: 710279 €11.55 + IVA/IGIC" [ref=e436] [cursor=pointer]':
+              - /url: /producto/5237/beper-90-341a-batidora-amasadora-de-varilla-turbo
+              - generic [ref=e437]: ¡Últimas 2!
+              - img "Beper 90.341A Batidora amasadora de varilla turbo" [ref=e439]
+              - generic [ref=e440]:
+                - heading "Beper 90.341A Batidora amasadora de varilla turbo" [level=3] [ref=e441]
+                - generic [ref=e442]: "SKU: 710279"
+              - generic [ref=e443]:
+                - generic [ref=e444]:
+                  - generic [ref=e445]: €11.55
+                  - generic [ref=e446]: + IVA/IGIC
+                - generic [ref=e447]:
+                  - button "Añadir al carrito" [ref=e448]:
+                    - img [ref=e449]
+                  - link "Ver detalles" [ref=e453]:
+                    - /url: /producto/5237/beper-90-341a-batidora-amasadora-de-varilla-turbo
+                    - img [ref=e454]
+            - 'link "¡Últimas 1! CAMARA TRASERA ORIGINAL DESMONTAJE PARA IPHONE 6S PLUS CAMARA TRASERA ORIGINAL DESMONTAJE PARA IPHONE 6S PLUS SKU: 6216 €10.00 + IVA/IGIC" [ref=e457] [cursor=pointer]':
+              - /url: /producto/5239/camara-trasera-original-desmontaje-para-iphone-6s-plus
+              - generic [ref=e458]: ¡Últimas 1!
+              - img "CAMARA TRASERA ORIGINAL DESMONTAJE PARA IPHONE 6S PLUS" [ref=e460]
+              - generic [ref=e461]:
+                - heading "CAMARA TRASERA ORIGINAL DESMONTAJE PARA IPHONE 6S PLUS" [level=3] [ref=e462]
+                - generic [ref=e463]: "SKU: 6216"
+              - generic [ref=e464]:
+                - generic [ref=e465]:
+                  - generic [ref=e466]: €10.00
+                  - generic [ref=e467]: + IVA/IGIC
+                - generic [ref=e468]:
+                  - button "Añadir al carrito" [ref=e469]:
+                    - img [ref=e470]
+                  - link "Ver detalles" [ref=e474]:
+                    - /url: /producto/5239/camara-trasera-original-desmontaje-para-iphone-6s-plus
+                    - img [ref=e475]
+            - 'link "Cable Adaptador MHL Lightning a HDMI Convertidor de Televisión de Alta Definición 1080p IOS Cable Adaptador MHL Lightning a HDMI Convertidor de Televisión de Alta Definición 1080p IOS SKU: 227007 14 disponibles €14.85 + IVA/IGIC" [ref=e478] [cursor=pointer]':
+              - /url: /producto/5241/cable-adaptador-mhl-lightning-a-hdmi-convertidor-de-television-de-alta-definicion-1080p-ios
+              - img "Cable Adaptador MHL Lightning a HDMI Convertidor de Televisión de Alta Definición 1080p IOS" [ref=e481]
+              - generic [ref=e482]:
+                - heading "Cable Adaptador MHL Lightning a HDMI Convertidor de Televisión de Alta Definición 1080p IOS" [level=3] [ref=e483]
+                - generic [ref=e484]: "SKU: 227007"
+                - generic [ref=e485]: 14 disponibles
+              - generic [ref=e487]:
+                - generic [ref=e488]:
+                  - generic [ref=e489]: €14.85
+                  - generic [ref=e490]: + IVA/IGIC
+                - generic [ref=e491]:
+                  - button "Añadir al carrito" [ref=e492]:
+                    - img [ref=e493]
+                  - link "Ver detalles" [ref=e497]:
+                    - /url: /producto/5241/cable-adaptador-mhl-lightning-a-hdmi-convertidor-de-television-de-alta-definicion-1080p-ios
+                    - img [ref=e498]
+            - 'link "¡Últimas 1! ALCATEL ONE TOUCH POP 3 OT-5015D 5015A 5015 5\" LCD ALCATEL ONE TOUCH POP 3 OT-5015D 5015A 5015 5\" LCD SKU: 4521 €9.00 + IVA/IGIC" [ref=e501] [cursor=pointer]':
+              - /url: /producto/5243/alcatel-one-touch-pop-3-ot-5015d-5015a-5015-5-lcd
+              - generic [ref=e502]: ¡Últimas 1!
+              - img "ALCATEL ONE TOUCH POP 3 OT-5015D 5015A 5015 5\" LCD" [ref=e504]
+              - generic [ref=e505]:
+                - heading "ALCATEL ONE TOUCH POP 3 OT-5015D 5015A 5015 5\" LCD" [level=3] [ref=e506]
+                - generic [ref=e507]: "SKU: 4521"
+              - generic [ref=e508]:
+                - generic [ref=e509]:
+                  - generic [ref=e510]: €9.00
+                  - generic [ref=e511]: + IVA/IGIC
+                - generic [ref=e512]:
+                  - button "Añadir al carrito" [ref=e513]:
+                    - img [ref=e514]
+                  - link "Ver detalles" [ref=e518]:
+                    - /url: /producto/5243/alcatel-one-touch-pop-3-ot-5015d-5015a-5015-5-lcd
+                    - img [ref=e519]
+            - 'link "¡Últimas 3! JVC HA-F250BT-B AURICULARES DEPORTIVOS BLUETOOTH MICROFONO NEGRO JVC HA-F250BT-B AURICULARES DEPORTIVOS BLUETOOTH MICROFONO NEGRO SKU: 441707 €29.00 + IVA/IGIC" [ref=e522] [cursor=pointer]':
+              - /url: /producto/5253/jvc-ha-f250bt-b-auriculares-deportivos-bluetooth-microfono-negro
+              - generic [ref=e523]: ¡Últimas 3!
+              - img "JVC HA-F250BT-B AURICULARES DEPORTIVOS BLUETOOTH MICROFONO NEGRO" [ref=e526]
+              - generic [ref=e527]:
+                - heading "JVC HA-F250BT-B AURICULARES DEPORTIVOS BLUETOOTH MICROFONO NEGRO" [level=3] [ref=e528]
+                - generic [ref=e529]: "SKU: 441707"
+              - generic [ref=e530]:
+                - generic [ref=e531]:
+                  - generic [ref=e532]: €29.00
+                  - generic [ref=e533]: + IVA/IGIC
+                - generic [ref=e534]:
+                  - button "Añadir al carrito" [ref=e535]:
+                    - img [ref=e536]
+                  - link "Ver detalles" [ref=e540]:
+                    - /url: /producto/5253/jvc-ha-f250bt-b-auriculares-deportivos-bluetooth-microfono-negro
+                    - img [ref=e541]
+            - 'link "¡Últimas 1! FLEX DE CARGA NEGRO ORIGINAL PARA IPHONE 7 PLUS 7PLUS FLEX DE CARGA NEGRO ORIGINAL PARA IPHONE 7 PLUS 7PLUS SKU: 9680 €27.82 + IVA/IGIC" [ref=e544] [cursor=pointer]':
+              - /url: /producto/5255/flex-de-carga-negro-original-para-iphone-7-plus-7plus
+              - generic [ref=e545]: ¡Últimas 1!
+              - img "FLEX DE CARGA NEGRO ORIGINAL PARA IPHONE 7 PLUS 7PLUS" [ref=e548]
+              - generic [ref=e549]:
+                - heading "FLEX DE CARGA NEGRO ORIGINAL PARA IPHONE 7 PLUS 7PLUS" [level=3] [ref=e550]
+                - generic [ref=e551]: "SKU: 9680"
+              - generic [ref=e552]:
+                - generic [ref=e553]:
+                  - generic [ref=e554]: €27.82
+                  - generic [ref=e555]: + IVA/IGIC
+                - generic [ref=e556]:
+                  - button "Añadir al carrito" [ref=e557]:
+                    - img [ref=e558]
+                  - link "Ver detalles" [ref=e562]:
+                    - /url: /producto/5255/flex-de-carga-negro-original-para-iphone-7-plus-7plus
+                    - img [ref=e563]
+            - 'link "¡Últimas 1! FLEX DE CARGA NEGRO ORI DESMONTAJE IPHONE 7 PLUS 7PLUS FLEX DE CARGA NEGRO ORI DESMONTAJE IPHONE 7 PLUS 7PLUS SKU: 9681 €7.00 + IVA/IGIC" [ref=e566] [cursor=pointer]':
+              - /url: /producto/5257/flex-de-carga-negro-ori-desmontaje-iphone-7-plus-7plus
+              - generic [ref=e567]: ¡Últimas 1!
+              - img "FLEX DE CARGA NEGRO ORI DESMONTAJE IPHONE 7 PLUS 7PLUS" [ref=e569]
+              - generic [ref=e570]:
+                - heading "FLEX DE CARGA NEGRO ORI DESMONTAJE IPHONE 7 PLUS 7PLUS" [level=3] [ref=e571]
+                - generic [ref=e572]: "SKU: 9681"
+              - generic [ref=e573]:
+                - generic [ref=e574]:
+                  - generic [ref=e575]: €7.00
+                  - generic [ref=e576]: + IVA/IGIC
+                - generic [ref=e577]:
+                  - button "Añadir al carrito" [ref=e578]:
+                    - img [ref=e579]
+                  - link "Ver detalles" [ref=e583]:
+                    - /url: /producto/5257/flex-de-carga-negro-ori-desmontaje-iphone-7-plus-7plus
+                    - img [ref=e584]
+            - 'link "¡Últimas 3! FLEX DE CARGA NEGRO ORI DESMONTAJE IPHONE 7 7G FLEX DE CARGA NEGRO ORI DESMONTAJE IPHONE 7 7G SKU: 9682 €7.00 + IVA/IGIC" [ref=e587] [cursor=pointer]':
+              - /url: /producto/5259/flex-de-carga-negro-ori-desmontaje-iphone-7-7g
+              - generic [ref=e588]: ¡Últimas 3!
+              - img "FLEX DE CARGA NEGRO ORI DESMONTAJE IPHONE 7 7G" [ref=e591]
+              - generic [ref=e592]:
+                - heading "FLEX DE CARGA NEGRO ORI DESMONTAJE IPHONE 7 7G" [level=3] [ref=e593]
+                - generic [ref=e594]: "SKU: 9682"
+              - generic [ref=e595]:
+                - generic [ref=e596]:
+                  - generic [ref=e597]: €7.00
+                  - generic [ref=e598]: + IVA/IGIC
+                - generic [ref=e599]:
+                  - button "Añadir al carrito" [ref=e600]:
+                    - img [ref=e601]
+                  - link "Ver detalles" [ref=e605]:
+                    - /url: /producto/5259/flex-de-carga-negro-ori-desmontaje-iphone-7-7g
+                    - img [ref=e606]
+            - 'link "¡Últimas 2! FLEX DE CARGA BLANCO ORI IPHONE 7 7G FLEX DE CARGA BLANCO ORI IPHONE 7 7G SKU: 9683 €7.00 + IVA/IGIC" [ref=e609] [cursor=pointer]':
+              - /url: /producto/5261/flex-de-carga-blanco-ori-iphone-7-7g
+              - generic [ref=e610]: ¡Últimas 2!
+              - img "FLEX DE CARGA BLANCO ORI IPHONE 7 7G" [ref=e613]
+              - generic [ref=e614]:
+                - heading "FLEX DE CARGA BLANCO ORI IPHONE 7 7G" [level=3] [ref=e615]
+                - generic [ref=e616]: "SKU: 9683"
+              - generic [ref=e617]:
+                - generic [ref=e618]:
+                  - generic [ref=e619]: €7.00
+                  - generic [ref=e620]: + IVA/IGIC
+                - generic [ref=e621]:
+                  - button "Añadir al carrito" [ref=e622]:
+                    - img [ref=e623]
+                  - link "Ver detalles" [ref=e627]:
+                    - /url: /producto/5261/flex-de-carga-blanco-ori-iphone-7-7g
+                    - img [ref=e628]
+            - 'link "¡Últimas 1! FLEX DE CARGA NEGRO ORI DESMONTAJE IPHONE 8 8G FLEX DE CARGA NEGRO ORI DESMONTAJE IPHONE 8 8G SKU: 93753 €8.00 + IVA/IGIC" [ref=e631] [cursor=pointer]':
+              - /url: /producto/5263/flex-de-carga-negro-ori-desmontaje-iphone-8-8g
+              - generic [ref=e632]: ¡Últimas 1!
+              - img "FLEX DE CARGA NEGRO ORI DESMONTAJE IPHONE 8 8G" [ref=e635]
+              - generic [ref=e636]:
+                - heading "FLEX DE CARGA NEGRO ORI DESMONTAJE IPHONE 8 8G" [level=3] [ref=e637]
+                - generic [ref=e638]: "SKU: 93753"
+              - generic [ref=e639]:
+                - generic [ref=e640]:
+                  - generic [ref=e641]: €8.00
+                  - generic [ref=e642]: + IVA/IGIC
+                - generic [ref=e643]:
+                  - button "Añadir al carrito" [ref=e644]:
+                    - img [ref=e645]
+                  - link "Ver detalles" [ref=e649]:
+                    - /url: /producto/5263/flex-de-carga-negro-ori-desmontaje-iphone-8-8g
+                    - img [ref=e650]
+            - 'link "Sin stock FLEX DE CARGA NEGRO ORI DESMONTAJE IPHONE 8 PLUS 8PLUS FLEX DE CARGA NEGRO ORI DESMONTAJE IPHONE 8 PLUS 8PLUS SKU: 93754 €8.00 + IVA/IGIC" [ref=e653] [cursor=pointer]':
+              - /url: /producto/5265/flex-de-carga-negro-ori-desmontaje-iphone-8-plus-8plus
+              - generic [ref=e655]: Sin stock
+              - img "FLEX DE CARGA NEGRO ORI DESMONTAJE IPHONE 8 PLUS 8PLUS" [ref=e658]
+              - generic [ref=e659]:
+                - heading "FLEX DE CARGA NEGRO ORI DESMONTAJE IPHONE 8 PLUS 8PLUS" [level=3] [ref=e660]
+                - generic [ref=e661]: "SKU: 93754"
+              - generic [ref=e662]:
+                - generic [ref=e663]:
+                  - generic [ref=e664]: €8.00
+                  - generic [ref=e665]: + IVA/IGIC
+                - generic [ref=e666]:
+                  - button "Sin stock" [disabled] [ref=e667]:
+                    - img [ref=e668]
+                  - link "Ver detalles" [ref=e672]:
+                    - /url: /producto/5265/flex-de-carga-negro-ori-desmontaje-iphone-8-plus-8plus
+                    - img [ref=e673]
+            - 'link "¡Últimas 1! CAMARA TRASERA ORIGINAL PARA IPHONE 8 PLUS 8PLUS CAMARA TRASERA ORIGINAL PARA IPHONE 8 PLUS 8PLUS SKU: 93855 €24.50 + IVA/IGIC" [ref=e676] [cursor=pointer]':
+              - /url: /producto/5267/camara-trasera-original-para-iphone-8-plus-8plus
+              - generic [ref=e677]: ¡Últimas 1!
+              - img "CAMARA TRASERA ORIGINAL PARA IPHONE 8 PLUS 8PLUS" [ref=e680]
+              - generic [ref=e681]:
+                - heading "CAMARA TRASERA ORIGINAL PARA IPHONE 8 PLUS 8PLUS" [level=3] [ref=e682]
+                - generic [ref=e683]: "SKU: 93855"
+              - generic [ref=e684]:
+                - generic [ref=e685]:
+                  - generic [ref=e686]: €24.50
+                  - generic [ref=e687]: + IVA/IGIC
+                - generic [ref=e688]:
+                  - button "Añadir al carrito" [ref=e689]:
+                    - img [ref=e690]
+                  - link "Ver detalles" [ref=e694]:
+                    - /url: /producto/5267/camara-trasera-original-para-iphone-8-plus-8plus
+                    - img [ref=e695]
+          - generic [ref=e698]:
+            - button [disabled] [ref=e699]:
+              - img [ref=e700]
+            - button "1" [ref=e702]
+            - button "2" [ref=e703]
+            - button "3" [ref=e704]
+            - generic [ref=e705]: …
+            - button "87" [ref=e706]
+            - button [ref=e707]:
+              - img [ref=e708]
+  - contentinfo [ref=e710]:
+    - generic [ref=e712]:
+      - generic [ref=e713]:
+        - img [ref=e714]
+        - generic [ref=e719]: Envío en 24h a Canarias
+      - generic [ref=e720]:
+        - img [ref=e721]
+        - generic [ref=e724]: Garantía de 6 meses
+      - generic [ref=e725]:
+        - img [ref=e726]
+        - generic [ref=e729]: Recogida en local
+    - generic [ref=e731]:
+      - generic [ref=e732]:
+        - generic [ref=e733]:
+          - generic [ref=e735]: GS
+          - generic [ref=e736]:
+            - generic [ref=e737]: GSMGC
+            - generic [ref=e738]: Accesorios Móvil Canarias
+        - paragraph [ref=e739]: Distribuidor mayorista de accesorios y repuestos para móviles. Las mejores marcas, precios competitivos, servicio rápido en Canarias.
+        - generic [ref=e740]:
+          - generic [ref=e741]:
+            - img [ref=e742]
+            - link "688 560 560" [ref=e744] [cursor=pointer]:
+              - /url: tel:+34688560560
+          - generic [ref=e745]:
+            - img [ref=e746]
+            - link "info@gsmgc.es" [ref=e749] [cursor=pointer]:
+              - /url: mailto:info@gsmgc.es
+          - generic [ref=e750]:
+            - img [ref=e751]
+            - generic [ref=e754]: Las Palmas de GC, Canarias
+          - generic [ref=e755]:
+            - img [ref=e756]
+            - generic [ref=e759]: L-V 10:00-14:00
+          - link "WhatsApp" [ref=e761] [cursor=pointer]:
+            - /url: https://wa.me/34688560560
+            - img [ref=e762]
+      - generic [ref=e764]:
+        - heading "Tienda" [level=4] [ref=e765]
+        - list [ref=e766]:
+          - listitem [ref=e767]:
+            - link "Inicio" [ref=e768] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e769]:
+            - link "Catálogo" [ref=e770] [cursor=pointer]:
+              - /url: /tienda
+          - listitem [ref=e771]:
+            - link "Marcas" [ref=e772] [cursor=pointer]:
+              - /url: /tienda?sort=brand
+          - listitem [ref=e773]:
+            - link "Novedades" [ref=e774] [cursor=pointer]:
+              - /url: /tienda?orderby=date
+      - generic [ref=e775]:
+        - heading "Legal" [level=4] [ref=e776]
+        - list [ref=e777]:
+          - listitem [ref=e778]:
+            - link "Condiciones de venta" [ref=e779] [cursor=pointer]:
+              - /url: /condiciones-de-venta
+          - listitem [ref=e780]:
+            - link "Política de privacidad" [ref=e781] [cursor=pointer]:
+              - /url: /politica-de-privacidad
+          - listitem [ref=e782]:
+            - link "Envíos y entregas" [ref=e783] [cursor=pointer]:
+              - /url: /envios-y-entregas
+          - listitem [ref=e784]:
+            - link "Devoluciones" [ref=e785] [cursor=pointer]:
+              - /url: /devoluciones
+      - generic [ref=e786]:
+        - heading "Cuenta" [level=4] [ref=e787]
+        - list [ref=e788]:
+          - listitem [ref=e789]:
+            - link "Iniciar sesión" [ref=e790] [cursor=pointer]:
+              - /url: /mi-cuenta
+          - listitem [ref=e791]:
+            - link "Registrarse" [ref=e792] [cursor=pointer]:
+              - /url: /mi-cuenta?register=1
+          - listitem [ref=e793]:
+            - link "Recuperar contraseña" [ref=e794] [cursor=pointer]:
+              - /url: /mi-cuenta?forgot=1
+    - generic [ref=e796]:
+      - generic [ref=e797]: © 2026 GSMGC Accesorios Móvil. Todos los derechos reservados.
+      - generic [ref=e798]: Las Palmas de Gran Canaria, Canarias, España
+  - link "Contactar por WhatsApp" [ref=e800] [cursor=pointer]:
+    - /url: https://wa.me/34688560560?text=Hola%2C%20me%20interesa%20el%20cat%C3%A1logo%20de%20GSMGC
+    - img [ref=e801]
+  - alert [ref=e803]

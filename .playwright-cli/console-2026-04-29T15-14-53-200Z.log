@@ -1,0 +1,2 @@
+[     511ms] [LOG] [GSMGC] Auth init: no token, skipping auth check (guest mode) @ https://gsmgc.es/assets/index-CGmLoiXb.js:0
+[     512ms] [WARNING] [GSMGC] 🔒 clearAllAuth: clearing all auth state @ https://gsmgc.es/assets/index-CGmLoiXb.js:0
