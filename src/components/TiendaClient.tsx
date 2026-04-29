@@ -8,6 +8,27 @@ import ProductCard from '@/components/ProductCard';
 
 const PER_PAGE = 24;
 
+// 品牌分类 ID — 对齐现站线上 DOM 侧边栏 "Marcas" 分组
+const BRAND_IDS = new Set([17, 18, 41, 30, 19, 20, 28, 21, 33, 38, 22, 35, 27, 37, 26]);
+
+// 品牌 emoji 映射 — 对齐现站（品牌无 emoji，产品类型有）
+const BRAND_EMOJI: Record<string, string> = {};
+
+// 产品类型 emoji 映射 — 对齐现站线上 DOM
+const TYPE_EMOJI: Record<string, string> = {
+  'Pantallas': '📺',
+  'Baterias': '🔋',
+  'Audio': '🎧',
+  'Accesorios': '📦',
+  'Cargadores': '🔌',
+  'Cables': '🔌',
+  'Herramientas': '🛠️',
+  'Fundas': '📱',
+  'Protectores': '📺',
+  'Otros': '📷',
+  'Sin categorizar': '',
+};
+
 interface CategoryWithCount extends ProductCategory {
   count?: number;
 }
@@ -24,10 +45,11 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
   const [filterOpen, setFilterOpen] = useState(false);
 
   // Read params from URL — aligned with old site (orderby + order, not sort)
+  // 现站默认排序：Precio: mayor a menor
   const categoryParam = searchParams.get('category') || '';
   const searchParam = searchParams.get('search') || '';
   const pageParam = parseInt(searchParams.get('page') || '1');
-  const orderby = searchParams.get('orderby') || 'date';
+  const orderby = searchParams.get('orderby') || 'price';
   const order = searchParams.get('order') || 'desc';
 
   const activeCategory = categories.find(c => String(c.id) === categoryParam);
@@ -147,10 +169,10 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
                 }}
                 className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
               >
+                <option value="price-desc">Precio: mayor a menor</option>
+                <option value="price-asc">Precio: menor a mayor</option>
                 <option value="date-desc">Más nuevos</option>
                 <option value="popularity-desc">Más vendidos</option>
-                <option value="price-asc">Precio: menor a mayor</option>
-                <option value="price-desc">Precio: mayor a menor</option>
                 <option value="title-asc">Nombre A-Z</option>
               </select>
 
@@ -187,39 +209,55 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex gap-6">
-          {/* Sidebar filters (desktop only) */}
+          {/* Sidebar filters (desktop only) — 对齐现站：Marcas + Tipo de Producto */}
           <aside className="hidden lg:block w-56 shrink-0">
             <div className="bg-white rounded-xl border border-gray-100 p-4">
-              <h3 className="font-bold text-sm mb-3">Categorías</h3>
-              <ul className="space-y-1">
-                <li>
+              {/* Marcas 分组 */}
+              <h3 className="font-bold text-sm mb-3">Marcas</h3>
+              <div className="mb-4">
+                <button
+                  onClick={() => updateParam('category', '')}
+                  className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition mb-1 ${
+                    !categoryParam ? 'bg-[#2563eb] text-white font-semibold' : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Todas
+                </button>
+                {categories.filter(c => BRAND_IDS.has(c.id) && (c.count || 0) > 0).map(cat => (
                   <button
-                    onClick={() => updateParam('category', '')}
-                    className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition ${
-                      !categoryParam ? 'bg-[#2563eb] text-white font-semibold' : 'text-gray-600 hover:bg-gray-50'
+                    key={cat.id}
+                    onClick={() => updateParam('category', String(cat.id))}
+                    className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition mb-1 ${
+                      String(cat.id) === categoryParam
+                        ? 'bg-[#2563eb] text-white font-semibold'
+                        : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    Todas
+                    {cat.name}
                   </button>
-                </li>
-                {categories.filter(c => (c.count || 0) > 0).map(cat => (
-                  <li key={cat.id}>
-                    <button
-                      onClick={() => updateParam('category', String(cat.id))}
-                      className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition flex items-center justify-between ${
-                        String(cat.id) === categoryParam
-                          ? 'bg-[#2563eb] text-white font-semibold'
-                          : 'text-gray-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      <span className="truncate">{cat.name}</span>
-                      <span className={`text-xs ${String(cat.id) === categoryParam ? 'text-blue-200' : 'text-gray-400'}`}>
-                        {cat.count}
-                      </span>
-                    </button>
-                  </li>
                 ))}
-              </ul>
+              </div>
+
+              {/* Tipo de Producto 分组 */}
+              <h3 className="font-bold text-sm mb-3">📋 Tipo de Producto</h3>
+              <div>
+                {categories.filter(c => !BRAND_IDS.has(c.id) && (c.count || 0) > 0).map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => updateParam('category', String(cat.id))}
+                    className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition mb-1 flex items-center gap-1.5 ${
+                      String(cat.id) === categoryParam
+                        ? 'bg-[#2563eb] text-white font-semibold'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {TYPE_EMOJI[cat.name] && <span>{TYPE_EMOJI[cat.name]}</span>}
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+
+              <p className="text-xs text-gray-400 mt-3">{products.length} productos</p>
             </div>
           </aside>
 
