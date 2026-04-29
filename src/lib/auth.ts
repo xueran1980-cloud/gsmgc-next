@@ -56,9 +56,12 @@ interface StockCheckResponse {
   success: boolean;
   items?: Array<{
     product_id: number;
-    available: boolean;
-    stock: number;
-    requested: number;
+    sufficient: boolean;
+    stock_quantity: number;
+    quantity: number;
+    name?: string;
+    sku?: string;
+    status?: string;
   }>;
   message?: string;
 }

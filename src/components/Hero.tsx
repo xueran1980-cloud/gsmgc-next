@@ -131,7 +131,6 @@ export default function Hero({ featuredProducts }: { featuredProducts: Product[]
                           fetchPriority="high"
                           width={120}
                           height={120}
-                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                         />
                       </div>
                       <div className="text-[10px] font-bold text-gray-800 leading-tight line-clamp-2 mb-1">{p.name}</div>

@@ -143,11 +143,11 @@ export default function CheckoutPage() {
       }
 
       if (stockRes.items) {
-        const outOfStock = stockRes.items.filter((i) => !i.available);
+        const outOfStock = stockRes.items.filter((i) => !i.sufficient);
         if (outOfStock.length > 0) {
           const names = outOfStock.map((i) => {
             const item = items.find((it) => it.id === i.product_id);
-            return item ? `${item.name} (solicitado: ${i.requested}, disponible: ${i.stock})` : `ID:${i.product_id}`;
+            return item ? `${item.name} (solicitado: ${i.quantity}, disponible: ${i.stock_quantity})` : `ID:${i.product_id}`;
           }).join(', ');
           throw new Error(`Productos sin stock suficiente: ${names}`);
         }
