@@ -15,6 +15,7 @@ export interface ProductCategory {
   name: string;
   slug: string;
   parent: number;
+  count?: number;
 }
 
 export interface Product {
@@ -103,4 +104,23 @@ export function formatPrice(priceStr: string): string {
   const price = parseFloat(priceStr);
   if (isNaN(price)) return "0,00";
   return price.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ---------- 分类数据（与旧站 wc_categories.json 一致） ----------
+
+const CATEGORIES_URL = "https://gsmgc.es/wc_categories.json";
+
+export async function fetchCategories(): Promise<ProductCategory[]> {
+  const res = await fetch(CATEGORIES_URL, {
+    next: { revalidate: 86400 }, // ISR 24h，与 products 同步
+    headers: {
+      "User-Agent": "GSMGC-Bot/1.0",
+    },
+  });
+  if (!res.ok) {
+    console.warn(`[fetchCategories] API returned ${res.status}, returning empty array`);
+    return [];
+  }
+  const data: ProductCategory[] = await res.json();
+  return data;
 }

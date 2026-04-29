@@ -13,7 +13,7 @@ const PER_PAGE = 24;
 type SortOption = 'date-desc' | 'popularity-desc' | 'price-asc' | 'price-desc' | 'name-asc';
 
 interface CategoryWithCount extends ProductCategory {
-  count: number;
+  count?: number;
 }
 
 interface TiendaClientProps {
@@ -34,17 +34,6 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
 
   const activeCategory = categories.find(c => String(c.id) === categoryParam);
 
-  // Compute category counts from products
-  const categoryCounts = useMemo(() => {
-    const counts = new Map<number, number>();
-    for (const p of products) {
-      for (const cat of p.categories || []) {
-        counts.set(cat.id, (counts.get(cat.id) || 0) + 1);
-      }
-    }
-    return counts;
-  }, [products]);
-
   // Filter + sort + paginate
   const result = useMemo(() => {
     let filtered = [...products];
@@ -62,7 +51,7 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
       filtered = filtered.filter(p =>
         p.name.toLowerCase().includes(q) ||
         p.sku?.toLowerCase().includes(q) ||
-        p.short_description?.toLowerCase().includes(q)
+        p.description?.toLowerCase().includes(q)
       );
     }
 
@@ -234,32 +223,25 @@ export default function TiendaClient({ products, categories }: TiendaClientProps
                     }`}
                   >
                     Todas
-                    <span className={`float-right text-xs ${!categoryParam ? 'text-blue-200' : 'text-gray-400'}`}>
-                      {products.length}
-                    </span>
                   </button>
                 </li>
-                {categories.map(cat => {
-                  const count = categoryCounts.get(cat.id) || 0;
-                  if (count === 0) return null;
-                  return (
-                    <li key={cat.id}>
-                      <button
-                        onClick={() => updateParam('category', String(cat.id))}
-                        className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition flex items-center justify-between ${
-                          String(cat.id) === categoryParam
-                            ? 'bg-[#2563eb] text-white font-semibold'
-                            : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        <span className="truncate">{cat.name}</span>
-                        <span className={`text-xs ${String(cat.id) === categoryParam ? 'text-blue-200' : 'text-gray-400'}`}>
-                          {count}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
+                {categories.filter(c => (c.count || 0) > 0).map(cat => (
+                  <li key={cat.id}>
+                    <button
+                      onClick={() => updateParam('category', String(cat.id))}
+                      className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition flex items-center justify-between ${
+                        String(cat.id) === categoryParam
+                          ? 'bg-[#2563eb] text-white font-semibold'
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span className="truncate">{cat.name}</span>
+                      <span className={`text-xs ${String(cat.id) === categoryParam ? 'text-blue-200' : 'text-gray-400'}`}>
+                        {cat.count}
+                      </span>
+                    </button>
+                  </li>
+                ))}
               </ul>
             </div>
 

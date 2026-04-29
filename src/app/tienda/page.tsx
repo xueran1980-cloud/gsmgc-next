@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { fetchProducts, getCategoriesFromProducts, generateSlug } from '@/lib/api';
+import { fetchProducts, fetchCategories } from '@/lib/api';
 import TiendaClient from '@/components/TiendaClient';
 
 // Dynamic rendering: fetch products at request time, not build time.
@@ -18,7 +18,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const search = params.search || '';
 
   const products = await fetchProducts();
-  const categories = getCategoriesFromProducts(products);
+  const categories = await fetchCategories();
 
   let title = 'Catálogo de Accesorios Móviles al Mayor';
   let description = 'Catálogo completo de accesorios móviles al mayor: pantallas, fundas, baterías, cargadores y más. Envío 24h Canarias. Precios mayoristas B2B. +2.100 productos.';
@@ -96,27 +96,11 @@ function TiendaLoading() {
 
 export default async function TiendaPage() {
   const products = await fetchProducts();
-  const categories = getCategoriesFromProducts(products);
-
-  // Compute category counts for the sidebar
-  const categoryMap = new Map<number, { id: number; name: string; slug: string; parent: number; count: number }>();
-  for (const product of products) {
-    if (!product.categories) continue;
-    for (const cat of product.categories) {
-      const existing = categoryMap.get(cat.id);
-      if (existing) {
-        existing.count++;
-      } else {
-        categoryMap.set(cat.id, { ...cat, count: 1 });
-      }
-    }
-  }
-  const categoriesWithCounts = Array.from(categoryMap.values())
-    .sort((a, b) => b.count - a.count);
+  const categories = await fetchCategories();
 
   return (
     <Suspense fallback={<TiendaLoading />}>
-      <TiendaClient products={products} categories={categoriesWithCounts} />
+      <TiendaClient products={products} categories={categories} />
     </Suspense>
   );
 }
