@@ -56,7 +56,7 @@ const PAYMENT_METHODS = [
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState<'form' | 'loading' | 'success' | 'error'>('form');
   const [errorMsg, setErrorMsg] = useState('');
@@ -91,12 +91,12 @@ export default function CheckoutPage() {
     }
   }, [user]);
 
-  // Redirect if not logged in
+  // Redirect if not logged in (wait for auth to finish loading first)
   useEffect(() => {
-    if (!isAuthenticated && step === 'form') {
+    if (!authLoading && !isAuthenticated && step === 'form') {
       router.push('/mi-cuenta?redirect=/checkout');
     }
-  }, [isAuthenticated, router, step]);
+  }, [isAuthenticated, authLoading, router, step]);
 
   const update = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
