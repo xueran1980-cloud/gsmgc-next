@@ -3,6 +3,9 @@
 
 const PRODUCTS_API = "https://api.gsmgc.es/wp-json/gsmgc/v1/products-raw";
 
+// Export for client-side usage
+export { PRODUCTS_API };
+
 // ---------- 类型定义 ----------
 
 export interface ProductImage {
@@ -109,6 +112,44 @@ export function formatPrice(priceStr: string): string {
 // ---------- 分类数据（与旧站 wc_categories.json 一致） ----------
 
 const CATEGORIES_URL = "https://gsmgc.es/wc_categories.json";
+
+// Export for client-side usage
+export { CATEGORIES_URL };
+
+// ---------- 客户端数据获取 ----------
+
+// Client-side fetch for TiendaClient (no next: revalidate, used in useEffect)
+export async function clientFetchProducts(): Promise<Product[]> {
+  try {
+    const res = await fetch(PRODUCTS_API);
+    if (!res.ok) {
+      console.warn(`[clientFetchProducts] API returned ${res.status}`);
+      return [];
+    }
+    const data: ProductsRawResponse = await res.json();
+    return data.products;
+  } catch (err) {
+    console.warn(`[clientFetchProducts] fetch failed:`, err);
+    return [];
+  }
+}
+
+export async function clientFetchCategories(): Promise<ProductCategory[]> {
+  try {
+    const res = await fetch(CATEGORIES_URL);
+    if (!res.ok) {
+      console.warn(`[clientFetchCategories] API returned ${res.status}`);
+      return [];
+    }
+    const data: ProductCategory[] = await res.json();
+    return data;
+  } catch (err) {
+    console.warn(`[clientFetchCategories] fetch failed:`, err);
+    return [];
+  }
+}
+
+// ---------- 服务端数据获取（SSG/ISR） ----------
 
 export async function fetchCategories(): Promise<ProductCategory[]> {
   const res = await fetch(CATEGORIES_URL, {

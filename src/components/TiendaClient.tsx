@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product, ProductCategory } from '@/lib/api';
+import { clientFetchProducts } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
 
 const PER_PAGE = 24;
@@ -37,11 +38,26 @@ interface TiendaClientProps {
   categories: CategoryWithCount[];
 }
 
-export default function TiendaClient({ products, categories: categoriesProp }: TiendaClientProps) {
+export default function TiendaClient({ categories: categoriesProp }: Omit<TiendaClientProps, 'products'>) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const [filterOpen, setFilterOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Client-side fetch products (like old site SPA behavior)
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    clientFetchProducts().then(data => {
+      if (!cancelled) {
+        setProducts(data);
+        setLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   // 从 products 动态提取完整分类列表（wc_categories.json 可能缺少部分分类）
   const categories = useMemo(() => {
@@ -303,7 +319,18 @@ export default function TiendaClient({ products, categories: categoriesProp }: T
                   : 'Catálogo de Accesorios Móviles al Mayor'}
             </h1>
 
-            {result.paginated.length === 0 ? (
+            {loading ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+                {Array.from({ length: 24 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 animate-pulse">
+                    <div className="bg-gray-100 rounded-xl h-40 mb-4" />
+                    <div className="h-4 bg-gray-100 rounded w-3/4 mb-2" />
+                    <div className="h-3 bg-gray-100 rounded w-1/2 mb-3" />
+                    <div className="h-5 bg-gray-100 rounded w-1/3" />
+                  </div>
+                ))}
+              </div>
+            ) : result.paginated.length === 0 ? (
               <div className="text-center py-20">
                 <div className="text-6xl mb-4">🔍</div>
                 <h2 className="text-xl font-bold text-gray-800 mb-2">No se encontraron productos</h2>
