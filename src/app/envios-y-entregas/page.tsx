@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Política de Envío y Entregas",
   description: "Información sobre envíos, plazos de entrega y costes para pedidos B2B en Canarias.",
   alternates: { canonical: "https://gsmgc.es/envios-y-entregas" },
 };

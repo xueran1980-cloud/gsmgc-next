@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Política de Devoluciones",
   description: "Política de devoluciones para pedidos mayoristas B2B en Canarias.",
   alternates: { canonical: "https://gsmgc.es/devoluciones" },
 };

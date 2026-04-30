@@ -14,10 +14,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: {
-    default: "GSMGC - Mayorista Accesorios Móviles Canarias | B2B",
-    template: "%s | GSMGC Canarias",
-  },
+  title: "GSMGC - Repuestos para Móviles Mayorista B2B | Canarias",
   description: "GSMGC - Tu mayorista de accesorios móviles en Canarias. Más de 2.000 productos B2B: pantallas, fundas, baterías, cargadores. Envío 24h a Gran Canaria y Tenerife.",
   keywords: ["repuestos móviles", "accesorios móvil", "mayorista Canarias", "GSMGC", "pantallas iPhone", "baterías Samsung", "fundas Xiaomi"],
   metadataBase: new URL("https://gsmgc.es"),
@@ -26,13 +23,13 @@ export const metadata: Metadata = {
     locale: "es_ES",
     url: "https://gsmgc.es",
     siteName: "GSMGC Accesorios Móvil",
-    title: "GSMGC - Mayorista Accesorios Móviles Canarias",
+    title: "GSMGC - Repuestos para Móviles Mayorista B2B | Canarias",
     description: "Distribuidor mayorista de accesorios y repuestos para móviles en Canarias.",
     images: [{ url: "/og-image.png", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "GSMGC - Mayorista Accesorios Móviles Canarias",
+    title: "GSMGC - Repuestos para Móviles Mayorista B2B | Canarias",
     description: "Distribuidor mayorista de accesorios y repuestos para móviles en Canarias.",
     images: ["/og-image.png"],
   },

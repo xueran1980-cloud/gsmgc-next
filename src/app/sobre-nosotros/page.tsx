@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sobre Nosotros - GSMGC Mayorista Accesorios Móvil Canarias",
   description: "Distribuidor mayorista de accesorios para móviles en Canarias desde 2014. +2.100 productos, envío 24h, solo profesionales B2B.",
   alternates: { canonical: "https://gsmgc.es/sobre-nosotros" },
 };

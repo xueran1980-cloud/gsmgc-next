@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidad",
   description: "Política de privacidad y protección de datos personales. RGPD y LOPDGDD.",
   alternates: { canonical: "https://gsmgc.es/politica-de-privacidad" },
 };

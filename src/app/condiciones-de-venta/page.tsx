@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Condiciones Generales de Venta B2B",
   description: "Condiciones generales de venta para distribuidores mayoristas. Términos B2B, pagos, envíos y garantías en Canarias.",
   alternates: { canonical: "https://gsmgc.es/condiciones-de-venta" },
 };
