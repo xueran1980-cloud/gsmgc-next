@@ -20,7 +20,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const products = await fetchProducts();
   const categories = await fetchCategories();
 
-  let title = 'Catálogo de Accesorios Móviles al Mayor | GSMGC Canarias';
+  let title = 'Catálogo - GSMGC Accesorios Móvil Mayorista Canarias';
   let description = 'Catálogo completo de accesorios móviles al mayor: pantallas, fundas, baterías, cargadores y más. Envío 24h Canarias. Precios mayoristas B2B.';
   let canonical = 'https://gsmgc.es/tienda';
 
@@ -48,7 +48,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       ? { index: false, follow: true }
       : { index: true, follow: true },
     openGraph: {
-      title: `${title} | GSMGC Canarias`,
+      title: `${title}`,
       description,
       url: canonical,
       siteName: 'GSMGC Canarias',
@@ -58,7 +58,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} | GSMGC Canarias`,
+      title: `${title}`,
       description,
       images: ['https://gsmgc.es/og-image.png'],
     },
