@@ -4,8 +4,8 @@ import type { Product } from "@/lib/api";
 import { getProductImage } from "@/lib/api";
 
 const HERO_STATS = [
-  { value: "2.077", label: "Productos" },
-  { value: "30", label: "Categorías" },
+  { value: "2.118", label: "Productos" },
+  { value: "27", label: "Categorías" },
   { value: "24h", label: "Envío GC" },
   { value: "6m", label: "Garantía" },
 ];
@@ -14,7 +14,7 @@ const TRUST_ITEMS = [
   { icon: Truck, text: "Envío en 24h a Canarias" },
   { icon: ShieldCheck, text: "Garantía de 6 meses" },
   { icon: MapPin, text: "Recogida en local" },
-  { icon: Clock, text: "Soporte L-V 10:00-14:00" },
+  { icon: Clock, text: "Soporte L-V 9:00-18:00" },
 ];
 
 const HOT_CATS = ["iPhone", "Samsung", "Xiaomi", "Cables", "Baterías"];
@@ -157,9 +157,9 @@ export default function Hero({ featuredProducts }: { featuredProducts: Product[]
                       <Star key={i} size={12} className="text-yellow-400 fill-yellow-400" />
                     ))}
                   </div>
-                  <span className="text-white text-xs font-semibold">2.077+ productos</span>
+                  <span className="text-white text-xs font-semibold">2.118+ productos</span>
                 </div>
-                <span className="text-blue-300 text-xs">30 categorías · 24h Canarias</span>
+                <span className="text-blue-300 text-xs">27 categorías · 24h Canarias</span>
               </div>
             </div>
 

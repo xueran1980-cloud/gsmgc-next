@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     default: "GSMGC - Mayorista Accesorios Móviles Canarias | B2B",
     template: "%s | GSMGC Canarias",
   },
-  description: "Distribuidor mayorista de accesorios y repuestos para móviles en Canarias. +2.100 referencias, precios competitivos, envío en 24h. Pantallas, baterías, fundas, cables y más.",
+  description: "GSMGC - Tu mayorista de accesorios móviles en Canarias. Más de 2.000 productos B2B: pantallas, fundas, baterías, cargadores. Envío 24h a Gran Canaria y Tenerife.",
   keywords: ["repuestos móviles", "accesorios móvil", "mayorista Canarias", "GSMGC", "pantallas iPhone", "baterías Samsung", "fundas Xiaomi"],
   metadataBase: new URL("https://gsmgc.es"),
   openGraph: {

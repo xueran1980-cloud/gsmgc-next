@@ -11,7 +11,21 @@ import StatsSection from "@/components/StatsSection";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
+  title: "GSMGC - Mayorista Accesorios Móviles Canarias | B2B",
+  description: "GSMGC - Tu mayorista de accesorios móviles en Canarias. Más de 2.000 productos B2B: pantallas, fundas, baterías, cargadores. Envío 24h a Gran Canaria y Tenerife.",
   alternates: { canonical: "https://gsmgc.es" },
+  openGraph: {
+    title: "GSMGC - Accesorios Móviles Mayorista Canarias",
+    description: "Tu distribuidor de confianza de accesorios móviles en Canarias. +2000 productos B2B. Envío rápido.",
+    type: "website",
+    url: "https://gsmgc.es",
+    images: [{ url: "https://gsmgc.es/og-image.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GSMGC - Accesorios Móviles Mayorista Canarias",
+    description: "Mayorista accesorios móviles Canarias. 2000+ productos B2B.",
+  },
 };
 
 export default async function HomePage() {
@@ -104,6 +118,8 @@ export default async function HomePage() {
           }),
         }}
       />
+
+      <h1 className="sr-only">Accesorios Móviles Mayorista Canarias - GSMGC Distribuidor B2B</h1>
 
       <Hero featuredProducts={heroProducts} />
       <ProductsCarousel

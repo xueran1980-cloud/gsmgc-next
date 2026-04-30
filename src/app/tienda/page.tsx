@@ -20,8 +20,8 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const products = await fetchProducts();
   const categories = await fetchCategories();
 
-  let title = 'Catálogo de Accesorios Móviles al Mayor';
-  let description = 'Catálogo completo de accesorios móviles al mayor: pantallas, fundas, baterías, cargadores y más. Envío 24h Canarias. Precios mayoristas B2B. +2.100 productos.';
+  let title = 'Catálogo de Accesorios Móviles al Mayor | GSMGC Canarias';
+  let description = 'Catálogo completo de accesorios móviles al mayor: pantallas, fundas, baterías, cargadores y más. Envío 24h Canarias. Precios mayoristas B2B.';
   let canonical = 'https://gsmgc.es/tienda';
 
   if (category) {

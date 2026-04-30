@@ -9,7 +9,6 @@ import {
   Monitor, Wrench, Package, LayoutGrid,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import { useAuth } from '@/context/AuthContext';
 import CartDrawer from '@/components/CartDrawer';
 
 const NAV_LINKS = [
@@ -58,25 +57,21 @@ function NavDropdown({ items, onClose }: { items: NonNullable<typeof NAV_LINKS[n
 
 export default function Header() {
   const { totalItems } = useCart();
-  const { isAuthenticated, user, logout } = useAuth();
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchVal, setSearchVal] = useState('');
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
   const router = useRouter();
   const pathname = usePathname();
   const dropdownTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const accountTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Close all on route change
   useEffect(() => {
     setActiveDropdown(null);
     setMenuOpen(false);
     setSearchOpen(false);
-    setAccountMenuOpen(false);
   }, [pathname]);
 
   function handleSearch(e: React.FormEvent) {
@@ -101,21 +96,6 @@ export default function Header() {
     if (dropdownTimer.current) clearTimeout(dropdownTimer.current);
   }
 
-  function handleAccountEnter() {
-    if (accountTimer.current) clearTimeout(accountTimer.current);
-    setAccountMenuOpen(true);
-  }
-
-  function handleAccountLeave() {
-    accountTimer.current = setTimeout(() => setAccountMenuOpen(false), 150);
-  }
-
-  async function handleLogout() {
-    await logout();
-    setAccountMenuOpen(false);
-    router.push('/');
-  }
-
   return (
     <>
       {/* Top bar */}
@@ -130,17 +110,19 @@ export default function Header() {
           </span>
           <span className="flex items-center gap-3">
             <Link
-              href="/mi-cuenta?register=1"
+              href="/mi-cuenta"
               className="hover:text-blue-200 transition flex items-center gap-1 text-xs"
             >
               <User size={13} /> Acceso
             </Link>
-            <Link
-              href="/mi-cuenta?register=1"
+            <a
+              href="https://gsmgc.es/mi-cuenta/?action=register"
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-[#ea580c] hover:bg-orange-500 px-3 py-0.5 rounded text-white text-xs font-bold transition"
             >
               Solicitar cuenta
-            </Link>
+            </a>
           </span>
         </div>
       </div>
@@ -150,8 +132,9 @@ export default function Header() {
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="GSMGC" className="h-10 w-auto rounded-lg shadow-sm group-hover:shadow-md transition" />
+            <div className="w-10 h-10 bg-gradient-to-br from-[#2563eb] to-[#1e3a8a] rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition">
+              <span className="text-white font-black text-sm">GS</span>
+            </div>
             <div className="hidden sm:block">
               <div className="text-[#1e3a8a] font-black text-lg leading-none tracking-tight">GSMGC</div>
               <div className="text-[10px] text-gray-400 leading-none mt-0.5 font-medium">Accesorios Móvil</div>
@@ -218,49 +201,14 @@ export default function Header() {
               <Search size={20} />
             </button>
 
-            {/* Account */}
-            <div
-              className="hidden sm:block relative"
-              onMouseEnter={handleAccountEnter}
-              onMouseLeave={handleAccountLeave}
+            {/* Account link */}
+            <Link
+              href="/mi-cuenta"
+              className="hidden sm:flex p-2 text-gray-600 hover:text-[#2563eb] hover:bg-blue-50 rounded-lg transition items-center"
+              aria-label="Mi cuenta"
             >
-              <Link
-                href={isAuthenticated ? '#' : '/mi-cuenta'}
-                onClick={(e) => {
-                  if (isAuthenticated) {
-                    e.preventDefault();
-                    setAccountMenuOpen(!accountMenuOpen);
-                  }
-                }}
-                className="flex p-2 text-gray-600 hover:text-[#2563eb] hover:bg-blue-50 rounded-lg transition items-center"
-                aria-label="Mi cuenta"
-              >
-                <User size={20} />
-              </Link>
-
-              {/* Account dropdown */}
-              {isAuthenticated && accountMenuOpen && (
-                <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 py-2">
-                  <div className="px-4 py-2 border-b border-gray-50">
-                    <p className="text-sm font-bold text-gray-900 truncate">{user?.displayName || user?.email}</p>
-                    <p className="text-xs text-gray-400 truncate">{user?.company || ''}</p>
-                  </div>
-                  <Link
-                    href="/mi-cuenta"
-                    onClick={() => setAccountMenuOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-[#2563eb] transition"
-                  >
-                    <User size={14} /> Mi cuenta
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition"
-                  >
-                    Cerrar sesión
-                  </button>
-                </div>
-              )}
-            </div>
+              <User size={20} />
+            </Link>
 
             {/* Cart */}
             <button
@@ -342,12 +290,14 @@ export default function Header() {
               >
                 <User size={16} /> Mi cuenta
               </Link>
-              <Link
-                href="/mi-cuenta?register=1"
+              <a
+                href="https://gsmgc.es/mi-cuenta/?action=register"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block bg-[#2563eb] text-white text-center font-bold py-2.5 rounded-xl text-sm hover:bg-[#1d4ed8] transition"
               >
                 Solicitar cuenta mayorista
-              </Link>
+              </a>
             </div>
           </nav>
         )}

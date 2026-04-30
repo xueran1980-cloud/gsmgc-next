@@ -17,7 +17,7 @@ const FOOTER_LINKS: Record<string, { label: string; href: string }[]> = {
   Cuenta: [
     { label: "Iniciar sesión", href: "/mi-cuenta" },
     { label: "Registrarse", href: "/mi-cuenta?register=1" },
-    { label: "Recuperar contraseña", href: "/mi-cuenta?forgot=1" },
+    { label: "Recuperar contraseña", href: "/mi-cuenta?lost=1" },
   ],
 };
 
@@ -67,7 +67,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-2">
                 <Mail size={14} className="text-blue-400" />
-                <a href="mailto:info@gsmgc.es" className="hover:text-white transition">info@gsmgc.es</a>
+                <a href="mailto:gsmyoucanarias@gmail.com" className="hover:text-white transition">gsmyoucanarias@gmail.com</a>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin size={14} className="text-blue-400" />
@@ -75,7 +75,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-2">
                 <Clock size={14} className="text-blue-400" />
-                <span>L-V 10:00-14:00</span>
+                <span>L-V 9:00-18:00</span>
               </div>
               <div className="flex items-center gap-3 mt-3">
                 <a

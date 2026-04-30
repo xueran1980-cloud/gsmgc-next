@@ -1,13 +1,11 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/context/AuthContext';
 import {
   CheckCircle, ExternalLink, Clock, FileText,
-  MessageCircle, ChevronRight, Loader2, Eye, EyeOff,
-  AlertCircle,
+  MessageCircle, ChevronRight, AlertCircle,
 } from 'lucide-react';
 
 const WP_SITE = 'https://gsmgc.es';
@@ -15,170 +13,30 @@ const WP_SITE = 'https://gsmgc.es';
 function MiCuentaContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, login, isAuthenticated, loading: authLoading } = useAuth();
 
-  // Login form state
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginError, setLoginError] = useState('');
-
-  // Mode: if already logged in → dashboard, else login/register/pending
-  const [mode, setMode] = useState<'login' | 'register' | 'pending'>(() =>
-    searchParams.get('register') === '1' ? 'register' :
-    searchParams.get('pending') === '1' ? 'pending' : 'login'
-  );
-
-  const redirect = searchParams.get('redirect') || '/';
-
-  // If already authenticated, redirect
-  useEffect(() => {
-    if (!authLoading && isAuthenticated && user && mode === 'login') {
-      router.push(redirect);
-    }
-  }, [authLoading, isAuthenticated, user, mode, router, redirect]);
-
-  // Handle login submit
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginError('');
-    setLoginLoading(true);
-
-    try {
-      await login(email, password);
-      router.push(redirect);
-    } catch (err) {
-      setLoginError(err instanceof Error ? err.message : 'Error al iniciar sesión');
-    } finally {
-      setLoginLoading(false);
-    }
-  };
+  const initialMode = searchParams.get('register') === '1' ? 'register' :
+                       searchParams.get('pending') === '1' ? 'pending' : 'login';
+  const [mode, setMode] = useState(initialMode);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Breadcrumb */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <nav className="flex items-center gap-1 text-sm text-gray-500">
-            <Link href="/" className="hover:text-[#2563eb] transition">Inicio</Link>
-            <ChevronRight size={13} className="text-gray-300" />
-            <span className="text-gray-800 font-medium">Mi cuenta</span>
-          </nav>
-        </div>
-      </div>
-
       {/* Header */}
       <div className="bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] text-white py-12">
         <div className="max-w-7xl mx-auto px-4">
           <h1 className="text-3xl font-black">
-            {mode === 'login' ? 'Área de clientes B2B' : mode === 'register' ? 'Registrarse como cliente B2B' : 'Cuenta en revisión'}
+            {mode === 'login' ? 'Area de clientes B2B' : mode === 'register' ? 'Registrarse como cliente B2B' : 'Cuenta en revisión'}
           </h1>
           <p className="text-blue-200 mt-1">
             {mode === 'login'
               ? 'Accede a tu cuenta mayorista'
-              : mode === 'register'
-              ? 'Solicita acceso como distribuidor o profesional'
-              : 'Tu registro está siendo verificado'}
+              : 'Solicita acceso como distribuidor o profesional'}
           </p>
         </div>
       </div>
 
       <div className="max-w-md mx-auto px-4 py-12">
-        {/* ── Login panel ── */}
-        {mode === 'login' && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-            <form onSubmit={handleLogin}>
-              {/* Error */}
-              {loginError && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-5 flex items-start gap-2">
-                  <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={16} />
-                  <p className="text-sm text-red-700">{loginError}</p>
-                </div>
-              )}
-
-              {/* Email */}
-              <div className="mb-4">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                  placeholder="tu@email.com"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent transition"
-                />
-              </div>
-
-              {/* Password */}
-              <div className="mb-5">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Contraseña
-                </label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent transition"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
-                    tabIndex={-1}
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={loginLoading || !email || !password}
-                className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition shadow-md flex items-center justify-center gap-2"
-              >
-                {loginLoading ? (
-                  <Loader2 className="animate-spin" size={18} />
-                ) : null}
-                Iniciar sesión
-              </button>
-            </form>
-
-            <div className="border-t border-gray-100 pt-5 mt-5">
-              <p className="text-sm text-gray-500 text-center mb-3">¿Olvidaste tu contraseña?</p>
-              <a
-                href={`${WP_SITE}/mi-cuenta/lost-password/`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full border border-gray-200 hover:bg-gray-50 font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2 text-sm text-gray-700"
-              >
-                Recuperar contraseña
-              </a>
-            </div>
-
-            <div className="text-center mt-6">
-              <button
-                onClick={() => setMode('register')}
-                className="text-sm text-gray-500 hover:text-[#2563eb] transition"
-              >
-                ¿No tienes cuenta? Regístrate
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Register panel ── */}
-        {mode === 'register' && (
+        {mode === 'register' ? (
+          /* ── Register panel ── */
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -195,7 +53,7 @@ function MiCuentaContent() {
               <p className="font-semibold mb-1">¿Qué incluye la cuenta B2B?</p>
               <ul className="space-y-1 text-blue-700">
                 <li>✓ Precios mayorista exclusivos</li>
-                <li>✓ Acceso a catálogo completo (2.077 productos)</li>
+                <li>✓ Acceso a catálogo completo (2.118 productos)</li>
                 <li>✓ Pedidos con pago por transferencia</li>
                 <li>✓ Historial de pedidos</li>
               </ul>
@@ -224,10 +82,8 @@ function MiCuentaContent() {
               </button>
             </div>
           </div>
-        )}
-
-        {/* ── Pending approval panel ── */}
-        {mode === 'pending' && (
+        ) : mode === 'pending' ? (
+          /* ── Pending approval panel ── */
           <div className="bg-white rounded-2xl border border-[#2563eb]/30 shadow-sm p-8">
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -239,6 +95,7 @@ function MiCuentaContent() {
               </p>
             </div>
 
+            {/* Estimated time card */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-5 border border-blue-100">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 bg-[#2563eb]/10 rounded-lg flex items-center justify-center shrink-0">
@@ -250,10 +107,11 @@ function MiCuentaContent() {
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-2 pl-13 ml-13">
-                Las solicitudes se procesan de L a V entre 10:00 y 14:00 (hora Canarias)
+                Las solicitudes se procesan de L a V entre 9:00 y 18:00 (hora Canarias)
               </p>
             </div>
 
+            {/* Required documents list */}
             <div className="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-200">
               <div className="flex items-center gap-2 mb-3">
                 <FileText size={18} className="text-[#1e3a8a]" />
@@ -276,6 +134,7 @@ function MiCuentaContent() {
               </ul>
             </div>
 
+            {/* WhatsApp CTA */}
             <a
               href="https://wa.me/34688560560?text=Hola%2C%20he%20registrado%20mi%20cuenta%20B2B%20en%20GSMGC%20y%20quer%C3%ADa%20acelerar%20la%20revisi%C3%B3n.%20Gracias."
               target="_blank"
@@ -290,12 +149,56 @@ function MiCuentaContent() {
               Abre WhatsApp con un mensaje predispuesto para agilizar tu aprobación
             </p>
 
+            {/* Back to login */}
             <div className="border-t border-gray-100 pt-4 text-center">
               <button
                 onClick={() => setMode('login')}
                 className="text-sm text-gray-500 hover:text-[#2563eb] transition font-medium"
               >
                 ← Volver al inicio de sesión
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* ── Login panel ── */
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+            <div className="bg-blue-50 rounded-xl p-4 mb-6 text-sm text-blue-800">
+              <p className="font-semibold mb-1">Acceso de clientes B2B</p>
+              <p>El inicio de sesión te lleva directamente a tu área de cliente en gsmgc.es, donde podrás ver tus pedidos y datos.</p>
+            </div>
+
+            <a
+              href={`${WP_SITE}/mi-cuenta/`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold py-3.5 rounded-xl transition shadow-md flex items-center justify-center gap-2 mb-4"
+            >
+              <ExternalLink size={16} />
+              Ir a mi cuenta (gsmgc.es)
+            </a>
+
+            <p className="text-xs text-gray-400 text-center mb-6">
+              Se abrirá tu área de cliente en una nueva pestaña
+            </p>
+
+            <div className="border-t border-gray-100 pt-5 mt-5">
+              <p className="text-sm text-gray-500 text-center mb-3">¿Olvidaste tu contraseña?</p>
+              <a
+                href={`${WP_SITE}/mi-cuenta/lost-password/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full border border-gray-200 hover:bg-gray-50 font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2 text-sm text-gray-700"
+              >
+                Recuperar contraseña
+              </a>
+            </div>
+
+            <div className="text-center mt-6">
+              <button
+                onClick={() => setMode('register')}
+                className="text-sm text-gray-500 hover:text-[#2563eb] transition"
+              >
+                ¿No tienes cuenta? Regístrate
               </button>
             </div>
           </div>
