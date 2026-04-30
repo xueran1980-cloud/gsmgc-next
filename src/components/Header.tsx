@@ -149,9 +149,8 @@ export default function Header() {
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#2563eb] to-[#1e3a8a] rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition">
-              <span className="text-white font-black text-sm">GS</span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="GSMGC" className="h-10 w-auto rounded-lg shadow-sm group-hover:shadow-md transition" />
             <div className="hidden sm:block">
               <div className="text-[#1e3a8a] font-black text-lg leading-none tracking-tight">GSMGC</div>
               <div className="text-[10px] text-gray-400 leading-none mt-0.5 font-medium">Accesorios Móvil</div>
