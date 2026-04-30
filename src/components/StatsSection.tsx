@@ -45,7 +45,7 @@ export default function StatsSection() {
                 Ver catálogo completo
               </Link>
               <a
-                href="https://api.gsmgc.es/mi-cuenta/?action=register"
+                href="https://gsmgc.es/mi-cuenta/?action=register"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="border-2 border-white/30 hover:border-white/60 text-white font-bold px-8 py-4 rounded-xl hover:bg-white/10 transition text-sm"
@@ -92,7 +92,7 @@ export default function StatsSection() {
             <p className="text-blue-200 text-sm mb-6">Regístrate gratis y empieza a comprar al precio mayorista hoy mismo.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <a
-                href="https://api.gsmgc.es/mi-cuenta/?action=register"
+                href="https://gsmgc.es/mi-cuenta/?action=register"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white text-[#1e3a8a] font-black px-7 py-3 rounded-xl hover:bg-blue-50 transition shadow-lg text-sm"
