@@ -227,58 +227,68 @@ export default function TiendaClient({ products, categories: categoriesProp }: T
           {/* Sidebar filters (desktop only) — 对齐现站：Marcas + Tipo de Producto */}
           <aside className="hidden lg:block w-60 shrink-0">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sticky top-[calc(var(--header-offset,64px)+1rem)]">
-              {/* Marcas 分组 — 对齐现站：flex-wrap 网格布局 + rounded-full 胶囊按钮 */}
-              <h3 className="font-bold text-sm text-gray-800 mb-2.5 tracking-tight">Marcas</h3>
-              <div className="flex flex-wrap gap-1.5 mb-3 max-h-[calc(100vh-18rem)] overflow-y-auto pr-0.5">
-                <button
-                  onClick={() => updateParam('category', '')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 whitespace-nowrap ${
-                    !categoryParam
-                      ? 'font-semibold bg-[#2563eb] text-white shadow-md shadow-blue-200 scale-105'
-                      : 'bg-gray-50 text-gray-600 hover:bg-blue-50 hover:text-[#2563eb]'
-                  }`}
-                >
-                  Todas
-                </button>
-                {categories.filter(c => BRAND_IDS.has(c.id) && (c.count || 0) > 0).map(cat => (
+              {/* DOM: div.mb-5 > h3 + div.flex-wrap.scrollbar-thin */}
+              <div className="mb-5">
+                <h3 className="font-bold text-sm text-gray-800 mb-2.5 tracking-tight">Marcas</h3>
+                <div className="flex flex-wrap gap-1.5 mb-3 max-h-[calc(100vh-18rem)] overflow-y-auto pr-0.5 scrollbar-thin">
                   <button
-                    key={cat.id}
-                    onClick={() => updateParam('category', String(cat.id))}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 whitespace-nowrap ${
-                      String(cat.id) === categoryParam
+                    onClick={() => updateParam('category', '')}
+                    className={`px-3 py-1.5 text-xs rounded-full transition-all duration-200 ${
+                      !categoryParam
                         ? 'font-semibold bg-[#2563eb] text-white shadow-md shadow-blue-200 scale-105'
-                        : 'bg-gray-50 text-gray-600 hover:bg-blue-50 hover:text-[#2563eb]'
+                        : 'font-medium bg-gray-50 text-gray-600 hover:bg-blue-50 hover:text-[#2563eb]'
                     }`}
                   >
-                    {cat.name}
+                    Todas
                   </button>
-                ))}
+                  {categories.filter(c => BRAND_IDS.has(c.id) && (c.count || 0) > 0).map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => updateParam('category', String(cat.id))}
+                      className={`px-3 py-1.5 text-xs rounded-full transition-all duration-200 ${
+                        String(cat.id) === categoryParam
+                          ? 'font-semibold bg-[#2563eb] text-white shadow-md shadow-blue-200 scale-105'
+                          : 'font-medium bg-gray-50 text-gray-600 hover:bg-blue-50 hover:text-[#2563eb]'
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Tipo de Producto 分组 — 对齐现站：purple 主题 + rounded-xl 列表 */}
-              <h3 className="font-bold text-sm text-purple-700 mb-2.5 tracking-tight flex items-center gap-1.5">
-                <span>📋</span> Tipo de Producto
-              </h3>
-              <div className="max-h-[320px] overflow-y-auto pr-0.5 space-y-2">
-                {categories.filter(c => !BRAND_IDS.has(c.id) && (c.count || 0) > 0).map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => updateParam('category', String(cat.id))}
-                    className={`w-full text-left px-2.5 py-2 rounded-xl transition-all duration-200 flex items-center gap-2 ${
-                      String(cat.id) === categoryParam
-                        ? 'bg-[#2563eb] text-white font-semibold shadow-md shadow-blue-200'
-                        : 'bg-gray-50 text-gray-600 hover:bg-purple-50 hover:text-purple-700'
-                    }`}
-                  >
-                    <span className="text-base leading-none shrink-0">{TYPE_EMOJI[cat.name] || ''}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-medium truncate leading-tight">{cat.name}</div>
-                    </div>
-                  </button>
-                ))}
+              {/* DOM: div.border-t.border-gray-100.my-4 分隔线 */}
+              <div className="border-t border-gray-100 my-4" />
+
+              {/* DOM: div > h3 + div.space-y-2.scrollbar-thin */}
+              <div className="">
+                <h3 className="font-bold text-sm text-purple-700 mb-2.5 tracking-tight flex items-center gap-1.5">
+                  <span>📋</span> Tipo de Producto
+                </h3>
+                <div className="max-h-[320px] overflow-y-auto pr-0.5 scrollbar-thin space-y-2">
+                  {categories.filter(c => !BRAND_IDS.has(c.id) && (c.count || 0) > 0).map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => updateParam('category', String(cat.id))}
+                      className={`w-full text-left px-2.5 py-2 rounded-xl transition-all duration-200 flex items-center gap-2 text-xs italic ${
+                        String(cat.id) === categoryParam
+                          ? 'bg-[#2563eb] text-white font-semibold shadow-md shadow-blue-200'
+                          : 'bg-gray-50 text-gray-500 hover:bg-purple-50 hover:text-purple-700'
+                      }`}
+                    >
+                      <span className="text-base leading-none shrink-0">{TYPE_EMOJI[cat.name] || ''}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[11px] font-medium truncate leading-tight">{cat.name}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <p className="text-xs text-gray-400 mt-3">{products.length} productos</p>
+              {/* DOM: div.mt-4.pt-3.border-t > p.text-[11px] */}
+              <div className="mt-4 pt-3 border-t border-gray-100">
+                <p className="text-[11px] text-gray-400">{products.length} productos</p>
+              </div>
             </div>
           </aside>
 
