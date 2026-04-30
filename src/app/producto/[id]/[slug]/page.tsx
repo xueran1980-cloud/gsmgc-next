@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
+import fs from 'fs';
+import path from 'path';
 import {
   ChevronRight,
   Package,
@@ -14,18 +16,31 @@ import ProductDetailActions from './ProductDetailActions';
 import ProductCard from '@/components/ProductCard';
 
 // ---------- Static Params ----------
-// If build-time fetch fails (CF blocks Vercel build IP), returns [].
-// Pages are generated on first visit via ISR (revalidate=86400 in fetchProducts).
+// Build 时从 public/product-ids.json 读取（静态文件，不需要网络请求）
+// 该文件由脚本从 API 生成，commit 到仓库中
+// dynamicParams=true 允许新产品走 ISR（首次访问时生成）
 export const dynamicParams = true;
 
-export async function generateStaticParams() {
-  const products = await fetchProducts();
-  return products
-    .filter((p) => p.status === 'publish')
-    .map((p) => ({
-      id: String(p.id),
-      slug: generateSlug(p.name) || 'producto',
-    }));
+interface StaticParam { id: string; slug: string }
+
+export async function generateStaticParams(): Promise<StaticParam[]> {
+  try {
+    // 从 public/ 读取预生成的产品 ID 列表（~155KB，无需网络）
+    const filePath = path.join(process.cwd(), 'public', 'product-ids.json');
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const ids: StaticParam[] = JSON.parse(content);
+    return ids;
+  } catch {
+    // 文件不存在时 fallback 到 API fetch（带 timeout 保护）
+    console.warn('[generateStaticParams] product-ids.json not found, falling back to API');
+    const products = await fetchProducts();
+    return products
+      .filter((p) => p.status === 'publish')
+      .map((p) => ({
+        id: String(p.id),
+        slug: generateSlug(p.name) || 'producto',
+      }));
+  }
 }
 
 // ---------- Metadata ----------
