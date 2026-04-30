@@ -1,21 +1,59 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle, ExternalLink, Clock, FileText, MessageCircle, ChevronRight } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import {
+  CheckCircle, ExternalLink, Clock, FileText,
+  MessageCircle, ChevronRight, Loader2, Eye, EyeOff,
+  AlertCircle,
+} from 'lucide-react';
 
 const WP_SITE = 'https://gsmgc.es';
 
 function MiCuentaContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/';
+  const { user, login, isAuthenticated, loading: authLoading } = useAuth();
 
+  // Login form state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
+  // Mode: if already logged in → dashboard, else login/register/pending
   const [mode, setMode] = useState<'login' | 'register' | 'pending'>(() =>
     searchParams.get('register') === '1' ? 'register' :
     searchParams.get('pending') === '1' ? 'pending' : 'login'
   );
+
+  const redirect = searchParams.get('redirect') || '/';
+
+  // If already authenticated, redirect
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && user && mode === 'login') {
+      router.push(redirect);
+    }
+  }, [authLoading, isAuthenticated, user, mode, router, redirect]);
+
+  // Handle login submit
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    setLoginLoading(true);
+
+    try {
+      await login(email, password);
+      router.push(redirect);
+    } catch (err) {
+      setLoginError(err instanceof Error ? err.message : 'Error al iniciar sesión');
+    } finally {
+      setLoginLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -47,8 +85,100 @@ function MiCuentaContent() {
       </div>
 
       <div className="max-w-md mx-auto px-4 py-12">
-        {mode === 'register' ? (
-          /* ── Register panel ── */
+        {/* ── Login panel ── */}
+        {mode === 'login' && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+            <form onSubmit={handleLogin}>
+              {/* Error */}
+              {loginError && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-5 flex items-start gap-2">
+                  <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={16} />
+                  <p className="text-sm text-red-700">{loginError}</p>
+                </div>
+              )}
+
+              {/* Email */}
+              <div className="mb-4">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  placeholder="tu@email.com"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent transition"
+                />
+              </div>
+
+              {/* Password */}
+              <div className="mb-5">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Contraseña
+                </label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loginLoading || !email || !password}
+                className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition shadow-md flex items-center justify-center gap-2"
+              >
+                {loginLoading ? (
+                  <Loader2 className="animate-spin" size={18} />
+                ) : null}
+                Iniciar sesión
+              </button>
+            </form>
+
+            <div className="border-t border-gray-100 pt-5 mt-5">
+              <p className="text-sm text-gray-500 text-center mb-3">¿Olvidaste tu contraseña?</p>
+              <a
+                href={`${WP_SITE}/mi-cuenta/lost-password/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full border border-gray-200 hover:bg-gray-50 font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2 text-sm text-gray-700"
+              >
+                Recuperar contraseña
+              </a>
+            </div>
+
+            <div className="text-center mt-6">
+              <button
+                onClick={() => setMode('register')}
+                className="text-sm text-gray-500 hover:text-[#2563eb] transition"
+              >
+                ¿No tienes cuenta? Regístrate
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Register panel ── */}
+        {mode === 'register' && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -94,8 +224,10 @@ function MiCuentaContent() {
               </button>
             </div>
           </div>
-        ) : mode === 'pending' ? (
-          /* ── Pending approval panel ── */
+        )}
+
+        {/* ── Pending approval panel ── */}
+        {mode === 'pending' && (
           <div className="bg-white rounded-2xl border border-[#2563eb]/30 shadow-sm p-8">
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -164,49 +296,6 @@ function MiCuentaContent() {
                 className="text-sm text-gray-500 hover:text-[#2563eb] transition font-medium"
               >
                 ← Volver al inicio de sesión
-              </button>
-            </div>
-          </div>
-        ) : (
-          /* ── Login panel ── */
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-            <div className="bg-blue-50 rounded-xl p-4 mb-6 text-sm text-blue-800">
-              <p className="font-semibold mb-1">Acceso de clientes B2B</p>
-              <p>El inicio de sesión te lleva directamente a tu área de cliente en gsmgc.es, donde podrás ver tus pedidos y datos.</p>
-            </div>
-
-            <a
-              href={`${WP_SITE}/mi-cuenta/`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold py-3.5 rounded-xl transition shadow-md flex items-center justify-center gap-2 mb-4"
-            >
-              <ExternalLink size={16} />
-              Ir a mi cuenta (gsmgc.es)
-            </a>
-
-            <p className="text-xs text-gray-400 text-center mb-6">
-              Se abrirá tu área de cliente en una nueva pestaña
-            </p>
-
-            <div className="border-t border-gray-100 pt-5 mt-5">
-              <p className="text-sm text-gray-500 text-center mb-3">¿Olvidaste tu contraseña?</p>
-              <a
-                href={`${WP_SITE}/mi-cuenta/lost-password/`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full border border-gray-200 hover:bg-gray-50 font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2 text-sm text-gray-700"
-              >
-                Recuperar contraseña
-              </a>
-            </div>
-
-            <div className="text-center mt-6">
-              <button
-                onClick={() => setMode('register')}
-                className="text-sm text-gray-500 hover:text-[#2563eb] transition"
-              >
-                ¿No tienes cuenta? Regístrate
               </button>
             </div>
           </div>
