@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ShoppingCart, Eye } from "lucide-react";
+import { ShoppingCart, Eye, LogIn } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Product } from "@/lib/api";
 import { getProductImage } from "@/lib/api";
+import { useWpLoggedIn } from "@/hooks/useWpLoggedIn";
 
 function generateSlug(name: string): string {
   if (!name) return "";
@@ -51,6 +52,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const isLoggedIn = useWpLoggedIn();
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -78,6 +80,15 @@ export default function ProductCard({ product, compact = false }: { product: Pro
 
   // ── compact variant (for carousels) ──
   if (compact) {
+    if (isLoggedIn === "loading") {
+      return (
+        <div className="flex-shrink-0 w-44 bg-white rounded-xl border border-gray-100 shadow-sm p-3 animate-pulse">
+          <div className="bg-gray-200 rounded-lg h-24 mb-3" />
+          <div className="h-3 bg-gray-200 rounded w-3/4 mb-1" />
+          <div className="h-3 bg-gray-200 rounded w-1/2" />
+        </div>
+      );
+    }
     return (
       <Link
         href={getProductUrl(product)}
@@ -115,17 +126,24 @@ export default function ProductCard({ product, compact = false }: { product: Pro
           <div className="text-[10px] text-gray-400 mb-1.5 font-mono">SKU: {product.sku}</div>
         )}
         <div className="flex items-center justify-between">
-          <div>
-            <span className="text-[#2563eb] font-black text-sm">
-              €{parseFloat(product.price || "0").toFixed(2)}
-            </span>
-            {hasDiscount && (
-              <div className="text-[10px] text-gray-400 line-through leading-none">
-                €{parseFloat(product.regular_price).toFixed(2)}
-              </div>
-            )}
-          </div>
-          {inStock ? (
+          {isLoggedIn ? (
+            <div>
+              <span className="text-[#2563eb] font-black text-sm">
+                €{parseFloat(product.price || "0").toFixed(2)}
+              </span>
+              {hasDiscount && (
+                <div className="text-[10px] text-gray-400 line-through leading-none">
+                  €{parseFloat(product.regular_price).toFixed(2)}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-[10px] text-gray-400 italic">
+              <LogIn size={10} className="inline mr-0.5" />
+              Regístrese para ver precio
+            </div>
+          )}
+          {inStock && isLoggedIn ? (
             <button
               onClick={handleAdd}
               className={`rounded-lg p-1.5 transition shadow-sm ${
@@ -143,9 +161,9 @@ export default function ProductCard({ product, compact = false }: { product: Pro
                 <ShoppingCart size={14} />
               )}
             </button>
-          ) : (
+          ) : !inStock ? (
             <span className="text-[10px] text-red-400 font-semibold">Sin stock</span>
-          )}
+          ) : null}
         </div>
       </Link>
     );
@@ -216,52 +234,68 @@ export default function ProductCard({ product, compact = false }: { product: Pro
       {/* Price + CTA */}
       <div className="flex items-end gap-2 mt-3 pt-3 border-t border-gray-50">
         <div className="flex-1">
-          <div className="text-[#2563eb] font-black text-lg leading-none">
-            €{parseFloat(product.price || "0").toFixed(2)}
-          </div>
-          {hasDiscount ? (
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-xs text-gray-400 line-through">
-                €{parseFloat(product.regular_price).toFixed(2)}
-              </span>
-              <span className="text-[10px] text-[#ea580c] font-bold">-{discountPct}%</span>
+          {isLoggedIn === "loading" ? (
+            <div className="animate-pulse">
+              <div className="h-5 bg-gray-200 rounded w-16 mb-1" />
+              <div className="h-3 bg-gray-200 rounded w-12" />
             </div>
+          ) : isLoggedIn ? (
+            <>
+              <div className="text-[#2563eb] font-black text-lg leading-none">
+                €{parseFloat(product.price || "0").toFixed(2)}
+              </div>
+              {hasDiscount ? (
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-xs text-gray-400 line-through">
+                    €{parseFloat(product.regular_price).toFixed(2)}
+                  </span>
+                  <span className="text-[10px] text-[#ea580c] font-bold">-{discountPct}%</span>
+                </div>
+              ) : (
+                <div className="text-[11px] text-gray-400 mt-0.5">+ IVA/IGIC</div>
+              )}
+            </>
           ) : (
-            <div className="text-[11px] text-gray-400 mt-0.5">+ IVA/IGIC</div>
+            <div className="text-[11px] text-gray-400 italic">
+              <LogIn size={11} className="inline mr-0.5 align--text-bottom" />
+              {" "}Regístrese para ver precio
+            </div>
           )}
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={handleAdd}
-            disabled={!inStock}
-            className={`rounded-xl p-2.5 transition font-bold text-sm ${
-              added
-                ? "bg-green-500 text-white shadow-md"
-                : inStock
-                ? "bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-md hover:shadow-lg"
-                : "bg-gray-100 text-gray-300 cursor-not-allowed"
-            }`}
-            title={inStock ? "Añadir al carrito" : "Sin stock"}
-          >
-            {added ? (
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            ) : (
-              <ShoppingCart size={16} />
-            )}
-          </button>
-          <Link
-            href={getProductUrl(product)}
-            onClick={(e) => e.stopPropagation()}
-            className="rounded-xl p-2.5 border border-gray-200 text-gray-400 hover:border-[#2563eb] hover:text-[#2563eb] transition"
-            title="Ver detalles"
-          >
-            <Eye size={16} />
-          </Link>
-        </div>
+        {isLoggedIn && (
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={handleAdd}
+              disabled={!inStock}
+              className={`rounded-xl p-2.5 transition font-bold text-sm ${
+                added
+                  ? "bg-green-500 text-white shadow-md"
+                  : inStock
+                  ? "bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-md hover:shadow-lg"
+                  : "bg-gray-100 text-gray-300 cursor-not-allowed"
+              }`}
+              title={inStock ? "Añadir al carrito" : "Sin stock"}
+            >
+              {added ? (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <ShoppingCart size={16} />
+              )}
+            </button>
+            <Link
+              href={getProductUrl(product)}
+              onClick={(e) => e.stopPropagation()}
+              className="rounded-xl p-2.5 border border-gray-200 text-gray-400 hover:border-[#2563eb] hover:text-[#2563eb] transition"
+              title="Ver detalles"
+            >
+              <Eye size={16} />
+            </Link>
+          </div>
+        )}
       </div>
     </Link>
   );
