@@ -109,16 +109,14 @@ export default function Header() {
             🇮🇨 Envío en 24h a Canarias · Garantía 6 meses · Solo mayoristas
           </span>
           <span className="flex items-center gap-3">
-            <a
-              href="https://api.gsmgc.es/mi-cuenta/"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/mi-cuenta"
               className="hover:text-blue-200 transition flex items-center gap-1 text-xs"
             >
               <User size={13} /> Acceso
-            </a>
+            </Link>
             <a
-              href="https://api.gsmgc.es/mi-cuenta/?action=register"
+              href="https://gsmgc.es/mi-cuenta/?action=register"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-[#ea580c] hover:bg-orange-500 px-3 py-0.5 rounded text-white text-xs font-bold transition"
@@ -204,15 +202,13 @@ export default function Header() {
             </button>
 
             {/* Account link */}
-            <a
-              href="https://api.gsmgc.es/mi-cuenta/"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/mi-cuenta"
               className="hidden sm:flex p-2 text-gray-600 hover:text-[#2563eb] hover:bg-blue-50 rounded-lg transition items-center"
               aria-label="Mi cuenta"
             >
               <User size={20} />
-            </a>
+            </Link>
 
             {/* Cart */}
             <button
@@ -287,17 +283,15 @@ export default function Header() {
               </div>
             ))}
             <div className="px-4 pt-3 border-t border-gray-100 mt-1">
-              <a
-                href="https://api.gsmgc.es/mi-cuenta/"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/mi-cuenta"
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#2563eb] mb-2"
               >
                 <User size={16} /> Mi cuenta
-              </a>
+              </Link>
               <a
-                href="https://api.gsmgc.es/mi-cuenta/?action=register"
+                href="https://gsmgc.es/mi-cuenta/?action=register"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block bg-[#2563eb] text-white text-center font-bold py-2.5 rounded-xl text-sm hover:bg-[#1d4ed8] transition"
