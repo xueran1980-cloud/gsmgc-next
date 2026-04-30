@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Package, Users, Zap, Percent, ShieldCheck, Truck, RotateCcw, HeadphonesIcon, BadgeCheck, Clock } from "lucide-react";
 
 const STATS = [
-  { value: "2.077", label: "Referencias", icon: Package, color: "text-blue-400" },
+  { value: "2.118", label: "Referencias", icon: Package, color: "text-blue-400" },
   { value: "500+", label: "Clientes B2B", icon: Users, color: "text-green-400" },
   { value: "24h", label: "Envío a GC/TF", icon: Zap, color: "text-yellow-400" },
   { value: "7%", label: "IGIC Canarias", icon: Percent, color: "text-orange-400" },
@@ -44,14 +44,12 @@ export default function StatsSection() {
               >
                 Ver catálogo completo
               </Link>
-              <a
-                href="https://gsmgc.es/mi-cuenta/?action=register"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/mi-cuenta?register=1"
                 className="border-2 border-white/30 hover:border-white/60 text-white font-bold px-8 py-4 rounded-xl hover:bg-white/10 transition text-sm"
               >
                 Crear cuenta B2B gratis
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -91,14 +89,12 @@ export default function StatsSection() {
             <h3 className="text-2xl font-black mb-2">¿Listo para empezar?</h3>
             <p className="text-blue-200 text-sm mb-6">Regístrate gratis y empieza a comprar al precio mayorista hoy mismo.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a
-                href="https://gsmgc.es/mi-cuenta/?action=register"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/mi-cuenta?register=1"
                 className="bg-white text-[#1e3a8a] font-black px-7 py-3 rounded-xl hover:bg-blue-50 transition shadow-lg text-sm"
               >
                 Crear cuenta gratis
-              </a>
+              </Link>
               <a
                 href="https://wa.me/34688560560"
                 target="_blank"
