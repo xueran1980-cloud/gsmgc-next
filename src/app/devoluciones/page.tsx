@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  description: "Política de devoluciones para pedidos mayoristas B2B en Canarias.",
+  title: "Devoluciones y Garantías - GSMGC",
+  description: "Política de devoluciones y garantías para distribuidores. Plazos, condiciones y procedimiento.",
   alternates: { canonical: "https://gsmgc.es/devoluciones" },
 };
 

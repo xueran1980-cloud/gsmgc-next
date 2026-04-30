@@ -15,9 +15,9 @@ const FOOTER_LINKS: Record<string, { label: string; href: string }[]> = {
     { label: "Devoluciones", href: "/devoluciones" },
   ],
   Cuenta: [
-    { label: "Iniciar sesión", href: "https://gsmgc.es/mi-cuenta/" },
-    { label: "Registrarse", href: "https://gsmgc.es/mi-cuenta/?action=register" },
-    { label: "Recuperar contraseña", href: "https://gsmgc.es/mi-cuenta/lost-password/" },
+    { label: "Iniciar sesión", href: "/mi-cuenta" },
+    { label: "Registrarse", href: "/mi-cuenta?register=1" },
+    { label: "Recuperar contraseña", href: "/mi-cuenta?lost=1" },
   ],
 };
 

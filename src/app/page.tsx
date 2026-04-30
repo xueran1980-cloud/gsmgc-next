@@ -11,19 +11,20 @@ import StatsSection from "@/components/StatsSection";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  description: "GSMGC - Tu mayorista de accesorios móviles en Canarias. Más de 2.000 productos B2B: pantallas, fundas, baterías, cargadores. Envío 24h a Gran Canaria y Tenerife.",
-  alternates: { canonical: "https://gsmgc.es" },
+  description: "Mayorista B2B de accesorios para móviles en Canarias. +2.100 productos, envío 24h a Gran Canaria y Tenerife. Precios wholesale.",
+  alternates: { canonical: "https://gsmgc.es/" },
   openGraph: {
     title: "GSMGC - Repuestos para Móviles Mayorista B2B | Canarias",
-    description: "Tu distribuidor de confianza de accesorios móviles en Canarias. +2000 productos B2B. Envío rápido.",
+    description: "Tu distribuidor de confianza de accesorios móviles en Canarias. Más de 2000 productos para profesionales. Envío rápido a Gran Canaria y Tenerife.",
     type: "website",
-    url: "https://gsmgc.es",
-    images: [{ url: "https://gsmgc.es/og-image.png", width: 1200, height: 630 }],
+    url: "https://gsmgc.es/",
+    images: [{ url: "https://gsmgc.es/logo.png" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "GSMGC - Repuestos para Móviles Mayorista B2B | Canarias",
-    description: "Mayorista accesorios móviles Canarias. 2000+ productos B2B.",
+    title: "GSMGC - Mayorista Accesorios Móviles Canarias",
+    description: "Mayorista accesorios móviles Canarias. 2000+ productos B2B. Envío 24h.",
+    images: ["https://gsmgc.es/logo.png"],
   },
 };
 
@@ -74,7 +75,7 @@ export default async function HomePage() {
             "name": "GSMGC Accesorios Móvil",
             "alternateName": "GSMGC",
             "url": "https://gsmgc.es",
-            "logo": "https://gsmgc.es/wp-content/uploads/2026/04/gsmgc-logo.png",
+            "logo": "https://gsmgc.es/logo.png",
             "description": "Mayorista B2B de accesorios y repuestos para móviles en Canarias. Más de 2.100 productos con envío en 24h.",
             "address": {
               "@type": "PostalAddress",

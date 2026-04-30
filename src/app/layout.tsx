@@ -14,27 +14,34 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "GSMGC - Repuestos para Móviles Mayorista B2B | Canarias",
-  description: "GSMGC - Tu mayorista de accesorios móviles en Canarias. Más de 2.000 productos B2B: pantallas, fundas, baterías, cargadores. Envío 24h a Gran Canaria y Tenerife.",
-  keywords: ["repuestos móviles", "accesorios móvil", "mayorista Canarias", "GSMGC", "pantallas iPhone", "baterías Samsung", "fundas Xiaomi"],
+  description: "Mayorista B2B de accesorios para móviles en Canarias. +2.100 productos, envío 24h a Gran Canaria y Tenerife. Precios wholesale.",
+  keywords: "repuestos móvil Canarias, accesorios móvil mayorista, piezas móvil Las Palmas, charger手机配件批发, wholesale phone parts Spain, accesorios tablets, repuestos Samsung, repuestos iPhone",
   metadataBase: new URL("https://gsmgc.es"),
   openGraph: {
     type: "website",
     locale: "es_ES",
-    url: "https://gsmgc.es",
-    siteName: "GSMGC Accesorios Móvil",
+    url: "https://gsmgc.es/",
+    siteName: "GSMGC",
     title: "GSMGC - Repuestos para Móviles Mayorista B2B | Canarias",
-    description: "Distribuidor mayorista de accesorios y repuestos para móviles en Canarias.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+    description: "Tu distribuidor de confianza de accesorios móviles en Canarias. Más de 2000 productos para profesionales. Envío rápido a Gran Canaria y Tenerife.",
+    images: [{ url: "https://gsmgc.es/logo.png" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "GSMGC - Repuestos para Móviles Mayorista B2B | Canarias",
-    description: "Distribuidor mayorista de accesorios y repuestos para móviles en Canarias.",
-    images: ["/og-image.png"],
+    title: "GSMGC - Mayorista Accesorios Móviles Canarias",
+    description: "Mayorista accesorios móviles Canarias. 2000+ productos B2B. Envío 24h.",
+    images: ["https://gsmgc.es/logo.png"],
   },
   robots: {
     index: true,
     follow: true,
+    googlebot: {
+      index: true,
+      follow: true,
+    },
+  },
+  other: {
+    "googlebot": "index, follow",
   },
 };
 
@@ -45,6 +52,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
+      <head>
+        <meta name="geo.region" content="ES-CN" />
+        <meta name="geo.placename" content="Canarias" />
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232563eb'/><text x='50%' y='50%' dominant-baseline='central' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='900' font-size='14'>GS</text></svg>" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+      </head>
       <body className={`${inter.className} font-sans antialiased`}>
         <CartProvider>
             <Header />
