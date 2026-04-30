@@ -52,9 +52,9 @@ const contacts = [
   {
     icon: Mail,
     label: 'Email',
-    value: 'gsmyoucanarias@gmail.com',
+    value: 'info@gsmgc.es',
     sub: 'Respuesta en 24h laborables',
-    href: 'mailto:gsmyoucanarias@gmail.com',
+    href: 'mailto:info@gsmgc.es',
     color: 'bg-gray-50 border-gray-200',
     btnClass: 'bg-gray-700 hover:bg-gray-800',
     btnLabel: 'Enviar email',
@@ -85,7 +85,7 @@ export default function ContactoPage() {
     const body = encodeURIComponent(
       `Nombre: ${form.name}\nEmail: ${form.email}\nTeléfono: ${form.phone || '-'}\n\n${form.message}`
     );
-    window.location.href = `mailto:gsmyoucanarias@gmail.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:info@gsmgc.es?subject=${subject}&body=${body}`;
 
     setTimeout(() => {
       setStatus('sent');
@@ -218,7 +218,7 @@ export default function ContactoPage() {
                 { icon: MapPin, text: 'Las Palmas de Gran Canaria, Canarias, España' },
                 { icon: Clock, text: 'Lunes a Viernes: 9:00 – 18:00 (festivos locales cerrado)' },
                 { icon: Phone, text: '688 560 560' },
-                { icon: Mail, text: 'gsmyoucanarias@gmail.com' },
+                { icon: Mail, text: 'info@gsmgc.es' },
               ].map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-start gap-3">
                   <Icon size={16} className="text-[#2563eb] mt-0.5 shrink-0" />
