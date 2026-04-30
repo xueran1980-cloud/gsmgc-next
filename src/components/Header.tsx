@@ -116,7 +116,7 @@ export default function Header() {
               <User size={13} /> Acceso
             </Link>
             <a
-              href="https://gsmgc.es/mi-cuenta/?action=register"
+              href="https://api.gsmgc.es/mi-cuenta/?action=register"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-[#ea580c] hover:bg-orange-500 px-3 py-0.5 rounded text-white text-xs font-bold transition"
@@ -291,7 +291,7 @@ export default function Header() {
                 <User size={16} /> Mi cuenta
               </Link>
               <a
-                href="https://gsmgc.es/mi-cuenta/?action=register"
+                href="https://api.gsmgc.es/mi-cuenta/?action=register"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block bg-[#2563eb] text-white text-center font-bold py-2.5 rounded-xl text-sm hover:bg-[#1d4ed8] transition"

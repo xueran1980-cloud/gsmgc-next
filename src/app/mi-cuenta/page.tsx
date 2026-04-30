@@ -8,7 +8,7 @@ import {
   MessageCircle, ChevronRight, AlertCircle,
 } from 'lucide-react';
 
-const WP_SITE = 'https://gsmgc.es';
+const WP_SITE = 'https://api.gsmgc.es';
 
 function MiCuentaContent() {
   const router = useRouter();
