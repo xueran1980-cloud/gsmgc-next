@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { ShoppingCart, Eye, LogIn } from "lucide-react";
+import { ShoppingCart, Eye } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Product } from "@/lib/api";
 import { getProductImage } from "@/lib/api";
 import { useWpLoggedIn } from "@/hooks/useWpLoggedIn";
+import { PriceOrLoginPrompt } from "./PriceOrLoginPrompt";
 
 function generateSlug(name: string): string {
   if (!name) return "";
@@ -70,12 +71,6 @@ export default function ProductCard({ product, compact = false }: { product: Pro
   };
 
   const inStock = product.stock_status === "instock";
-  const stockQty = product.stock_quantity;
-  const hasDiscount =
-    parseFloat(product.regular_price) > parseFloat(product.price);
-  const discountPct = hasDiscount
-    ? Math.round((1 - parseFloat(product.price) / parseFloat(product.regular_price)) * 100)
-    : 0;
   const imgUrl = getProductImage(product);
 
   // ── compact variant (for carousels) ──
@@ -126,23 +121,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
           <div className="text-[10px] text-gray-400 mb-1.5 font-mono">SKU: {product.sku}</div>
         )}
         <div className="flex items-center justify-between">
-          {isLoggedIn ? (
-            <div>
-              <span className="text-[#2563eb] font-black text-sm">
-                €{parseFloat(product.price || "0").toFixed(2)}
-              </span>
-              {hasDiscount && (
-                <div className="text-[10px] text-gray-400 line-through leading-none">
-                  €{parseFloat(product.regular_price).toFixed(2)}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-[10px] text-gray-400 italic">
-              <LogIn size={10} className="inline mr-0.5" />
-              Regístrese para ver precio
-            </div>
-          )}
+          <PriceOrLoginPrompt price={product.price} regularPrice={product.regular_price} compact />
           {inStock && isLoggedIn ? (
             <button
               onClick={handleAdd}
@@ -177,7 +156,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
     >
       {/* Badges */}
       <DiscountBadge regular_price={product.regular_price} price={product.price} />
-      <StockBadge stock_status={product.stock_status} stock_quantity={stockQty} />
+      <StockBadge stock_status={product.stock_status} stock_quantity={product.stock_quantity ?? null} />
 
       {/* Out-of-stock overlay */}
       {!inStock && (
@@ -205,13 +184,13 @@ export default function ProductCard({ product, compact = false }: { product: Pro
             />
           </>
         ) : (
-            <img
-              src="/product-placeholder.svg"
-              alt="Sin imagen"
-              className="max-h-full max-w-full object-contain opacity-60"
-              aria-hidden="true"
-            />
-          )}
+          <img
+            src="/product-placeholder.svg"
+            alt="Sin imagen"
+            className="max-h-full max-w-full object-contain opacity-60"
+            aria-hidden="true"
+          />
+        )}
       </div>
 
       {/* Content */}
@@ -223,10 +202,10 @@ export default function ProductCard({ product, compact = false }: { product: Pro
           <div className="text-[11px] text-gray-400 font-mono mb-2">SKU: {product.sku}</div>
         )}
         {/* Stock quantity indicator */}
-        {inStock && stockQty !== null && stockQty !== undefined && stockQty > 5 && (
+        {inStock && product.stock_quantity !== null && product.stock_quantity !== undefined && product.stock_quantity > 5 && (
           <div className="text-[11px] text-green-600 font-medium mb-1 flex items-center gap-1">
             <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block" />
-            {stockQty} disponibles
+            {product.stock_quantity} disponibles
           </div>
         )}
       </div>
@@ -234,37 +213,11 @@ export default function ProductCard({ product, compact = false }: { product: Pro
       {/* Price + CTA */}
       <div className="flex items-end gap-2 mt-3 pt-3 border-t border-gray-50">
         <div className="flex-1">
-          {isLoggedIn === "loading" ? (
-            <div className="animate-pulse">
-              <div className="h-5 bg-gray-200 rounded w-16 mb-1" />
-              <div className="h-3 bg-gray-200 rounded w-12" />
-            </div>
-          ) : isLoggedIn ? (
-            <>
-              <div className="text-[#2563eb] font-black text-lg leading-none">
-                €{parseFloat(product.price || "0").toFixed(2)}
-              </div>
-              {hasDiscount ? (
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-xs text-gray-400 line-through">
-                    €{parseFloat(product.regular_price).toFixed(2)}
-                  </span>
-                  <span className="text-[10px] text-[#ea580c] font-bold">-{discountPct}%</span>
-                </div>
-              ) : (
-                <div className="text-[11px] text-gray-400 mt-0.5">+ IVA/IGIC</div>
-              )}
-            </>
-          ) : (
-            <div className="text-[11px] text-gray-400 italic">
-              <LogIn size={11} className="inline mr-0.5 align--text-bottom" />
-              {" "}Regístrese para ver precio
-            </div>
-          )}
+          <PriceOrLoginPrompt price={product.price} regularPrice={product.regular_price} />
         </div>
 
-        {/* Actions */}
-        {isLoggedIn && (
+        {/* Actions - only show if logged in */}
+        {isLoggedIn === true && (
           <div className="flex items-center gap-1.5">
             <button
               onClick={handleAdd}

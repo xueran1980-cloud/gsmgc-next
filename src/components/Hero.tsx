@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { ShieldCheck, Truck, MapPin, Clock, ArrowRight, Star, UserPlus } from "lucide-react";
 import type { Product } from "@/lib/api";
 import { getProductImage } from "@/lib/api";
+import { useWpLoggedIn } from "@/hooks/useWpLoggedIn";
+import { PriceOrLoginPrompt } from "./PriceOrLoginPrompt";
 
 const HERO_STATS = [
   { value: "2.118", label: "Productos" },
@@ -134,7 +138,7 @@ export default function Hero({ featuredProducts }: { featuredProducts: Product[]
                         />
                       </div>
                       <div className="text-[10px] font-bold text-gray-800 leading-tight line-clamp-2 mb-1">{p.name}</div>
-                      <div className="text-[#2563eb] font-black text-sm">€{parseFloat(p.price || "0").toFixed(2)}</div>
+                      <PriceOrLoginPrompt price={p.price} regularPrice={p.regular_price} compact />
                     </Link>
                   ))
                   : ["PANTALLA IPHONE 14", "BATERÍA SAM A55", "CABLE USB-C"].map((name, i) => (

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ShoppingCart, Check, MessageCircle } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useWpLoggedIn } from '@/hooks/useWpLoggedIn';
+import { PriceOrLoginPrompt } from '@/components/PriceOrLoginPrompt';
 
 interface ProductDetailActionsProps {
   product: {
@@ -60,18 +61,8 @@ export default function ProductDetailActions({ product, waMsg }: ProductDetailAc
         <>
           {/* Price block */}
           <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl border border-blue-100 p-5 mb-6">
-            <div className="flex items-end gap-3 flex-wrap">
-              <span className="text-4xl font-black text-[#2563eb]">
-                €{parseFloat(product.price || '0').toFixed(2)}
-              </span>
-              {hasDiscount && (
-                <span className="text-xl text-gray-300 line-through mb-0.5">
-                  €{parseFloat(product.regular_price).toFixed(2)}
-                </span>
-              )}
-              <span className="text-gray-400 text-sm mb-1">+ IVA/IGIC</span>
-            </div>
-            {hasDiscount && (
+            <PriceOrLoginPrompt price={product.price} regularPrice={product.regular_price} />
+            {isLoggedIn === true && hasDiscount && (
               <div className="mt-1.5 inline-flex items-center gap-1.5 bg-[#ea580c]/10 text-[#ea580c] text-sm font-bold px-3 py-1 rounded-full">
                 Ahorras €{(parseFloat(product.regular_price) - parseFloat(product.price)).toFixed(2)} ({discountPct}% dto.)
               </div>
