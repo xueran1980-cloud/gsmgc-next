@@ -30,7 +30,7 @@ export default function WhatsAppFloat() {
       )}
 
       <a
-        href="https://wa.me/34688560560"
+        href="https://wa.me/34688560560?text=Hola%2C%20me%20interesa%20el%20cat%C3%A1logo%20de%20GSMGC"
         target="_blank"
         rel="noopener noreferrer"
         className={`flex items-center justify-center w-14 h-14 rounded-full shadow-xl transition-all duration-200 hover:scale-110 ${
