@@ -1,7 +1,7 @@
 // WooCommerce REST API — 订单创建（对齐旧站 woocommerce.js）
 // Basic Auth 凭据通过环境变量配置，不需要用户登录
 
-const WC_SITE = 'https://gsmgc.es';
+const WC_SITE = 'https://api.gsmgc.es';
 const WC_ENDPOINT = `${WC_SITE}/wp-json/wc/v3`;
 
 function getBasicAuthHeader(): string {

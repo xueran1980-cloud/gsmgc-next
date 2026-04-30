@@ -4,7 +4,6 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
-import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 
 const inter = Inter({
@@ -47,14 +46,12 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${inter.className} font-sans antialiased`}>
-        <AuthProvider>
-          <CartProvider>
+        <CartProvider>
             <Header />
             <main>{children}</main>
             <Footer />
             <WhatsAppFloat />
           </CartProvider>
-        </AuthProvider>
       </body>
     </html>
   );

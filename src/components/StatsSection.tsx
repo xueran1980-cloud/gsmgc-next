@@ -44,12 +44,14 @@ export default function StatsSection() {
               >
                 Ver catálogo completo
               </Link>
-              <Link
-                href="/mi-cuenta?register=1"
+              <a
+                href="https://api.gsmgc.es/mi-cuenta/?action=register"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="border-2 border-white/30 hover:border-white/60 text-white font-bold px-8 py-4 rounded-xl hover:bg-white/10 transition text-sm"
               >
                 Crear cuenta B2B gratis
-              </Link>
+              </a>
             </div>
           </div>
         </div>
@@ -89,12 +91,14 @@ export default function StatsSection() {
             <h3 className="text-2xl font-black mb-2">¿Listo para empezar?</h3>
             <p className="text-blue-200 text-sm mb-6">Regístrate gratis y empieza a comprar al precio mayorista hoy mismo.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                href="/mi-cuenta?register=1"
+              <a
+                href="https://api.gsmgc.es/mi-cuenta/?action=register"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="bg-white text-[#1e3a8a] font-black px-7 py-3 rounded-xl hover:bg-blue-50 transition shadow-lg text-sm"
               >
                 Crear cuenta gratis
-              </Link>
+              </a>
               <a
                 href="https://wa.me/34688560560"
                 target="_blank"

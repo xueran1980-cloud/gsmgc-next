@@ -71,13 +71,15 @@ export default function Hero({ featuredProducts }: { featuredProducts: Product[]
 
             {/* CTAs */}
             <div className="flex flex-wrap gap-3 mb-10">
-              <Link
-                href="/mi-cuenta?register=1"
+              <a
+                href="https://api.gsmgc.es/mi-cuenta/?action=register"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="bg-[#ea580c] text-white font-black px-7 py-3.5 rounded-xl hover:bg-[#c24a0a] transition shadow-xl shadow-orange-500/30 flex items-center gap-2 text-sm"
               >
                 Registrarse como profesional
                 <ArrowRight size={16} />
-              </Link>
+              </a>
               <Link
                 href="/tienda"
                 className="border-2 border-white/40 hover:border-white/70 text-white font-bold px-7 py-3.5 rounded-xl hover:bg-white/15 transition text-sm flex items-center gap-2"

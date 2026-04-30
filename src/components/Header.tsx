@@ -109,12 +109,14 @@ export default function Header() {
             🇮🇨 Envío en 24h a Canarias · Garantía 6 meses · Solo mayoristas
           </span>
           <span className="flex items-center gap-3">
-            <Link
-              href="/mi-cuenta"
+            <a
+              href="https://api.gsmgc.es/mi-cuenta/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="hover:text-blue-200 transition flex items-center gap-1 text-xs"
             >
               <User size={13} /> Acceso
-            </Link>
+            </a>
             <a
               href="https://api.gsmgc.es/mi-cuenta/?action=register"
               target="_blank"
@@ -202,13 +204,15 @@ export default function Header() {
             </button>
 
             {/* Account link */}
-            <Link
-              href="/mi-cuenta"
+            <a
+              href="https://api.gsmgc.es/mi-cuenta/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="hidden sm:flex p-2 text-gray-600 hover:text-[#2563eb] hover:bg-blue-50 rounded-lg transition items-center"
               aria-label="Mi cuenta"
             >
               <User size={20} />
-            </Link>
+            </a>
 
             {/* Cart */}
             <button
@@ -283,13 +287,15 @@ export default function Header() {
               </div>
             ))}
             <div className="px-4 pt-3 border-t border-gray-100 mt-1">
-              <Link
-                href="/mi-cuenta"
+              <a
+                href="https://api.gsmgc.es/mi-cuenta/"
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#2563eb] mb-2"
               >
                 <User size={16} /> Mi cuenta
-              </Link>
+              </a>
               <a
                 href="https://api.gsmgc.es/mi-cuenta/?action=register"
                 target="_blank"

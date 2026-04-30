@@ -15,9 +15,9 @@ const FOOTER_LINKS: Record<string, { label: string; href: string }[]> = {
     { label: "Devoluciones", href: "/devoluciones" },
   ],
   Cuenta: [
-    { label: "Iniciar sesión", href: "/mi-cuenta" },
-    { label: "Registrarse", href: "/mi-cuenta?register=1" },
-    { label: "Recuperar contraseña", href: "/mi-cuenta?lost=1" },
+    { label: "Iniciar sesión", href: "https://api.gsmgc.es/mi-cuenta/" },
+    { label: "Registrarse", href: "https://api.gsmgc.es/mi-cuenta/?action=register" },
+    { label: "Recuperar contraseña", href: "https://api.gsmgc.es/mi-cuenta/lost-password/" },
   ],
 };
 
@@ -100,12 +100,23 @@ export default function Footer() {
               <ul className="space-y-2">
                 {links.map(link => (
                   <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-gray-400 hover:text-white transition"
-                    >
-                      {link.label}
-                    </Link>
+                    {link.href.startsWith('https://') ? (
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-gray-400 hover:text-white transition"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="text-sm text-gray-400 hover:text-white transition"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
