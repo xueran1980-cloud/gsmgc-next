@@ -57,19 +57,34 @@ interface ProductsRawResponse {
 // The JSON response itself won't be cached by Next.js (too large), but CF caches it for 60s.
 
 export async function fetchProducts(): Promise<Product[]> {
-  const res = await fetch(PRODUCTS_API, {
-    next: { revalidate: 86400 }, // ISR 24h
-    headers: {
-      // Critical: CF Bot Fight Mode blocks requests without User-Agent (error 1010)
-      "User-Agent": "GSMGC-Bot/1.0",
-    },
-  });
-  if (!res.ok) {
-    console.warn(`[fetchProducts] API returned ${res.status}, returning empty array`);
-    return [];
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15_000); // 15s timeout
+
+  try {
+    const res = await fetch(PRODUCTS_API, {
+      next: { revalidate: 86400 }, // ISR 24h
+      headers: {
+        // Critical: CF Bot Fight Mode blocks requests without User-Agent (error 1010)
+        "User-Agent": "GSMGC-Bot/1.0",
+      },
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      console.warn(`[fetchProducts] API returned ${res.status}, returning empty array`);
+      return [];
+    }
+    const data: ProductsRawResponse = await res.json();
+    return data.products;
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      console.warn('[fetchProducts] Fetch aborted after 15s timeout, returning empty array');
+    } else {
+      console.warn(`[fetchProducts] Fetch failed:`, err);
+    }
+    return []; // 返回空数组，build 不中断，ISR 会在运行时重新拉取
+  } finally {
+    clearTimeout(timeout);
   }
-  const data: ProductsRawResponse = await res.json();
-  return data.products;
 }
 
 export function getCategoriesFromProducts(products: Product[]): ProductCategory[] {
