@@ -13,11 +13,9 @@ function getBasicAuthHeader(): string {
   return `Basic ${btoa(`${user}:${pass}`)}`;
 }
 
-interface OrderAddress {
+interface ShippingAddress {
   first_name: string;
   last_name: string;
-  email: string;
-  phone: string;
   company: string;
   address_1: string;
   address_2: string;
@@ -27,11 +25,16 @@ interface OrderAddress {
   state: string;
 }
 
+interface BillingAddress extends ShippingAddress {
+  email: string;
+  phone: string;
+}
+
 interface CreateOrderRequest {
   payment_method: string;
   payment_method_title: string;
-  billing: OrderAddress;
-  shipping: OrderAddress;
+  billing: BillingAddress;
+  shipping: ShippingAddress;
   line_items: Array<{ product_id: number; quantity: number }>;
   status: string;
   customer_note: string;

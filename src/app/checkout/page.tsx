@@ -127,8 +127,6 @@ export default function CheckoutPage() {
         shipping: {
           first_name: form.first_name,
           last_name: form.last_name,
-          email: form.email,
-          phone: form.phone,
           company: form.company,
           address_1: form.address_1,
           address_2: form.address_2,
@@ -342,7 +340,7 @@ export default function CheckoutPage() {
                   onChange={update('order_comments')}
                   rows={3}
                   placeholder="Instrucciones especiales de entrega, referencia interna de tu empresa..."
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/30 focus:border-[#2563eb] resize-none"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/30 focus:border-transparent resize-none"
                 />
               </div>
             </div>
@@ -388,7 +386,7 @@ export default function CheckoutPage() {
 
               {/* COD warning */}
               {paymentMethod === 'cod' && (
-                <div className="mt-4 bg-amber-50 border border-amber-100 rounded-xl p-3 flex items-start gap-2">
+                <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
                   <AlertCircle size={15} className="text-amber-500 mt-0.5 shrink-0" />
                   <p className="text-xs text-amber-700">
                     Se añade un recargo del <strong>2%</strong> sobre el total por gastos de gestión contra reembolso.
@@ -417,7 +415,7 @@ export default function CheckoutPage() {
             >
               {step === 'loading' ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Procesando pedido...
                 </>
               ) : (
