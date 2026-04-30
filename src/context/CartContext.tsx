@@ -10,7 +10,6 @@ export interface CartItem {
   name: string;
   price: string;
   regular_price?: string;
-  stock: number;
   image?: string;
   qty: number;
 }
@@ -35,18 +34,14 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case 'ADD_ITEM': {
       const existing = state.items.find((i) => i.id === action.item.id);
       if (existing) {
-        // 累加数量，不超过库存
-        const newQty = Math.min(existing.qty + (action.item.qty || 1), action.item.stock || 9999);
         return {
           ...state,
           items: state.items.map((i) =>
-            i.id === action.item.id ? { ...i, qty: newQty } : i,
+            i.id === action.item.id ? { ...i, qty: i.qty + (action.item.qty || 1) } : i,
           ),
         };
       }
-      // 新增，数量不超过库存
-      const qty = Math.min(action.item.qty || 1, action.item.stock || 9999);
-      return { ...state, items: [...state.items, { ...action.item, qty }] };
+      return { ...state, items: [...state.items, { ...action.item, qty: action.item.qty || 1 }] };
     }
     case 'REMOVE_ITEM':
       return { ...state, items: state.items.filter((i) => i.id !== action.id) };
@@ -54,7 +49,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       return {
         ...state,
         items: state.items.map((i) =>
-          i.id === action.id ? { ...i, qty: Math.max(1, Math.min(action.qty, i.stock || 9999)) } : i,
+          i.id === action.id ? { ...i, qty: Math.max(1, action.qty) } : i,
         ),
       };
     case 'CLEAR':

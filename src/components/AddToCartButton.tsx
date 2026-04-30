@@ -13,7 +13,6 @@ interface AddToCartButtonProps {
     stock_quantity: number | null;
     stock_status: string;
     images: Array<{ src: string }>;
-    min_qty: number;
   };
 }
 
@@ -22,8 +21,6 @@ export default function AddToCartButton({ product }: AddToCartButtonProps) {
   const [added, setAdded] = useState(false);
 
   const inStock = product.stock_status === 'instock';
-  const stock = product.stock_quantity || 0;
-  const minQty = product.min_qty || 1;
   const image = product.images?.[0]?.src;
 
   if (!inStock) {
@@ -43,9 +40,7 @@ export default function AddToCartButton({ product }: AddToCartButtonProps) {
       sku: product.sku,
       name: product.name,
       price: product.price,
-      stock,
       image,
-      qty: minQty,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);

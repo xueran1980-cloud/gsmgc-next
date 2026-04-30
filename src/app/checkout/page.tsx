@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag, ArrowLeft, Check, Lock, CreditCard, Banknote, Truck, AlertCircle } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import { useAuth } from '@/context/AuthContext';
-import { createOrder, stockCheck } from '@/lib/auth';
+import { createOrderWC } from '@/lib/woocommerce';
 import Footer from '@/components/Footer';
 
 function FormField({ label, name, type = 'text', value, onChange, required, placeholder, error, hint }: {
@@ -56,12 +55,10 @@ const PAYMENT_METHODS = [
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState<'form' | 'loading' | 'success' | 'error'>('form');
   const [errorMsg, setErrorMsg] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('bacs');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [form, setForm] = useState({
     first_name: '', last_name: '', email: '', phone: '',
@@ -70,33 +67,6 @@ export default function CheckoutPage() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Auto-fill from user data
-  useEffect(() => {
-    if (user) {
-      setForm((f) => ({
-        ...f,
-        first_name: user.firstName || '',
-        last_name: user.lastName || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        company: user.company || '',
-        cif_nif: user.cifNif || '',
-        address_1: user.address_1 || '',
-        address_2: '',
-        city: user.city || '',
-        postcode: user.postcode || '',
-        state: 'GC',
-      }));
-    }
-  }, [user]);
-
-  // Redirect if not logged in (wait for auth to finish loading first)
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated && step === 'form') {
-      router.push('/mi-cuenta?redirect=/checkout');
-    }
-  }, [isAuthenticated, authLoading, router, step]);
 
   const update = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -123,36 +93,13 @@ export default function CheckoutPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (isSubmitting) return;
 
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
-    setIsSubmitting(true);
     setStep('loading');
 
     try {
-      // Stock check before order
-      const stockRes = await stockCheck(items.map((item) => ({
-        product_id: item.id,
-        quantity: item.qty,
-      })));
-
-      if (!stockRes.success) {
-        throw new Error(stockRes.message || 'Error al verificar stock');
-      }
-
-      if (stockRes.items) {
-        const outOfStock = stockRes.items.filter((i) => !i.sufficient);
-        if (outOfStock.length > 0) {
-          const names = outOfStock.map((i) => {
-            const item = items.find((it) => it.id === i.product_id);
-            return item ? `${item.name} (solicitado: ${i.quantity}, disponible: ${i.stock_quantity})` : `ID:${i.product_id}`;
-          }).join(', ');
-          throw new Error(`Productos sin stock suficiente: ${names}`);
-        }
-      }
-
       const line_items = items.map((item) => ({
         product_id: item.id,
         quantity: item.qty,
@@ -162,7 +109,7 @@ export default function CheckoutPage() {
         ? { payment_method: 'bacs', payment_method_title: 'Transferencia Bancaria (BACS)' }
         : { payment_method: 'cod', payment_method_title: 'Contra Reembolso (+2%)' };
 
-      const result = await createOrder({
+      const result = await createOrderWC({
         ...paymentInfo,
         billing: {
           first_name: form.first_name,
@@ -201,16 +148,18 @@ export default function CheckoutPage() {
     } catch (err) {
       let errorMessage = 'Error al procesar el pedido. Inténtalo de nuevo.';
       if (err instanceof Error) {
-        if (err.message === 'UNAUTHORIZED') {
-          errorMessage = 'Sesión expirada. Inicia sesión de nuevo.';
-          router.push('/mi-cuenta?redirect=/checkout');
-          return;
+        if (err.message.includes('401') || err.message.includes('403')) {
+          errorMessage = 'Error de autenticación del sistema de pedidos. Contacta con nosotros.';
+        } else if (err.message.includes('credentials')) {
+          errorMessage = 'Sistema de pedidos temporalmente no disponible. Contáctanos por WhatsApp.';
+        } else if (err.message.includes('network')) {
+          errorMessage = 'Error de conexión. Verifica tu internet e inténtalo de nuevo.';
+        } else {
+          errorMessage = err.message;
         }
-        errorMessage = err.message;
       }
       setErrorMsg(errorMessage);
       setStep('error');
-      setIsSubmitting(false);
     }
   }
 
@@ -463,7 +412,7 @@ export default function CheckoutPage() {
 
             <button
               type="submit"
-              disabled={step === 'loading' || isSubmitting}
+              disabled={step === 'loading'}
               className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] active:bg-[#1e40af] disabled:bg-blue-300 text-white font-black py-4 rounded-2xl transition shadow-lg shadow-blue-200 text-lg flex items-center justify-center gap-2"
             >
               {step === 'loading' ? (

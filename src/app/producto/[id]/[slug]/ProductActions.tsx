@@ -13,18 +13,15 @@ interface ProductActionsProps {
     stock_quantity: number | null;
     stock_status: string;
     images: Array<{ src: string }>;
-    min_qty: number;
   };
 }
 
 export default function ProductActions({ product }: ProductActionsProps) {
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
-  const [qty, setQty] = useState(product.min_qty || 1);
+  const [qty, setQty] = useState(1);
 
   const inStock = product.stock_status === 'instock';
-  const stock = product.stock_quantity || 0;
-  const minQty = product.min_qty || 1;
   const image = product.images?.[0]?.src;
 
   if (!inStock) {
@@ -41,7 +38,6 @@ export default function ProductActions({ product }: ProductActionsProps) {
       sku: product.sku,
       name: product.name,
       price: product.price,
-      stock,
       image,
       qty,
     });
@@ -54,7 +50,7 @@ export default function ProductActions({ product }: ProductActionsProps) {
       {/* Quantity selector */}
       <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
         <button
-          onClick={() => setQty((q) => Math.max(minQty, q - 1))}
+          onClick={() => setQty((q) => Math.max(1, q - 1))}
           className="w-11 h-12 text-gray-600 hover:bg-gray-50 transition text-lg font-bold flex items-center justify-center"
           type="button"
         >
@@ -63,12 +59,12 @@ export default function ProductActions({ product }: ProductActionsProps) {
         <input
           type="number"
           value={qty}
-          onChange={e => setQty(Math.max(minQty, parseInt(e.target.value) || minQty))}
+          onChange={e => setQty(Math.max(1, parseInt(e.target.value) || 1))}
           className="w-14 text-center font-black text-lg border-x border-gray-100 h-12 focus:outline-none"
-          min={minQty}
+          min={1}
         />
         <button
-          onClick={() => setQty((q) => Math.min(stock, q + 1))}
+          onClick={() => setQty((q) => q + 1)}
           className="w-11 h-12 text-gray-600 hover:bg-gray-50 transition text-lg font-bold flex items-center justify-center"
           type="button"
         >
