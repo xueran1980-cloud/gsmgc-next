@@ -39,23 +39,49 @@ export interface Product {
 }
 
 // ---------- 服务端获取所有产品（ISR/SSR） ----------
-// 统一调用 /api/products（内部代理到 WC REST API）
-// cache: 'no-store' 确保每次获取最新数据
+// ✅ 修复：Server Component 中必须使用绝对 URL
+// 降级策略：先尝试 /api/products，失败后直连 WordPress 代理
+
+const PROXY_URL = 'https://gsmgc-next.vercel.app/api/proxy/wp-json/gsmgc/v1/products-raw';
 
 export async function fetchProducts(): Promise<Product[]> {
+  // 策略1：尝试 /api/products（需要 NEXT_PUBLIC_BASE_URL）
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/products`, {
+        cache: 'no-store',
+        headers: { 'User-Agent': 'GSMGC-Next-Server/1.0' },
+      });
+      if (res.ok) {
+        const data: Product[] = await res.json();
+        return data;
+      }
+    } catch (err) {
+      console.warn('[fetchProducts] /api/products failed, trying proxy...', err);
+    }
+  }
+
+  // 策略2：直连 WordPress 代理（绕过 /api/products）
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/products`, {
+    const res = await fetch(PROXY_URL, {
       cache: 'no-store',
-      headers: { 'User-Agent': 'GSMGC-Next-Proxy/1.0' },
+      headers: {
+        'User-Agent': 'GSMGC-Next-Proxy/1.0',
+        'Accept': 'application/json',
+      },
     });
     if (!res.ok) {
-      console.warn(`[fetchProducts] /api/products returned ${res.status}`);
+      console.warn(`[fetchProducts] proxy returned ${res.status}`);
       return [];
     }
-    const data: Product[] = await res.json();
-    return data;
+    const json = await res.json();
+    if (!json.success || !Array.isArray(json.products)) {
+      console.warn('[fetchProducts] invalid proxy response');
+      return [];
+    }
+    return json.products;
   } catch (err) {
-    console.warn('[fetchProducts] fetch failed:', err);
+    console.warn('[fetchProducts] proxy fetch failed:', err);
     return [];
   }
 }
