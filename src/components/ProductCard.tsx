@@ -53,6 +53,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const isLoggedIn = useWpLoggedIn();
 
   const handleAdd = (e: React.MouseEvent) => {
@@ -91,7 +92,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
       >
         <DiscountBadge regular_price={product.regular_price} price={product.price} />
         <div className="bg-gray-50 rounded-lg h-24 flex items-center justify-center mb-3 overflow-hidden">
-          {imgUrl && !imgUrl.includes("placeholder") ? (
+          {imgUrl && !imgUrl.includes("placeholder") && !imgError ? (
             <>
               {!imgLoaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
               <img
@@ -103,6 +104,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
                 width={300}
                 height={300}
                 onLoad={() => setImgLoaded(true)}
+                onError={() => setImgError(true)}
               />
             </>
           ) : (
@@ -169,7 +171,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
 
       {/* Image */}
       <div className="bg-gray-50 rounded-xl h-40 flex items-center justify-center mb-4 overflow-hidden relative">
-        {imgUrl && !imgUrl.includes("placeholder") ? (
+        {imgUrl && !imgUrl.includes("placeholder") && !imgError ? (
           <>
             {!imgLoaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
             <img
@@ -181,6 +183,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
               width={300}
               height={300}
               onLoad={() => setImgLoaded(true)}
+              onError={() => setImgError(true)}
             />
           </>
         ) : (

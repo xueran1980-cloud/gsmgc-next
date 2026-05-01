@@ -161,12 +161,15 @@ export async function clientFetchProducts(): Promise<Product[]> {
       return [];
     }
     const data: Product[] = await res.json();
-    // Fix image URLs: replace gsmgc.es with api.gsmgc.es (images are on WP server)
+    // Normalize image URLs to relative paths (Next.js rewrite proxies to api.gsmgc.es)
+    // This avoids CF Bot Fight Mode blocking direct api.gsmgc.es requests from the browser
     for (const p of data) {
       if (p.images) {
         for (const img of p.images) {
-          if (img.src && img.src.startsWith('https://gsmgc.es/')) {
-            img.src = img.src.replace('https://gsmgc.es/', 'https://api.gsmgc.es/');
+          if (img.src) {
+            img.src = img.src
+              .replace('https://api.gsmgc.es/wp-content/uploads/', '/wp-content/uploads/')
+              .replace('https://gsmgc.es/wp-content/uploads/', '/wp-content/uploads/');
           }
         }
       }
