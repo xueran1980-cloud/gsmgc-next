@@ -136,7 +136,12 @@ export { CATEGORIES_URL };
 // Client-side fetch for TiendaClient (no next: revalidate, used in useEffect)
 export async function clientFetchProducts(): Promise<Product[]> {
   try {
-    const res = await fetch(PRODUCTS_API);
+    const res = await fetch(PRODUCTS_API, {
+      headers: {
+        // Critical: CF Bot Fight Mode blocks requests without User-Agent (error 1010)
+        "User-Agent": "GSMGC-Bot/1.0",
+      },
+    });
     if (!res.ok) {
       console.warn(`[clientFetchProducts] API returned ${res.status}`);
       return [];
@@ -151,7 +156,12 @@ export async function clientFetchProducts(): Promise<Product[]> {
 
 export async function clientFetchCategories(): Promise<ProductCategory[]> {
   try {
-    const res = await fetch(CATEGORIES_URL);
+    const res = await fetch(CATEGORIES_URL, {
+      headers: {
+        // Critical: CF Bot Fight Mode blocks requests without User-Agent (error 1010)
+        "User-Agent": "GSMGC-Bot/1.0",
+      },
+    });
     if (!res.ok) {
       console.warn(`[clientFetchCategories] API returned ${res.status}`);
       return [];
