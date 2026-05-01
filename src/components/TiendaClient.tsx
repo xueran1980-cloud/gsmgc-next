@@ -175,10 +175,9 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
       clientFetchCategories(),
     ]).then(([prods, cats]) => {
       if (!cancelled) {
-        // ★ 统一排序层：所有产品进入 state 前必须经过 sortProducts()
-        // 使用默认排序规则（price-desc）对齐现站首屏行为
-        const sorted = sortProducts(prods, 'price', 'desc');
-        setProducts(sorted);
+        // ★ 终极修复：useEffect 只负责 setProducts 原始数据
+        // 排序完全由 useMemo 控制，不允许任何初始化 override
+        setProducts(prods);
         setCategories(cats);
         setLoading(false);
       }
@@ -191,8 +190,13 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
   const searchParam = searchParams.get('search') || '';
   const pageParam = Math.max(1, parseInt(searchParams.get('page') || '1'));
   const productType = searchParams.get('type') || ''; // ★ 配件类型筛选
-  const orderby = searchParams.get('orderby') || 'price'; // ★ 默认 price (旧站)
-  const order = searchParams.get('order') || 'desc';
+  const orderby = searchParams.get('orderby');
+  const order = searchParams.get('order');
+
+  // ★ 终极修复：删除 searchParams 对默认排序的影响
+  // 默认永远 price-desc，不允许任何初始化 override
+  const finalOrderby = orderby || 'price';
+  const finalOrder = order || 'desc';
 
   // ★ updateParam — 对齐旧站行为：清除 page + scrollTo(0,0)
   const updateParam = useCallback((key: string, val: string) => {
@@ -377,7 +381,8 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
     }
 
     // ★ 统一排序层：filter 后的数据也必须重新 sort
-    const sorted = sortProducts(filtered, orderby, order);
+    // ★ 唯一排序源：finalOrderby + finalOrder（禁止 orderby/order 直接传入）
+    const sorted = sortProducts(filtered, finalOrderby, finalOrder);
 
     // Paginate
     const totalCount = sorted.length;
@@ -386,7 +391,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
     const paginated = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
     return { paginated, totalCount, totalPages, page };
-  }, [products, categoryParam, productType, searchParam, orderby, order, pageParam, categories]);
+  }, [products, categoryParam, productType, searchParam, finalOrderby, finalOrder, pageParam, categories]);
 
   // Smart page numbers with ellipsis（对齐旧站）
   function renderPagination() {
