@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { CartProvider } from "@/context/CartContext";
+import { AuthProvider } from "@/context/AuthContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -59,12 +60,14 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
       </head>
       <body className={`${inter.className} font-sans antialiased`}>
+        <AuthProvider>
         <CartProvider>
             <Header />
             <main>{children}</main>
             <Footer />
             <WhatsAppFloat />
           </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );
