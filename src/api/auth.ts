@@ -458,39 +458,57 @@ export async function resetPassword(loginVal: string, key: string, password: str
 }
 
 export async function getCurrentUser(): Promise<GsmgcUser | null> {
-  const res = await smartFetch('/me', {});
-  if (!res.ok) return null;
-  const data = await parseJSON(res);
-  return data.user || data;
+  // ★ 改用统一端点 /api/auth/me（Next.js API route，服务端代理到后端）
+  try {
+    const res = await fetch('/api/auth/me', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.logged_in && data.user && (data.user as Record<string, unknown>).id) {
+      return data.user as GsmgcUser;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 export async function getCurrentUserSafe(): Promise<GsmgcUser | null> {
-  // ★ v5.9.7: 用于 login 后验证 — 不触发 401 熔断
-  // 避免 /me 失败时 clearAllAuth 清掉刚保存的 token
-  const token = getAuthToken();
-  const headers: Record<string, string> = {};
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  // ★ 改用统一端点 /api/auth/me（Next.js API route，服务端代理）
   try {
-    const res = await fetchViaEdgeProxy('/me', headers, {});
+    const res = await fetch('/api/auth/me', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+    });
     if (!res.ok) return null;
-    const data = await parseJSON(res);
-    return data.user || data;
+    const data = await res.json();
+    if (data.logged_in && data.user && data.user.id) {
+      return data.user as GsmgcUser;
+    }
+    return null;
   } catch {
     return null;
   }
 }
 
 export async function checkAuth(): Promise<{ authenticated: boolean; user?: GsmgcUser; [key: string]: unknown }> {
+  // ★ 改用统一端点 /api/auth/me（Next.js API route，服务端代理，单次请求即完成鉴权）
   try {
-    const res = await smartFetch('/auth-check', {});
-    if (!res.ok) return { authenticated: false };
-    const data = await parseJSON(res);
-    const result = { authenticated: data.logged_in || false, ...data };
-    // ★ v3.1: API 返回 user 时更新本地缓存
-    if (result.authenticated && data.user && data.user.id) {
+    const res = await fetch('/api/auth/me', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+    });
+    const data = await res.json();
+    if (data.logged_in && data.user && data.user.id) {
       setCachedUser(data.user);
+      return { authenticated: true, user: data.user };
     }
-    return result;
+    return { authenticated: false };
   } catch (err) {
     console.warn('[GSMGC] checkAuth error:', err);
     return { authenticated: false };
