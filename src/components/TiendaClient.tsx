@@ -442,8 +442,9 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
 
             <div className="flex items-center gap-3">
               {/* Sort — 对齐旧站选项顺序：price-desc first */}
+              {/* ★ 终极修复：select value 必须用 finalOrderby/finalOrder（唯一排序源）*/}
               <select
-                value={`${orderby}-${order}`}
+                value={`${finalOrderby}-${finalOrder}`}
                 onChange={e => {
                   const [ob, or] = e.target.value.split('-');
                   updateParam('orderby', ob);
