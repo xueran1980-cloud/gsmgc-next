@@ -17,7 +17,7 @@ const FOOTER_LINKS: Record<string, { label: string; href: string }[]> = {
   Cuenta: [
     { label: "Iniciar sesión", href: "/mi-cuenta" },
     { label: "Registrarse", href: "/mi-cuenta?register=1" },
-    { label: "Recuperar contraseña", href: "/mi-cuenta?lost=1" },
+    { label: "Recuperar contraseña", href: "/mi-cuenta?forgot=1" },
   ],
 };
 

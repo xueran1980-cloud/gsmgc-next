@@ -11,20 +11,21 @@ import StatsSection from "@/components/StatsSection";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
+  title: "GSMGC - Mayorista Accesorios Móviles Canarias | B2B",
   description: "Mayorista B2B de accesorios para móviles en Canarias. +2.100 productos, envío 24h a Gran Canaria y Tenerife. Precios wholesale.",
   alternates: { canonical: "https://gsmgc.es/" },
   openGraph: {
-    title: "GSMGC - Repuestos para Móviles Mayorista B2B | Canarias",
+    title: "GSMGC - Accesorios Móviles Mayorista B2B | Canarias",
     description: "Tu distribuidor de confianza de accesorios móviles en Canarias. Más de 2000 productos para profesionales. Envío rápido a Gran Canaria y Tenerife.",
     type: "website",
     url: "https://gsmgc.es/",
-    images: [{ url: "/logo.png" }],
+    images: [{ url: "https://gsmgc.es/logo.png" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "GSMGC - Mayorista Accesorios Móviles Canarias",
     description: "Mayorista accesorios móviles Canarias. 2000+ productos B2B. Envío 24h.",
-    images: ["/logo.png"],
+    images: ["https://gsmgc.es/logo.png"],
   },
 };
 
@@ -50,18 +51,30 @@ export default async function HomePage() {
   // Select products for sections
   const inStockProducts = products.filter(p => p.stock_status === "instock" && p.images?.length > 0);
   
-  // Latest products (by date_created, newest first)
+  // Latest products (by date_created, newest first) — 1:1 现站 30个
   const latest = [...inStockProducts]
     .sort((a, b) => new Date(b.date_created).getTime() - new Date(a.date_created).getTime())
-    .slice(0, 20);
+    .slice(0, 30);
 
-  // Featured products (best sellers by total_sales)
+  // Featured products (best sellers by total_sales) — 1:1 现站 30个
   const featured = [...inStockProducts]
     .sort((a, b) => (b.total_sales || 0) - (a.total_sales || 0))
-    .slice(0, 20);
+    .slice(0, 30);
 
   // Hero products (3 with images)
   const heroProducts = inStockProducts.slice(0, 3);
+
+  // Count unique categories for Hero
+  const uniqueCategoryIds = new Set();
+  for (const product of products) {
+    if (product.categories) {
+      for (const cat of product.categories) {
+        uniqueCategoryIds.add(cat.id);
+      }
+    }
+  }
+  const categoryCount = uniqueCategoryIds.size;
+  const productCount = products.length;
 
   return (
     <>
@@ -76,7 +89,7 @@ export default async function HomePage() {
             "alternateName": "GSMGC",
             "url": "https://gsmgc.es",
             "logo": "/logo.png",
-            "description": "Mayorista B2B de accesorios y repuestos para móviles en Canarias. Más de 2.100 productos con envío en 24h.",
+            "description": "Mayorista B2B de accesorios y repuestos para móviles en Canarias. Más de 2.000 productos con envío en 24h.",
             "address": {
               "@type": "PostalAddress",
               "streetAddress": "C/ Mayor 45",
@@ -121,7 +134,7 @@ export default async function HomePage() {
 
       <h1 className="sr-only">Accesorios Móviles Mayorista Canarias - GSMGC Distribuidor B2B</h1>
 
-      <Hero featuredProducts={heroProducts} />
+      <Hero featuredProducts={heroProducts} productCount={productCount} categoryCount={categoryCount} />
       <ProductsCarousel
         title="Novedades"
         icon={<span className="text-xl">✨</span>}
@@ -135,8 +148,8 @@ export default async function HomePage() {
         products={featured}
         viewAllLink="/tienda"
       />
-      <BrandsSection />
-      <StatsSection />
+      <BrandsSection categories={categoriesWithCounts} />
+      <StatsSection productCount={productCount} />
     </>
   );
 }

@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useWpLoggedIn } from "@/hooks/useWpLoggedIn";
-import { LogIn } from "lucide-react";
+import { Lock } from "lucide-react";
+
+const IGIC_RATE = 0.07;
 
 export function PriceOrLoginPrompt({
   price,
@@ -25,12 +27,12 @@ export function PriceOrLoginPrompt({
   }
 
   if (isLoggedIn !== true) {
-    // 游客视图
+    // 游客视图 — 1:1 对齐现站 ProductCard.jsx
     if (compact) {
       return (
         <div className="text-[10px] text-gray-400 italic">
-          <LogIn size={10} className="inline mr-0.5" />
-          Regístrese para ver precio
+          <Lock size={9} className="inline mr-0.5" />
+          Ver precio
         </div>
       );
     }
@@ -41,25 +43,32 @@ export function PriceOrLoginPrompt({
           href="/mi-cuenta?register=1"
           className="text-[#2563eb] font-semibold text-sm hover:underline"
         >
-          Registrarse para ver precio
+          <Lock size={15} className="inline mr-1" />
+          Registrate para ver precio
         </Link>
       </div>
     );
   }
 
-  // 登录用户视图
+  // 登录用户视图 — 1:1 对齐现站 PriceWithIGIC.jsx
+  const base = parseFloat(price || "0");
+  const igicTotal = base * (1 + IGIC_RATE);
   const hasDiscount =
-    regularPrice && parseFloat(regularPrice) > parseFloat(price);
+    regularPrice && parseFloat(regularPrice) > base;
+
   return (
     <div>
-      <span className="text-[#2563eb] font-black">
-        €{parseFloat(price || "0").toFixed(2)}
+      <span className="font-black text-[#2563eb]">
+        {base.toFixed(2)} €
       </span>
       {hasDiscount && (
         <span className="text-[10px] text-gray-400 line-through ml-1">
           €{parseFloat(regularPrice).toFixed(2)}
         </span>
       )}
+      <div className="text-xs text-gray-500">
+        <span className="font-medium">IGIC</span> {igicTotal.toFixed(2)} €
+      </div>
     </div>
   );
 }

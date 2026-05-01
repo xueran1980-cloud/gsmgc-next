@@ -47,9 +47,9 @@ const PAYMENT_METHODS = [
     id: 'cod',
     title: 'Pago Contra Reembolso',
     subtitle: 'Pagar al recibir',
-    description: 'Paga en efectivo al recibir el pedido. Se añade un recargo del 2% por gestión.',
+    description: 'Paga en efectivo al recibir el pedido.',
     icon: Truck,
-    badge: '+2%',
+    badge: null,
   },
 ];
 
@@ -71,8 +71,8 @@ export default function CheckoutPage() {
   const update = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  // COD fee
-  const codFee = paymentMethod === 'cod' ? totalPrice * 0.02 : 0;
+  // COD fee — 现站已取消COD 2%收费，统一为0
+  const codFee = 0;
   const finalTotal = totalPrice + codFee;
 
   function validate() {
@@ -383,17 +383,6 @@ export default function CheckoutPage() {
                   );
                 })}
               </div>
-
-              {/* COD warning */}
-              {paymentMethod === 'cod' && (
-                <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
-                  <AlertCircle size={15} className="text-amber-500 mt-0.5 shrink-0" />
-                  <p className="text-xs text-amber-700">
-                    Se añade un recargo del <strong>2%</strong> sobre el total por gastos de gestión contra reembolso.
-                    Total con recargo: <strong>€{finalTotal.toFixed(2)}</strong>
-                  </p>
-                </div>
-              )}
             </div>
 
             {/* Error */}
@@ -477,7 +466,7 @@ export default function CheckoutPage() {
                   <span className="text-gray-500">Envío (Canarias)</span>
                   <span className="text-green-600 font-semibold">Gratis</span>
                 </div>
-                {paymentMethod === 'cod' && (
+                {codFee > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-amber-600">Recargo COD (2%)</span>
                     <span className="text-amber-600 font-semibold">+€{codFee.toFixed(2)}</span>
@@ -485,7 +474,7 @@ export default function CheckoutPage() {
                 )}
                 <div className="flex justify-between text-sm text-gray-400">
                   <span>IGIC (7%)</span>
-                  <span>Incluido</span>
+                  <span>No incluido</span>
                 </div>
                 <div className="flex justify-between pt-3 border-t border-gray-100 items-baseline">
                   <span className="font-black text-gray-900 text-base">TOTAL</span>

@@ -39,9 +39,9 @@ function DiscountBadge({ regular_price, price }: { regular_price: string; price:
 
 function StockBadge({ stock_status, stock_quantity }: { stock_status: string; stock_quantity: number | null }) {
   if (stock_status !== "instock") return null;
-  if (stock_quantity !== null && stock_quantity !== undefined && stock_quantity <= 5) {
+  if (stock_quantity !== null && stock_quantity !== undefined && stock_quantity <= 1) {
     return (
-      <span className="absolute top-2 right-2 z-10 bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm">
+      <span className="absolute top-2 right-2 z-10 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm">
         ¡Última!
       </span>
     );
@@ -141,7 +141,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
               )}
             </button>
           ) : !inStock ? (
-            <span className="text-[10px] text-red-400 font-semibold">Sin stock</span>
+            <span className="text-[10px] text-red-400 font-semibold">Agotado</span>
           ) : null}
         </div>
       </Link>
@@ -161,8 +161,8 @@ export default function ProductCard({ product, compact = false }: { product: Pro
       {/* Out-of-stock overlay */}
       {!inStock && (
         <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-xl">
-          <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1.5 rounded-full tracking-wide">
-            Sin stock
+          <span className="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full tracking-wide animate-pulse">
+            Agotado
           </span>
         </div>
       )}
@@ -227,9 +227,9 @@ export default function ProductCard({ product, compact = false }: { product: Pro
                   ? "bg-green-500 text-white shadow-md"
                   : inStock
                   ? "bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-md hover:shadow-lg"
-                  : "bg-gray-100 text-gray-300 cursor-not-allowed"
+                  : "bg-red-100 text-red-400 cursor-not-allowed"
               }`}
-              title={inStock ? "Añadir al carrito" : "Sin stock"}
+              title={inStock ? "Añadir al carrito" : "Agotado"}
             >
               {added ? (
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}>

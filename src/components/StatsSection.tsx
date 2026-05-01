@@ -1,13 +1,6 @@
 import Link from "next/link";
 import { Package, Users, Zap, Percent, ShieldCheck, Truck, RotateCcw, HeadphonesIcon, BadgeCheck, Clock } from "lucide-react";
 
-const STATS = [
-  { value: "2118", label: "Referencias", icon: Package, color: "text-blue-400" },
-  { value: "500+", label: "Clientes B2B", icon: Users, color: "text-green-400" },
-  { value: "24h", label: "Envío a GC/TF", icon: Zap, color: "text-yellow-400" },
-  { value: "7%", label: "IGIC Canarias", icon: Percent, color: "text-orange-400" },
-];
-
 const B2B_BENEFITS = [
   { icon: BadgeCheck, title: "Precios Mayorista", description: "Tarifas exclusivas para profesionales. Descuentos por volumen bajo petición.", color: "bg-blue-500" },
   { icon: Truck, title: "Envío en 24h", description: "Entrega rápida a Gran Canaria y Tenerife. Recogida gratuita en nuestro local.", color: "bg-green-500" },
@@ -17,7 +10,16 @@ const B2B_BENEFITS = [
   { icon: Clock, title: "Stock Siempre Disponible", description: "+2.100 referencias en stock permanente. Actualizamos catálogo semanalmente.", color: "bg-cyan-500" },
 ];
 
-export default function StatsSection() {
+export default function StatsSection({ productCount }: { productCount?: number }) {
+  const formattedCount = productCount != null ? productCount.toLocaleString('es-ES') : "2.118";
+
+  const STATS = [
+    { value: formattedCount, label: "Referencias", icon: Package, color: "text-blue-400" },
+    { value: "500+", label: "Clientes B2B", icon: Users, color: "text-green-400" },
+    { value: "24h", label: "Envío a GC/TF", icon: Zap, color: "text-yellow-400" },
+    { value: "7%", label: "IGIC Canarias", icon: Percent, color: "text-orange-400" },
+  ];
+
   return (
     <>
       {/* Stats bar */}

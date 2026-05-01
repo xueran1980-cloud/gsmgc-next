@@ -5,26 +5,24 @@ import TiendaClient from '@/components/TiendaClient';
 // No SSR data fetching to avoid Vercel serverless timeout with 3.5MB products-raw payload.
 export const dynamic = 'force-dynamic';
 
-// Static metadata — old site is SPA so it also has fixed metadata.
-// Category/search-specific meta is not possible without SSR data, which matches old site behavior.
 export const metadata: Metadata = {
-  title: 'Catálogo | GSMGC Canarias - Accesorios Móviles al Mayor',
+  title: 'Catálogo - GSMGC Accesorios Móvil Mayorista Canarias',
   description: 'Catálogo completo de accesorios móviles al mayor: pantallas, fundas, baterías, cargadores y más. Envío 24h Canarias. Precios mayoristas B2B.',
   alternates: { canonical: 'https://gsmgc.es/tienda' },
   openGraph: {
-    title: 'Catálogo | GSMGC Canarias - Accesorios Móviles al Mayor',
-    description: 'Catálogo completo de accesorios móviles al mayor: pantallas, fundas, baterías, cargadores y más. Envío 24h Canarias. Precios mayoristas B2B.',
+    title: 'Catálogo - GSMGC Accesorios Móvil Mayorista Canarias',
+    description: 'Catálogo completo de accesorios móviles al mayor: pantallas, fundas, baterías, cargadores y más. Envío 24h Canarias.',
     url: 'https://gsmgc.es/tienda',
-    siteName: 'GSMGC Canarias',
+    siteName: 'GSMGC',
     locale: 'es_ES',
     type: 'website',
-    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
+    images: [{ url: 'https://gsmgc.es/og-image.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Catálogo | GSMGC Canarias - Accesorios Móviles al Mayor',
-    description: 'Catálogo completo de accesorios móviles al mayor: pantallas, fundas, baterías, cargadores y más. Envío 24h Canarias. Precios mayoristas B2B.',
-    images: ['/og-image.png'],
+    title: 'Catálogo - GSMGC Accesorios Móvil Mayorista Canarias',
+    description: 'Catálogo completo de accesorios móviles al mayor.',
+    images: ['https://gsmgc.es/og-image.png'],
   },
 };
 

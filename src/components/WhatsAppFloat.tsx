@@ -7,8 +7,10 @@ function isBusinessHours() {
   const now = new Date();
   const canaryHour = now.getUTCHours() + 1;
   const day = now.getUTCDay();
-  return day >= 1 && day <= 5 && canaryHour >= 9 && canaryHour < 18;
+  return day >= 1 && day <= 5 && canaryHour >= 10 && canaryHour < 14;
 }
+
+const WA_MESSAGE = 'Hola! Soy distribuidor/taller y me interesa vuestro catálogo B2B de accesorios móviles. ¿Podrían enviarme información?';
 
 export default function WhatsAppFloat() {
   const [showTooltip, setShowTooltip] = useState(false);
@@ -30,7 +32,7 @@ export default function WhatsAppFloat() {
       )}
 
       <a
-        href="https://wa.me/34688560560?text=Hola%2C%20me%20interesa%20el%20cat%C3%A1logo%20de%20GSMGC"
+        href={`https://wa.me/34688560560?text=${encodeURIComponent(WA_MESSAGE)}`}
         target="_blank"
         rel="noopener noreferrer"
         className={`flex items-center justify-center w-14 h-14 rounded-full shadow-xl transition-all duration-200 hover:scale-110 ${
