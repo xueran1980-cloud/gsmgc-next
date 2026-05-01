@@ -63,6 +63,27 @@ const FALLBACK_TYPE_PATTERNS: FallbackTypePattern[] = [
     patterns: [/\bplaca\s+(de\s+)?carga\s+/i, /\bflex\s+(main\s+para|de\s+carga\s+)/i] },
 ];
 
+// ─── 统一排序函数（对齐现站 WooCommerce 排序逻辑）─────────
+// 所有产品数据在渲染前必须经过此函数处理
+function sortProducts(
+  products: Product[],
+  orderby: string = 'price',
+  order: string = 'desc'
+): Product[] {
+  const mult = order === 'asc' ? 1 : -1;
+  const sorted = [...products];
+  if (orderby === 'price') {
+    sorted.sort((a, b) => mult * (parseFloat(a.price || '0') - parseFloat(b.price || '0')));
+  } else if (orderby === 'title') {
+    sorted.sort((a, b) => mult * a.name.localeCompare(b.name, 'es'));
+  } else if (orderby === 'popularity') {
+    sorted.sort((a, b) => mult * ((a.total_sales || 0) - (b.total_sales || 0)));
+  } else if (orderby === 'date') {
+    sorted.sort((a, b) => mult * (new Date(b.date_created).getTime() - new Date(a.date_created).getTime()));
+  }
+  return sorted;
+}
+
 // ─── 辅助函数（对齐旧站）─────────────────────────────────────
 
 /**
@@ -130,6 +151,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
   const [loading, setLoading] = useState(true);
 
   // Client-side fetch products + categories (like old site SPA behavior)
+  // ★ products 载入后经过 sortProducts() 统一排序后再入 state
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -138,7 +160,10 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
       clientFetchCategories(),
     ]).then(([prods, cats]) => {
       if (!cancelled) {
-        setProducts(prods);
+        // ★ 统一排序层：所有产品进入 state 前必须经过 sortProducts()
+        // 使用默认排序规则（price-desc）对齐现站首屏行为
+        const sorted = sortProducts(prods, 'price', 'desc');
+        setProducts(sorted);
         setCategories(cats);
         setLoading(false);
       }
@@ -336,23 +361,14 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
       );
     }
 
-    // Sort（对齐旧站排序逻辑）
-    const mult = order === 'asc' ? 1 : -1;
-    if (orderby === 'price') {
-      filtered.sort((a, b) => mult * (parseFloat(a.price || '0') - parseFloat(b.price || '0')));
-    } else if (orderby === 'title') {
-      filtered.sort((a, b) => mult * a.name.localeCompare(b.name, 'es'));
-    } else if (orderby === 'popularity') {
-      filtered.sort((a, b) => mult * ((a.total_sales || 0) - (b.total_sales || 0)));
-    } else if (orderby === 'date') {
-      filtered.sort((a, b) => mult * (new Date(b.date_created).getTime() - new Date(a.date_created).getTime()));
-    }
+    // ★ 统一排序层：filter 后的数据也必须重新 sort
+    const sorted = sortProducts(filtered, orderby, order);
 
     // Paginate
-    const totalCount = filtered.length;
+    const totalCount = sorted.length;
     const totalPages = Math.ceil(totalCount / PER_PAGE);
     const page = Math.max(1, Math.min(pageParam, totalPages));
-    const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+    const paginated = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
     return { paginated, totalCount, totalPages, page };
   }, [products, categoryParam, productType, searchParam, orderby, order, pageParam, categories]);
@@ -627,7 +643,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
             </h1>
 
             {loading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
                 {Array.from({ length: 24 }).map((_, i) => (
                   <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 animate-pulse">
                     <div className="bg-gray-100 rounded-xl h-40 mb-4" />
@@ -658,7 +674,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                     : `${result.totalCount} productos`
                   }
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
                   {result.paginated.map(p => (
                     <ProductCard key={p.id} product={p} />
                   ))}
