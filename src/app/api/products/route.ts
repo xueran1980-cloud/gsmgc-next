@@ -1,102 +1,109 @@
-// Next.js API Route — 纯代理到 WooCommerce REST API
-// 所有产品数据来自 /wp-json/wc/v3/products（实时，无缓存）
-// 前端只做渲染，分类统一使用 WC 分类系统（category 参数）
+// Next.js API Route — 代理到 WordPress 自定义端点 /products-raw
+// 数据最终来源仍是 WooCommerce（由 mu-plugins 内部调用 WC REST API）
+// 前端只做渲染，分类统一使用 WC 分类系统
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const WC_API_URL = 'https://api.gsmgc.es/wp-json/wc/v3/products';
-const WC_KEY = process.env.WC_KEY!;
-const WC_SECRET = process.env.WC_SECRET!;
+const PROXY_BASE = '/api/proxy/wp-json/gsmgc/v1';
 
 /**
- * 构建 WC 认证参数
+ * 将 WC REST API 参数映射到 /products-raw 支持的参数
  */
-function wcAuthParams(): string {
-  const p = new URLSearchParams();
-  p.set('consumer_key', WC_KEY);
-  p.set('consumer_secret', WC_SECRET);
-  return p.toString();
-}
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
-    // ★ 查询单个产品（by ID）→ 直接透传 WC API
-    const id = searchParams.get('id');
-    if (id) {
-      return await handleSingleProduct(id);
-    }
-
-    // ★ 列表查询：透传参数到 WC REST API
-    const orderby = searchParams.get('orderby') || 'price';
-    const order = searchParams.get('order') || 'desc';
+    // 读取前端传来的参数
     const category = searchParams.get('category') || '';
     const search = searchParams.get('search') || '';
-    const perPage = parseInt(searchParams.get('per_page') || '24');
     const page = parseInt(searchParams.get('page') || '1');
+    const perPage = parseInt(searchParams.get('per_page') || '24');
+    const orderby = searchParams.get('orderby') || 'price';
+    const order = searchParams.get('order') || 'desc';
 
-    const wcParams = new URLSearchParams();
-    wcParams.set('consumer_key', WC_KEY);
-    wcParams.set('consumer_secret', WC_SECRET);
-    wcParams.set('per_page', String(perPage));
-    wcParams.set('page', String(page));
-    wcParams.set('status', 'publish');
-    wcParams.set('orderby', orderby);
-    wcParams.set('order', order);
-    if (category) wcParams.set('category', category);
-    if (search) wcParams.set('search', search);
+    // 调用 WordPress /products-raw 端点
+    const url = new URL(`${PROXY_BASE}/products-raw`, 'http://localhost');
 
-    const res = await fetch(`${WC_API_URL}?${wcParams.toString()}`, {
-      headers: { 'User-Agent': 'GSMGC-Next-Proxy/1.0', 'Accept': 'application/json' },
+    const res = await fetch(`${request.nextUrl.origin}/api/proxy/wp-json/gsmgc/v1/products-raw`, {
+      headers: {
+        'User-Agent': 'GSMGC-Next-Proxy/1.0',
+        'Accept': 'application/json',
+      },
       cache: 'no-store',
     });
 
     if (!res.ok) {
       const text = await res.text();
-      console.error('[API /products] WC REST API error:', res.status, text);
+      console.error('[API /products] /products-raw error:', res.status, text.slice(0, 200));
       return NextResponse.json(
-        { success: false, error: `WC API returned ${res.status}` },
+        { success: false, error: `Backend returned ${res.status}` },
         { status: res.status }
       );
     }
 
-    const data = await res.json();
-    return NextResponse.json(data, {
+    const json = await res.json();
+    if (!json.success || !Array.isArray(json.products)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid response from backend' },
+        { status: 502 }
+      );
+    }
+
+    // ★ 前端传来的参数在 Next.js 端执行过滤/排序/分页
+    // （因为 /products-raw 返回全量数据，前端参数需要服务端处理）
+    let products: any[] = json.products;
+
+    // 分类过滤
+    if (category) {
+      const catId = parseInt(category);
+      products = products.filter((p: any) =>
+        p.categories && p.categories.some((c: any) => c.id === catId)
+      );
+    }
+
+    // 搜索过滤
+    if (search) {
+      const lower = search.toLowerCase();
+      products = products.filter((p: any) => {
+        const name = (p.name || '').toLowerCase();
+        const sku = (p.sku || '').toLowerCase();
+        return name.includes(lower) || sku.includes(lower);
+      });
+    }
+
+    // 排序
+    products.sort((a: any, b: any) => {
+      let va: any, vb: any;
+      if (orderby === 'price') {
+        va = parseFloat(a.price || '0');
+        vb = parseFloat(b.price || '0');
+      } else if (orderby === 'title') {
+        return order === 'asc'
+          ? (a.name || '').localeCompare(b.name || '', 'es')
+          : (b.name || '').localeCompare(a.name || '', 'es');
+      } else if (orderby === 'date') {
+        va = new Date(a.date_created || 0).getTime();
+        vb = new Date(b.date_created || 0).getTime();
+      } else if (orderby === 'popularity') {
+        va = parseInt(a.total_sales || '0');
+        vb = parseInt(b.total_sales || '0');
+      } else {
+        va = parseFloat(a.price || '0');
+        vb = parseFloat(b.price || '0');
+      }
+      return order === 'asc' ? va - vb : vb - va;
+    });
+
+    // 分页
+    const totalCount = products.length;
+    const totalPages = Math.ceil(totalCount / perPage);
+    const paginated = products.slice((page - 1) * perPage, page * perPage);
+
+    return NextResponse.json(paginated, {
       headers: { 'Cache-Control': 'no-store' },
     });
   } catch (err: any) {
     console.error('[API /products] Unexpected error:', err);
-    return NextResponse.json(
-      { success: false, error: err.message },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * 查询单个产品（by ID）
- * 直接透传到 WC REST API `/wp-json/wc/v3/products/<id>`
- */
-async function handleSingleProduct(id: string) {
-  try {
-    const url = `${WC_API_URL}/${id}?${wcAuthParams()}`;
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'GSMGC-Next-Proxy/1.0', 'Accept': 'application/json' },
-      cache: 'no-store',
-    });
-    if (!res.ok) {
-      return NextResponse.json(
-        { success: false, error: `Product not found (${res.status})` },
-        { status: res.status === 404 ? 404 : 500 }
-      );
-    }
-    const product = await res.json();
-    return NextResponse.json(product, {
-      headers: { 'Cache-Control': 'no-store' },
-    });
-  } catch (err: any) {
-    console.error('[API /products/single] Unexpected error:', err);
     return NextResponse.json(
       { success: false, error: err.message },
       { status: 500 }

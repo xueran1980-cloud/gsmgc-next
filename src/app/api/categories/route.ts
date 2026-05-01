@@ -1,24 +1,17 @@
-// Next.js API Route — 代理到 WooCommerce REST API 获取分类
+// Next.js API Route — 代理到 WordPress 自定义端点 /categories-raw
+// 数据最终来源仍是 WooCommerce（由 mu-plugins 内部调用 WC REST API）
 // 前端只做渲染，分类数据100%来自 WC 后端
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const WC_API_URL = 'https://api.gsmgc.es/wp-json/wc/v3/products/categories';
-const WC_KEY = process.env.WC_KEY!;
-const WC_SECRET = process.env.WC_SECRET!;
+const PROXY_BASE = '/api/proxy/wp-json/gsmgc/v1';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
-    const wcParams = new URLSearchParams();
-    wcParams.set('consumer_key', WC_KEY);
-    wcParams.set('consumer_secret', WC_SECRET);
-    wcParams.set('per_page', searchParams.get('per_page') || '100');
-    wcParams.set('page', searchParams.get('page') || '1');
-    wcParams.set('hide_empty', 'true');
 
-    const res = await fetch(`${WC_API_URL}?${wcParams.toString()}`, {
+    // 调用 WordPress /categories-raw 端点
+    const res = await fetch(`${request.nextUrl.origin}/api/proxy/wp-json/gsmgc/v1/categories-raw`, {
       headers: {
         'User-Agent': 'GSMGC-Next-Proxy/1.0',
         'Accept': 'application/json',
@@ -28,16 +21,22 @@ export async function GET(request: NextRequest) {
 
     if (!res.ok) {
       const text = await res.text();
-      console.error('[API /categories] WC REST API error:', res.status, text);
+      console.error('[API /categories] /categories-raw error:', res.status, text.slice(0, 200));
       return NextResponse.json(
-        { success: false, error: `WC API returned ${res.status}` },
+        { success: false, error: `Backend returned ${res.status}` },
         { status: res.status }
       );
     }
 
-    const data = await res.json();
+    const json = await res.json();
+    if (!json.success || !Array.isArray(json.categories)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid response from backend' },
+        { status: 502 }
+      );
+    }
 
-    return NextResponse.json(data, {
+    return NextResponse.json(json.categories, {
       headers: {
         'Cache-Control': 's-maxage=300, stale-while-revalidate=60',
       },
