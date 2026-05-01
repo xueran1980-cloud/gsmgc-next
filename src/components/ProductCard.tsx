@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ShoppingCart, Eye } from "lucide-react";
+import { ShoppingCart, Eye, Lock } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import type { Product } from "@/lib/api";
 import { getProductImage } from "@/lib/api";
-import { useWpLoggedIn } from "@/hooks/useWpLoggedIn";
 import { PriceOrLoginPrompt } from "./PriceOrLoginPrompt";
 
 function generateSlug(name: string): string {
@@ -54,7 +54,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
   const [added, setAdded] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const isLoggedIn = useWpLoggedIn();
+  const { isLoggedIn, loading: authLoading } = useAuth();
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -66,6 +66,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
       regular_price: product.regular_price,
       image: product.images?.[0]?.src || "",
       sku: product.sku,
+      stock_quantity: product.stock_quantity,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
@@ -76,7 +77,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
 
   // ── compact variant (for carousels) ──
   if (compact) {
-    if (isLoggedIn === "loading") {
+    if (authLoading) {
       return (
         <div className="flex-shrink-0 w-44 bg-white rounded-xl border border-gray-100 shadow-sm p-3 animate-pulse">
           <div className="bg-gray-200 rounded-lg h-24 mb-3" />
@@ -219,8 +220,8 @@ export default function ProductCard({ product, compact = false }: { product: Pro
           <PriceOrLoginPrompt price={product.price} regularPrice={product.regular_price} />
         </div>
 
-        {/* Actions - only show if logged in */}
-        {isLoggedIn === true && (
+        {/* Actions */}
+        {isLoggedIn ? (
           <div className="flex items-center gap-1.5">
             <button
               onClick={handleAdd}
@@ -251,6 +252,15 @@ export default function ProductCard({ product, compact = false }: { product: Pro
               <Eye size={16} />
             </Link>
           </div>
+        ) : !inStock ? null : (
+          <Link
+            href="/mi-cuenta"
+            onClick={(e) => e.stopPropagation()}
+            className="shrink-0 rounded-xl px-3 py-2 bg-[#ea580c] hover:bg-[#d97706] text-white text-xs font-bold transition flex items-center gap-1.5"
+          >
+            <Lock size={13} />
+            Registrarse
+          </Link>
         )}
       </div>
     </Link>
