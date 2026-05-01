@@ -1,10 +1,6 @@
-// GSMGC Next.js - 数据获取层
-// SSG/ISR 页面在服务端调用，CSR 页面通过 smartFetch 调用
-
-const PRODUCTS_API = "https://api.gsmgc.es/wp-json/gsmgc/v1/products-raw";
-
-// Export for client-side usage
-export { PRODUCTS_API };
+// GSMGC Next.js - 数据获取层（统一数据源）
+// 所有产品数据必须来自 /api/products（Next.js API Route → WC REST API）
+// 禁止使用 wc_products.json / products-raw / 任何本地 JSON 缓存
 
 // ---------- 类型定义 ----------
 
@@ -42,167 +38,85 @@ export interface Product {
   min_qty: number;
 }
 
-interface ProductsRawResponse {
-  success: boolean;
-  count: number;
-  cached_at: string;
-  products: Product[];
-}
-
-// ---------- SSG/ISR 数据获取（Server Component） ----------
-
-// Server-side fetch for SSG/ISR pages
-// Note: products-raw is ~3.5MB, exceeds Next.js default 2MB response cache limit.
-// We use revalidate: 86400 for ISR (controls HTML page regeneration).
-// The JSON response itself won't be cached by Next.js (too large), but CF caches it for 60s.
+// ---------- 服务端获取所有产品（ISR/SSR） ----------
+// 统一调用 /api/products（内部代理到 WC REST API）
+// cache: 'no-store' 确保每次获取最新数据
 
 export async function fetchProducts(): Promise<Product[]> {
-  // Build time: read from local JSON file (no API call, no CF intercept)
-  if (typeof window === 'undefined') {
-    try {
-      const fs = require('fs');
-      const path = require('path');
-      const filePath = path.join(process.cwd(), 'public', 'wc_products.json');
-      const content = fs.readFileSync(filePath, 'utf-8');
-      return JSON.parse(content);
-    } catch {
-      // Fall through to API fetch
-    }
-  }
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15_000); // 15s timeout
-
   try {
-    const res = await fetch(PRODUCTS_API, {
-      next: { revalidate: 86400 }, // ISR 24h
-      headers: {
-        // Use real browser UA to bypass CF Bot Fight Mode challenge on Vercel builds
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "application/json",
-        "Accept-Language": "es-ES,es;q=0.9",
-      },
-      signal: controller.signal,
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/products`, {
+      cache: 'no-store',
+      headers: { 'User-Agent': 'GSMGC-Next-Proxy/1.0' },
     });
     if (!res.ok) {
-      console.warn(`[fetchProducts] API returned ${res.status}, returning empty array`);
+      console.warn(`[fetchProducts] /api/products returned ${res.status}`);
       return [];
     }
-    const data: ProductsRawResponse = await res.json();
-    return data.products;
+    const data: Product[] = await res.json();
+    return data;
   } catch (err) {
-    if (err instanceof DOMException && err.name === 'AbortError') {
-      console.warn('[fetchProducts] Fetch aborted after 15s timeout, returning empty array');
-    } else {
-      console.warn(`[fetchProducts] Fetch failed:`, err);
-    }
-    return []; // 返回空数组，build 不中断，ISR 会在运行时重新拉取
-  } finally {
-    clearTimeout(timeout);
+    console.warn('[fetchProducts] fetch failed:', err);
+    return [];
   }
 }
 
-export function getCategoriesFromProducts(products: Product[]): ProductCategory[] {
-  const categoryMap = new Map<number, ProductCategory>();
-  for (const product of products) {
-    if (!product.categories) continue;
-    for (const cat of product.categories) {
-      if (!categoryMap.has(cat.id)) {
-        categoryMap.set(cat.id, cat);
+// ---------- 服务端获取单个产品 ----------
+
+export async function fetchProductById(id: string): Promise<Product | null> {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/products?id=${id}`, {
+      cache: 'no-store',
+      headers: { 'User-Agent': 'GSMGC-Next-Proxy/1.0' },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.warn('[fetchProductById] fetch failed:', err);
+    return null;
+  }
+}
+
+// ---------- 分类数据 ----------
+
+const CATEGORIES_URL = '/api/products';
+
+export async function fetchCategories(): Promise<ProductCategory[]> {
+  try {
+    const products = await fetchProducts();
+    const catMap = new Map<number, ProductCategory>();
+    for (const p of products) {
+      if (!p.categories) continue;
+      for (const c of p.categories) {
+        if (!catMap.has(c.id)) catMap.set(c.id, c);
       }
     }
+    return Array.from(catMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  } catch (err) {
+    console.warn('[fetchCategories] failed:', err);
+    return [];
   }
-  return Array.from(categoryMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 // ---------- Slug 生成（与 ProductCard 一致） ----------
 
 export function generateSlug(name: string): string {
-  if (!name) return "";
+  if (!name) return '';
   return name
     .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 // ---------- 客户端工具函数 ----------
 
 export function getProductImage(product: Product): string {
-  return product.images?.[0]?.src || "/product-placeholder.svg";
+  return product.images?.[0]?.src || '/product-placeholder.svg';
 }
 
 export function formatPrice(priceStr: string): string {
   const price = parseFloat(priceStr);
-  if (isNaN(price)) return "0,00";
-  return price.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-// ---------- 分类数据（与旧站 wc_categories.json 一致） ----------
-
-const CATEGORIES_URL = "/wc_categories.json";
-
-// Export for client-side usage
-export { CATEGORIES_URL };
-
-// ---------- 客户端数据获取 ----------
-
-// Client-side fetch for TiendaClient (same as old site: read from local JSON)
-let _productsCache: Product[] | null = null;
-let _categoriesCache: ProductCategory[] | null = null;
-
-export async function clientFetchProducts(): Promise<Product[]> {
-  if (_productsCache) return _productsCache;
-  try {
-    const res = await fetch('/wc_products.json');
-    if (!res.ok) {
-      console.warn(`[clientFetchProducts] API returned ${res.status}`);
-      return [];
-    }
-    const data: Product[] = await res.json();
-    // Image URLs are already absolute https://gsmgc.es/wp-content/uploads/...
-    // No normalization needed - gsmgc.es domain is not blocked by CF Bot Fight Mode
-    // (Only api.gsmgc.es is blocked)
-    // Keep URLs as-is for consistency with old site.
-    _productsCache = data;
-    return data;
-  } catch (err) {
-    console.warn(`[clientFetchProducts] fetch failed:`, err);
-    return [];
-  }
-}
-
-export async function clientFetchCategories(): Promise<ProductCategory[]> {
-  if (_categoriesCache) return _categoriesCache;
-  try {
-    const res = await fetch('/wc_categories.json');
-    if (!res.ok) {
-      console.warn(`[clientFetchCategories] API returned ${res.status}`);
-      return [];
-    }
-    const data: ProductCategory[] = await res.json();
-    _categoriesCache = data;
-    return data;
-  } catch (err) {
-    console.warn(`[clientFetchCategories] fetch failed:`, err);
-    return [];
-  }
-}
-
-// ---------- 服务端数据获取（SSG/ISR） ----------
-
-export async function fetchCategories(): Promise<ProductCategory[]> {
-  const res = await fetch(CATEGORIES_URL, {
-    next: { revalidate: 86400 }, // ISR 24h，与 products 同步
-    headers: {
-      "User-Agent": "GSMGC-Bot/1.0",
-    },
-  });
-  if (!res.ok) {
-    console.warn(`[fetchCategories] API returned ${res.status}, returning empty array`);
-    return [];
-  }
-  const data: ProductCategory[] = await res.json();
-  return data;
+  if (isNaN(price)) return '0,00';
+  return price.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }

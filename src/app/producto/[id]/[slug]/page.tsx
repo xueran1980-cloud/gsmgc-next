@@ -1,47 +1,38 @@
 // GSMGC Product Detail Page
 // Route: /producto/[id]/[slug]
+// 统一数据源：只从 /api/products?id=<id> 获取实时数据
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import fs from 'fs';
-import path from 'path';
 import {
   ChevronRight,
   Package,
   ShieldCheck,
   Truck,
 } from 'lucide-react';
-import { fetchProducts, generateSlug, type Product } from '@/lib/api';
+import { generateSlug, fetchProductById, type Product } from '@/lib/api';
 import ImageGallery from '@/components/ImageGallery';
 import ShareButton from '@/components/ShareButton';
 import ProductDetailActions from './ProductDetailActions';
 import ProductCard from '@/components/ProductCard';
 
 // ---------- Static Params ----------
-// Build 时从 public/product-ids.json 读取（静态文件，不需要网络请求）
-// 该文件由脚本从 API 生成，commit 到仓库中
-// dynamicParams=true 允许新产品走 ISR（首次访问时生成）
+// 从 public/product-ids.json 读取（仅用于 build-time 静态生成）
+// 运行时新产品走 ISR
 export const dynamicParams = true;
 
 interface StaticParam { id: string; slug: string }
 
 export async function generateStaticParams(): Promise<StaticParam[]> {
   try {
-    // 从 public/ 读取预生成的产品 ID 列表（~155KB，无需网络）
+    const fs = require('fs');
+    const path = require('path');
     const filePath = path.join(process.cwd(), 'public', 'product-ids.json');
     const content = fs.readFileSync(filePath, 'utf-8');
-    const ids: StaticParam[] = JSON.parse(content);
-    return ids;
+    return JSON.parse(content);
   } catch {
-    // 文件不存在时 fallback 到 API fetch（带 timeout 保护）
-    console.warn('[generateStaticParams] product-ids.json not found, falling back to API');
-    const products = await fetchProducts();
-    return products
-      .filter((p) => p.status === 'publish')
-      .map((p) => ({
-        id: String(p.id),
-        slug: generateSlug(p.name) || 'producto',
-      }));
+    // product-ids.json 不存在时返回空数组，新产品通过 ISR 按需生成
+    return [];
   }
 }
 
@@ -53,7 +44,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const { product } = await getProductById(id);
+  const product = await fetchProductById(id);
   if (!product) return {};
 
   const canonicalUrl = `https://gsmgc.es/producto/${product.id}/${generateSlug(product.name) || 'producto'}`;
@@ -62,7 +53,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ? product.short_description.replace(/<[^>]*>/g, '').trim().slice(0, 160)
     : `Compra ${product.name} al mayor. SKU: ${product.sku || 'N/A'} para profesionales en Canarias. Envío 24h, garantía 6 meses.`;
   const ogImage = product.images?.[0]?.src || '/og-image.png';
-  const categoryName = product.categories?.[0]?.name || 'Catálogo';
 
   return {
     title,
@@ -86,34 +76,39 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 // ---------- Data ----------
-// Build-time: read from local JSON (no API call, no CF intercept)
-// Runtime (ISR): stil use fetchProducts() for revalidation
-async function getProductById(id: string): Promise<{ product: Product | null; allProducts: Product[] }> {
-  // Build/SSR: read from public/wc_products.json (committed to repo)
-  if (typeof window === 'undefined') {
+// 统一从 /api/products?id=<id> 获取实时数据（不再读 JSON）
+
+async function getProductById(id: string): Promise<{ product: Product | null; related: Product[] }> {
+  const product = await fetchProductById(id);
+  if (!product) return { product: null, related: [] };
+
+  // 获取同分类的相关产品（调用 /api/products?category=<id>&per_page=7）
+  let related: Product[] = [];
+  const categoryId = product.categories?.[0]?.id;
+  if (categoryId) {
     try {
-      const fs = require('fs');
-      const path = require('path');
-      const filePath = path.join(process.cwd(), 'public', 'wc_products.json');
-      const content = fs.readFileSync(filePath, 'utf-8');
-      const products: Product[] = JSON.parse(content);
-      const product = products.find((p) => p.id === parseInt(id)) || null;
-      return { product, allProducts: products };
+      const base = process.env.NEXT_PUBLIC_BASE_URL || '';
+      const res = await fetch(`${base}/api/products?category=${categoryId}&per_page=7`, {
+        cache: 'no-store',
+        headers: { 'User-Agent': 'GSMGC-Next-Proxy/1.0' },
+      });
+      if (res.ok) {
+        const all: Product[] = await res.json();
+        related = all.filter((p) => String(p.id) !== id).slice(0, 6);
+      }
     } catch (err) {
-      console.warn('[getProductById] Failed to read local file, falling back to API', err);
+      console.warn('[getProductById] Failed to fetch related:', err);
     }
   }
-  // Fallback: fetch from API (runtime or if local file fails)
-  const products = await fetchProducts();
-  const product = products.find((p) => p.id === parseInt(id)) || null;
-  return { product, allProducts: products };
+
+  return { product, related };
 }
 
 // ---------- Page ----------
 
 export default async function ProductPage({ params }: PageProps) {
   const { id, slug } = await params;
-  const { product, allProducts } = await getProductById(id);
+  const { product, related } = await getProductById(id);
 
   // 404 if not found
   if (!product) {
@@ -136,11 +131,6 @@ export default async function ProductPage({ params }: PageProps) {
   const categoryName = product.categories?.[0]?.name || 'Catálogo';
   const categoryId = product.categories?.[0]?.id || '';
   const canonicalUrl = `https://gsmgc.es/producto/${id}/${expectedSlug}`;
-
-  // Related products: same category, exclude self, max 6 (reusing allProducts, no extra fetch)
-  const related = allProducts
-    .filter(p => p.categories?.[0]?.id === categoryId && p.id !== parseInt(id) && p.status === 'publish')
-    .slice(0, 6);
 
   // WhatsApp message - aligned with old site
   const waMsg = encodeURIComponent(
@@ -330,7 +320,7 @@ export default async function ProductPage({ params }: PageProps) {
               )}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {related.map(p => <ProductCard key={p.id} product={p} />)}
+              {related.map((p) => <ProductCard key={p.id} product={p} />)}
             </div>
           </div>
         )}

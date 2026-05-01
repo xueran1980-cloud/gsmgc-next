@@ -4,12 +4,11 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product, ProductCategory } from '@/lib/api';
-import { clientFetchProducts, clientFetchCategories } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
 
 const PER_PAGE = 24;
 
-// ─── 品牌与类型分类常量（对齐旧站 ShopPage.jsx）─────────
+// ─── 品牌常量（对齐旧站 ShopPage.jsx）─────────
 const KNOWN_BRANDS = new Set([
   'APPLE', 'IPHONE', 'IPAD', 'SAMSUNG', 'XIAOMI', 'HUAWEI', 'OPPO',
   'VIVO', 'ONEPLUS', 'MOTOROLA', 'TCL', 'ZTE', 'ALCATEL', 'NOKIA',

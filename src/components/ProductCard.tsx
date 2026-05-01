@@ -99,13 +99,13 @@ export default function ProductCard({ product, compact = false }: { product: Pro
               <img
                 src={imgUrl}
                 alt={product.name}
-                className={`max-h-full max-w-full object-contain group-hover:scale-105 transition-transform ${imgLoaded ? "" : "opacity-0"}`}
-                loading="lazy"
-                decoding="async"
-                width={300}
-                height={300}
-                onLoad={() => setImgLoaded(true)}
-                onError={() => setImgError(true)}
+              className={`w-full aspect-square object-cover group-hover:scale-105 transition-transform ${imgLoaded ? "" : "opacity-0"}`}
+              loading="lazy"
+              decoding="async"
+              width={300}
+              height={300}
+              onLoad={() => setImgLoaded(true)}
+              onError={() => setImgError(true)}
               />
             </>
           ) : (
@@ -155,7 +155,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
   return (
     <Link
       href={getProductUrl(product)}
-      className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-blue-100 transition-all p-4 group flex flex-col relative overflow-hidden"
+      className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-blue-100 transition-all p-4 group flex flex-col h-full relative overflow-hidden"
     >
       {/* Badges */}
       <DiscountBadge regular_price={product.regular_price} price={product.price} />
@@ -175,10 +175,10 @@ export default function ProductCard({ product, compact = false }: { product: Pro
         {imgUrl && !imgUrl.includes("placeholder") && !imgError ? (
           <>
             {!imgLoaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
-            <img
-              src={imgUrl}
-              alt={product.name}
-              className={`max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300 ${imgLoaded ? "" : "opacity-0"}`}
+              <img
+                src={imgUrl}
+                alt={product.name}
+                className={`w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-300 ${imgLoaded ? "" : "opacity-0"}`}
               loading="lazy"
               decoding="async"
               width={300}

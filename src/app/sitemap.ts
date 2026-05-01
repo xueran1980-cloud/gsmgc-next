@@ -1,13 +1,15 @@
 import type { MetadataRoute } from 'next';
-import { fetchProducts, getCategoriesFromProducts, generateSlug } from '@/lib/api';
+import { fetchProducts, fetchCategories, generateSlug } from '@/lib/api';
 
 // Dynamic rendering: generate sitemap at request time (not build time)
-// CF Bot Fight Mode blocks Vercel build IPs, so build-time fetch always fails.
-// Runtime fetch works fine (Tienda 3.2MB proves it).
 export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const products = await fetchProducts();
+  const [products, categories] = await Promise.all([
+    fetchProducts(),
+    fetchCategories(),
+  ]);
+
   const baseUrl = 'https://gsmgc.es';
 
   // Static pages
@@ -26,8 +28,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Category pages (from products-raw)
-  const categories = getCategoriesFromProducts(products);
+  // Category pages (from fetchCategories)
   const categoryPages: MetadataRoute.Sitemap = categories.map(cat => ({
     url: `${baseUrl}/tienda?category=${cat.id}`,
     lastModified: new Date(),
@@ -35,10 +36,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  // Product pages (SSG)
+  // Product pages
   const productPages: MetadataRoute.Sitemap = products
-    .filter(p => p.status === 'publish')
-    .map(p => {
+    .filter((p: any) => p.status === 'publish')
+    .map((p: any) => {
       const slug = generateSlug(p.name);
       return {
         url: slug

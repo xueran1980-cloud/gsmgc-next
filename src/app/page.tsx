@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { fetchProducts, getCategoriesFromProducts } from "@/lib/api";
+import { fetchProducts } from "@/lib/api";
 import Hero from "@/components/Hero";
 import { ProductsCarousel } from "@/components/ProductsCarousel";
 import CategoriesSection from "@/components/CategoriesSection";
