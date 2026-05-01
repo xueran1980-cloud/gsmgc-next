@@ -36,7 +36,7 @@ function checkStock(
   stockQty: number | null | undefined
 ): { clamped: number; error: string | null } {
   // null/undefined = 无限库存 (manage_stock=false)
-  if (stockQty === null || stockQty === undefined || stockQty === ") {
+  if (stockQty === null || stockQty === undefined || stockQty === "") {
     return { clamped: currentQty + requested, error: null };
   }
 
