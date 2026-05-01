@@ -361,12 +361,12 @@ export function buildBilling(user: GsmgcUser | null, addrFields: BillingAddress 
 }
 
 export async function login(email: string, password: string, remember = false): Promise<GsmgcUser> {
-  // ★ v6.1: login 前置清除由 AuthContext 处理，这里 skip401 避免密码错误触发熔断
-  const res = await smartFetch('/login', {
+  // ★ 修复 CORS：走本地 Next.js API 代理（/api/auth/login）
+  const res = await fetch('/api/auth/login', {
     method: 'POST',
-    skip401: true,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password, remember }),
+    cache: 'no-store',
   });
 
   if (!res.ok) {
@@ -415,10 +415,12 @@ export async function logout(): Promise<{ success: boolean }> {
 }
 
 export async function register(userData: Record<string, string>): Promise<any> {
-  const res = await smartFetch('/register', {
+  // ★ 修复 CORS：走本地 Next.js API 代理（/api/auth/register）
+  const res = await fetch('/api/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(userData),
+    cache: 'no-store',
   });
 
   if (!res.ok) {
