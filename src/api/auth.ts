@@ -522,47 +522,21 @@ export async function checkAuth(): Promise<{ authenticated: boolean; user?: Gsmg
  * 返回值: { authenticated, user } 或 { authenticated: false }
  */
 export async function deepCheckAuth(): Promise<{ authenticated: boolean; user?: GsmgcUser }> {
+  // ★ 改用统一端点 /api/auth/me（Next.js API route，服务端完成高置信鉴权）
   try {
-    // ★ v4.5: 不再需要 warmup（SG Bot Protection 已关闭）
-
-    // 1. auth-check 轻量检测
-    const authRes = await smartFetch('/auth-check', {});
-    if (!authRes.ok) return { authenticated: false };
-    const authData = await parseJSON(authRes);
-
-    const isLoggedIn = authData.logged_in === true || authData.authenticated === true;
-
-    // ★ v3.1: 成功时更新本地缓存
-    if (isLoggedIn && authData.user && authData.user.id) {
-      setCachedUser(authData.user);
-      return { authenticated: true, user: authData.user };
+    const res = await fetch('/api/auth/me', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+    });
+    const data = await res.json();
+    if (data.logged_in && data.user && data.user.id) {
+      setCachedUser(data.user);
+      return { authenticated: true, user: data.user };
     }
-
-    if (!isLoggedIn) return { authenticated: false };
-
-    // 2. 如果 auth-check 认为已登录但没返回 user，再调用 /me 获取完整用户数据
-    //    这一步确保用户对象完整（解决 auth-check 可能不含 user 的边缘情况）
-    const meRes = await smartFetch('/me', {});
-    if (meRes.ok) {
-      const meData = await parseJSON(meRes);
-      const userData: GsmgcUser = meData.user || meData;
-      if (userData && userData.id) {
-        // ★ v3.1: 缓存 user
-        setCachedUser(userData);
-        return { authenticated: true, user: userData };
-      }
-    }
-
-    // 3. /me 失败但 auth-check 有 user 数据，用 auth-check 的
-    if (authData.user && authData.user.id) {
-      setCachedUser(authData.user);
-      return { authenticated: true, user: authData.user };
-    }
-
     return { authenticated: false };
   } catch (err) {
     console.warn('[GSMGC] deepCheckAuth error:', err);
-    // ★ v6.1: AUTH_EXPIRED（401）不要吞掉，让调用方知道 token 已失效
     if ((err as Error).message === 'AUTH_EXPIRED') throw err;
     return { authenticated: false };
   }
