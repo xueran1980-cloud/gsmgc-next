@@ -1,17 +1,20 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // 图片优化：限制 /wp-content/uploads/** 路径（安全加固）
+  // 图片优化：允许外部图片域名
   images: {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "api.gsmgc.es",
-        pathname: "/wp-content/uploads/**",
+        hostname: "yougsm.es",
       },
       {
         protocol: "https",
         hostname: "gsmgc.es",
+      },
+      {
+        protocol: "https",
+        hostname: "api.gsmgc.es",
         pathname: "/wp-content/uploads/**",
       },
     ],
