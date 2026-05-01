@@ -32,7 +32,7 @@ function filterBrandCategories(categories: ProductCategory[]) {
   if (!categories || categories.length === 0) return [];
   return [...categories]
     .filter(c => {
-      if (c.parent !== 0 || c.count <= 0) return false;
+      if (c.parent !== 0 || c.count == null || c.count <= 0) return false;
       const n = (c.name || '').trim().toUpperCase();
       if (EXCLUDED_TOP_CATEGORIES.has(c.name) || EXCLUDED_TOP_CATEGORIES.has(n)) return false;
       if (KNOWN_BRANDS.has(n)) return true;
