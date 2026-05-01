@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { CategoryWithCount } from "@/lib/api";
+import type { ProductCategory } from "@/lib/api";
 
 const EXCLUDED_TOP_CATEGORIES = new Set([
   'sin categorizar', 'uncategorized', 'sin categoria',
@@ -25,10 +25,10 @@ const FALLBACK_BRANDS = [
 ];
 
 interface BrandsSectionProps {
-  categories?: CategoryWithCount[];
+  categories?: ProductCategory[];
 }
 
-function filterBrandCategories(categories: CategoryWithCount[]) {
+function filterBrandCategories(categories: ProductCategory[]) {
   if (!categories || categories.length === 0) return [];
   return [...categories]
     .filter(c => {
