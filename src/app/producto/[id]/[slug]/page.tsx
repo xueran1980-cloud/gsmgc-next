@@ -51,7 +51,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const product = await getProductById(id);
+  const { product } = await getProductById(id);
   if (!product) return {};
 
   const canonicalUrl = `https://gsmgc.es/producto/${product.id}/${generateSlug(product.name) || 'producto'}`;
@@ -85,16 +85,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 // ---------- Data ----------
 
-async function getProductById(id: string): Promise<Product | null> {
+// 单次获取所有产品，避免重复 fetchProducts() 调用
+async function getProductById(id: string): Promise<{ product: Product | null; allProducts: Product[] }> {
   const products = await fetchProducts();
-  return products.find((p) => p.id === parseInt(id)) || null;
+  const product = products.find((p) => p.id === parseInt(id)) || null;
+  return { product, allProducts: products };
 }
 
 // ---------- Page ----------
 
 export default async function ProductPage({ params }: PageProps) {
   const { id, slug } = await params;
-  const product = await getProductById(id);
+  const { product, allProducts } = await getProductById(id);
 
   // 404 if not found
   if (!product) {
@@ -118,8 +120,7 @@ export default async function ProductPage({ params }: PageProps) {
   const categoryId = product.categories?.[0]?.id || '';
   const canonicalUrl = `https://gsmgc.es/producto/${id}/${expectedSlug}`;
 
-  // Related products: same category, exclude self, max 6
-  const allProducts = await fetchProducts();
+  // Related products: same category, exclude self, max 6 (reusing allProducts, no extra fetch)
   const related = allProducts
     .filter(p => p.categories?.[0]?.id === categoryId && p.id !== parseInt(id) && p.status === 'publish')
     .slice(0, 6);

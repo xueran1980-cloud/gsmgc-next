@@ -146,6 +146,16 @@ export async function clientFetchProducts(): Promise<Product[]> {
       return [];
     }
     const data: Product[] = await res.json();
+    // Fix image URLs: replace gsmgc.es with api.gsmgc.es (images are on WP server)
+    for (const p of data) {
+      if (p.images) {
+        for (const img of p.images) {
+          if (img.src && img.src.startsWith('https://gsmgc.es/')) {
+            img.src = img.src.replace('https://gsmgc.es/', 'https://api.gsmgc.es/');
+          }
+        }
+      }
+    }
     _productsCache = data;
     return data;
   } catch (err) {
