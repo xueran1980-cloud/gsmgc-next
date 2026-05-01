@@ -1,3 +1,5 @@
+// GSMGC Product Detail Page
+// Route: /producto/[id]/[slug]
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
