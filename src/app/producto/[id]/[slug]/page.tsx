@@ -142,9 +142,9 @@ export default async function ProductPage({ params }: PageProps) {
     .filter(p => p.categories?.[0]?.id === categoryId && p.id !== parseInt(id) && p.status === 'publish')
     .slice(0, 6);
 
-  // WhatsApp message
+  // WhatsApp message - aligned with old site
   const waMsg = encodeURIComponent(
-    `Hola, estoy interesado en el producto: ${product.name} (SKU: ${product.sku || 'N/A'}) - ${canonicalUrl}`
+    `Hola! Me interesa este producto:\n\n📱 ${(product.name || 'Producto')}\n💰 Precio: €${(product.price || '0')}\n🔗 ${canonicalUrl}\n\n¿Tienen stock disponible?`
   );
 
   // Clean description for JSON-LD
@@ -295,7 +295,7 @@ export default async function ProductPage({ params }: PageProps) {
             {/* Description */}
             {product.description && (
               <div className="border-t border-gray-100 pt-6">
-                <h2 className="font-bold text-base mb-3 text-gray-900">Descripción del producto</h2>
+                <h3 className="font-bold text-base mb-3 text-gray-900">Descripción del producto</h3>
                 <div
                   className="text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none"
                   dangerouslySetInnerHTML={{ __html: product.description }}
