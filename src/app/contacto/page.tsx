@@ -43,7 +43,7 @@ const contacts = [
     icon: Phone,
     label: 'Teléfono',
     value: '688 560 560',
-    sub: 'Lunes a viernes, 9:00 – 18:00',
+    sub: 'Lunes a viernes, 10:00 – 14:00',
     href: 'tel:+34688560560',
     color: 'bg-blue-50 border-blue-200',
     btnClass: 'bg-[#2563eb] hover:bg-[#1d4ed8]',
