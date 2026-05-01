@@ -63,42 +63,6 @@ const FALLBACK_TYPE_PATTERNS: FallbackTypePattern[] = [
     patterns: [/\bplaca\s+(de\s+)?carga\s+/i, /\bflex\s+(main\s+para|de\s+carga\s+)/i] },
 ];
 
-// ─── 统一排序函数（对齐现站 WooCommerce 排序逻辑）─────────
-// 所有产品数据在渲染前必须经过此函数处理
-function sortProducts(
-  products: Product[],
-  orderby: string = 'price',
-  order: string = 'desc'
-): Product[] {
-  const list = [...products];
-  const mult = order === 'asc' ? 1 : -1;
-
-  switch (orderby) {
-    case 'price':
-      return list.sort((a, b) =>
-        mult * (parseFloat(a.price || '0') - parseFloat(b.price || '0'))
-      );
-
-    case 'title':
-      return list.sort((a, b) =>
-        mult * a.name.localeCompare(b.name, 'es')
-      );
-
-    case 'popularity':
-      return list.sort((a, b) =>
-        mult * ((a.total_sales || 0) - (b.total_sales || 0))
-      );
-
-    case 'date':
-      return list.sort((a, b) =>
-        mult * (new Date(b.date_created).getTime() - new Date(a.date_created).getTime())
-      );
-
-    default:
-      return list;
-  }
-}
-
 // ─── 辅助函数（对齐旧站）─────────────────────────────────────
 
 /**
@@ -165,26 +129,6 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Client-side fetch products + categories (like old site SPA behavior)
-  // ★ products 载入后经过 sortProducts() 统一排序后再入 state
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    Promise.all([
-      clientFetchProducts(),
-      clientFetchCategories(),
-    ]).then(([prods, cats]) => {
-      if (!cancelled) {
-        // ★ 终极修复：useEffect 只负责 setProducts 原始数据
-        // 排序完全由 useMemo 控制，不允许任何初始化 override
-        setProducts(prods);
-        setCategories(cats);
-        setLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, []);
-
   // Read params from URL — 对齐旧站默认值：price-desc
   const categoryParam = searchParams.get('category') || '';
   const searchParam = searchParams.get('search') || '';
@@ -192,13 +136,11 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
   const productType = searchParams.get('type') || ''; // ★ 配件类型筛选
   const orderby = searchParams.get('orderby');
   const order = searchParams.get('order');
-
-  // ★ 终极修复：删除 searchParams 对默认排序的影响
-  // 默认永远 price-desc，不允许任何初始化 override
+  // ★ 终极修复：finalOrderby/finalOrder 是唯一排序源（对齐旧站默认 price-desc）
   const finalOrderby = orderby || 'price';
   const finalOrder = order || 'desc';
 
-  // ★ updateParam — 对齐旧站行为：清除 page + scrollTo(0,0)
+  // ★ 参数透传给 /api/products（后端处理排序/筛选）
   const updateParam = useCallback((key: string, val: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (val) params.set(key, val);
@@ -214,6 +156,37 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
     router.push(pathname, { scroll: false });
     window.scrollTo(0, 0);
   }, [router, pathname]);
+
+  // ★ useEffect：从 /api/products 获取产品（所有参数透传给后端）
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    // 构建 API 参数（透传给 WC REST API 或服务端过滤）
+    const params = new URLSearchParams();
+    if (finalOrderby) params.set('orderby', finalOrderby);
+    if (finalOrder) params.set('order', finalOrder);
+    if (categoryParam) params.set('category', categoryParam);
+    if (searchParam) params.set('search', searchParam);
+    if (productType) params.set('type', productType); // ★ 方案 B：传 type 给服务端
+    params.set('per_page', String(PER_PAGE));
+    params.set('page', String(pageParam));
+
+    Promise.all([
+      fetch(`/api/products?${params.toString()}`).then(r => r.json()),
+      fetch('/api/categories').then(r => r.json()),
+    ]).then(([prods, cats]) => {
+      if (!cancelled) {
+        setProducts(prods || []);
+        setCategories(cats || []);
+        setLoading(false);
+      }
+    }).catch(err => {
+      console.error('[TiendaClient] fetch error:', err);
+      if (!cancelled) setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [finalOrderby, finalOrder, categoryParam, searchParam, pageParam, productType]); // ★ 加 productType
 
   // ★ activeCategory — 同时匹配 id 和 slug（对齐旧站）
   const activeCategory = categories.find(c =>
@@ -313,85 +286,15 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
     setComputedTypeCounts(counts);
   }, [products, typeCategories, categories]);
 
-  // Filter + sort + paginate（对齐旧站的完整过滤逻辑）
+
+  // ★ result 对象（统一分页计算，对齐旧站）
   const result = useMemo(() => {
-    let filtered = [...products];
-
-    // ── 阶段1: 品牌过滤（对齐旧站：slug 精确匹配 + 模糊匹配）──
-    if (categoryParam) {
-      const brandLower = categoryParam.toLowerCase();
-      const brandUpper = categoryParam.toUpperCase();
-      const isShortBrand = brandUpper.length < 3; // 短品牌名跳过模糊匹配
-      filtered = filtered.filter(p => {
-        // 精确匹配分类名或 slug
-        const catMatch = (p.categories || []).some(c =>
-          (c.name || '').toLowerCase() === brandLower ||
-          (c.slug || '').toLowerCase() === brandLower
-        );
-        if (catMatch) return true;
-        // 模糊匹配 SKU 或产品名中的品牌词（仅品牌名>=3字符时启用）
-        if (!isShortBrand) {
-          if ((p.sku || '').toUpperCase().includes(brandUpper)) return true;
-          if ((p.name || '').toUpperCase().includes(brandUpper)) return true;
-        }
-        return false;
-      });
-    }
-
-    // ── 阶段2: 类型过滤（?type=xxx，对齐旧站）──
-    if (productType) {
-      const typeLower = productType.toLowerCase();
-      filtered = filtered.filter(p => {
-        // 方案A：产品的分类直接匹配（最可靠）
-        const catMatch = (p.categories || []).some(c => {
-          const cSlug = (c.slug || '').toLowerCase();
-          const cName = (c.name || '').toLowerCase();
-          const cId = String(c.id || '');
-          if (cSlug === typeLower || cName === typeLower) return true;
-          if (cSlug.includes(typeLower) || typeLower.includes(cSlug)) return true;
-          if (typeLower === cId) return true;
-          return false;
-        });
-        if (catMatch) return true;
-
-        // 方案B：无品牌杂牌 → fallback 名称模式匹配
-        const brandCats = (categories || []).filter(c => {
-          if (c.parent !== 0) return false;
-          const n = ((c.name || '') as string).toUpperCase().trim();
-          if (EXCLUDED_TOP_CATEGORIES.has(c.name || '')) return false;
-          for (const kw of TYPE_KEYWORDS) { if (n.includes(kw)) return false; }
-          return true;
-        });
-        const brandCatNames = new Set(brandCats.map(c => c.name));
-        if (!hasBrandCategory(p.categories, brandCatNames)) {
-          return matchFallbackType(p.name || '', typeLower);
-        }
-        return false;
-      });
-    }
-
-    // Search filter
-    if (searchParam) {
-      const q = searchParam.toLowerCase();
-      filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(q) ||
-        p.sku?.toLowerCase().includes(q) ||
-        p.description?.toLowerCase().includes(q)
-      );
-    }
-
-    // ★ 统一排序层：filter 后的数据也必须重新 sort
-    // ★ 唯一排序源：finalOrderby + finalOrder（禁止 orderby/order 直接传入）
-    const sorted = sortProducts(filtered, finalOrderby, finalOrder);
-
-    // Paginate
-    const totalCount = sorted.length;
+    const totalCount = products.length;
     const totalPages = Math.ceil(totalCount / PER_PAGE);
-    const page = Math.max(1, Math.min(pageParam, totalPages));
-    const paginated = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-
-    return { paginated, totalCount, totalPages, page };
-  }, [products, categoryParam, productType, searchParam, finalOrderby, finalOrder, pageParam, categories]);
+    const page = Math.max(1, Math.min(pageParam, totalPages || 1));
+    const paginated = products.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+    return { totalCount, totalPages, page, paginated };
+  }, [products, pageParam]);
 
   // Smart page numbers with ellipsis（对齐旧站）
   function renderPagination() {
