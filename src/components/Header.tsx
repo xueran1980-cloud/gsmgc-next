@@ -133,7 +133,7 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
             <img
-              src="https://gsmgc.es/logo.png"
+              src="/logo.png"
               alt="GSMGC"
               className="h-10 w-auto"
               width={40}

@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const desc = product.short_description
     ? product.short_description.replace(/<[^>]*>/g, '').trim().slice(0, 160)
     : `Compra ${product.name} al mayor. SKU: ${product.sku || 'N/A'} para profesionales en Canarias. Envío 24h, garantía 6 meses.`;
-  const ogImage = product.images?.[0]?.src || 'https://gsmgc.es/og-image.png';
+  const ogImage = product.images?.[0]?.src || '/og-image.png';
   const categoryName = product.categories?.[0]?.name || 'Catálogo';
 
   return {
@@ -139,7 +139,7 @@ export default async function ProductPage({ params }: PageProps) {
     '@context': 'https://schema.org/',
     '@type': 'Product',
     name: product.name,
-    image: images.length > 0 ? images.map((img) => img.src) : ['https://gsmgc.es/og-image.png'],
+    image: images.length > 0 ? images.map((img) => img.src) : ['/og-image.png'],
     description: cleanDesc,
     ...(product.sku ? { sku: product.sku } : {}),
     brand: { '@type': 'Brand', name: 'GSMGC' },

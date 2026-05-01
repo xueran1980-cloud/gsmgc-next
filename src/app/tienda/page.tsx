@@ -18,13 +18,13 @@ export const metadata: Metadata = {
     siteName: 'GSMGC Canarias',
     locale: 'es_ES',
     type: 'website',
-    images: [{ url: 'https://gsmgc.es/og-image.png', width: 1200, height: 630 }],
+    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Catálogo | GSMGC Canarias - Accesorios Móviles al Mayor',
     description: 'Catálogo completo de accesorios móviles al mayor: pantallas, fundas, baterías, cargadores y más. Envío 24h Canarias. Precios mayoristas B2B.',
-    images: ['https://gsmgc.es/og-image.png'],
+    images: ['/og-image.png'],
   },
 };
 

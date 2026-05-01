@@ -18,13 +18,13 @@ export const metadata: Metadata = {
     description: "Tu distribuidor de confianza de accesorios móviles en Canarias. Más de 2000 productos para profesionales. Envío rápido a Gran Canaria y Tenerife.",
     type: "website",
     url: "https://gsmgc.es/",
-    images: [{ url: "https://gsmgc.es/logo.png" }],
+    images: [{ url: "/logo.png" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "GSMGC - Mayorista Accesorios Móviles Canarias",
     description: "Mayorista accesorios móviles Canarias. 2000+ productos B2B. Envío 24h.",
-    images: ["https://gsmgc.es/logo.png"],
+    images: ["/logo.png"],
   },
 };
 
@@ -75,7 +75,7 @@ export default async function HomePage() {
             "name": "GSMGC Accesorios Móvil",
             "alternateName": "GSMGC",
             "url": "https://gsmgc.es",
-            "logo": "https://gsmgc.es/logo.png",
+            "logo": "/logo.png",
             "description": "Mayorista B2B de accesorios y repuestos para móviles en Canarias. Más de 2.100 productos con envío en 24h.",
             "address": {
               "@type": "PostalAddress",

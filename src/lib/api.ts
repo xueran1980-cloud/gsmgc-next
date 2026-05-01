@@ -126,7 +126,7 @@ export function formatPrice(priceStr: string): string {
 
 // ---------- 分类数据（与旧站 wc_categories.json 一致） ----------
 
-const CATEGORIES_URL = "https://gsmgc.es/wc_categories.json";
+const CATEGORIES_URL = "/wc_categories.json";
 
 // Export for client-side usage
 export { CATEGORIES_URL };

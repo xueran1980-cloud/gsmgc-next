@@ -24,13 +24,13 @@ export const metadata: Metadata = {
     siteName: "GSMGC",
     title: "GSMGC - Repuestos para Móviles Mayorista B2B | Canarias",
     description: "Tu distribuidor de confianza de accesorios móviles en Canarias. Más de 2000 productos para profesionales. Envío rápido a Gran Canaria y Tenerife.",
-    images: [{ url: "https://gsmgc.es/logo.png" }],
+    images: [{ url: "/logo.png" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "GSMGC - Mayorista Accesorios Móviles Canarias",
     description: "Mayorista accesorios móviles Canarias. 2000+ productos B2B. Envío 24h.",
-    images: ["https://gsmgc.es/logo.png"],
+    images: ["/logo.png"],
   },
   robots: {
     index: true,
