@@ -57,6 +57,19 @@ interface ProductsRawResponse {
 // The JSON response itself won't be cached by Next.js (too large), but CF caches it for 60s.
 
 export async function fetchProducts(): Promise<Product[]> {
+  // Build time: read from local JSON file (no API call, no CF intercept)
+  if (typeof window === 'undefined') {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const filePath = path.join(process.cwd(), 'public', 'wc_products.json');
+      const content = fs.readFileSync(filePath, 'utf-8');
+      return JSON.parse(content);
+    } catch {
+      // Fall through to API fetch
+    }
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15_000); // 15s timeout
 
@@ -64,8 +77,10 @@ export async function fetchProducts(): Promise<Product[]> {
     const res = await fetch(PRODUCTS_API, {
       next: { revalidate: 86400 }, // ISR 24h
       headers: {
-        // Critical: CF Bot Fight Mode blocks requests without User-Agent (error 1010)
-        "User-Agent": "GSMGC-Bot/1.0",
+        // Use real browser UA to bypass CF Bot Fight Mode challenge on Vercel builds
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+        "Accept-Language": "es-ES,es;q=0.9",
       },
       signal: controller.signal,
     });

@@ -86,9 +86,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 // ---------- Data ----------
-
-// 单次获取所有产品，避免重复 fetchProducts() 调用
+// Build-time: read from local JSON (no API call, no CF intercept)
+// Runtime (ISR): stil use fetchProducts() for revalidation
 async function getProductById(id: string): Promise<{ product: Product | null; allProducts: Product[] }> {
+  // Build/SSR: read from public/wc_products.json (committed to repo)
+  if (typeof window === 'undefined') {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const filePath = path.join(process.cwd(), 'public', 'wc_products.json');
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const products: Product[] = JSON.parse(content);
+      const product = products.find((p) => p.id === parseInt(id)) || null;
+      return { product, allProducts: products };
+    } catch (err) {
+      console.warn('[getProductById] Failed to read local file, falling back to API', err);
+    }
+  }
+  // Fallback: fetch from API (runtime or if local file fails)
   const products = await fetchProducts();
   const product = products.find((p) => p.id === parseInt(id)) || null;
   return { product, allProducts: products };
