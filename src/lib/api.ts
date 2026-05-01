@@ -133,21 +133,21 @@ export { CATEGORIES_URL };
 
 // ---------- 客户端数据获取 ----------
 
-// Client-side fetch for TiendaClient (no next: revalidate, used in useEffect)
+// Client-side fetch for TiendaClient (same as old site: read from local JSON)
+let _productsCache: Product[] | null = null;
+let _categoriesCache: ProductCategory[] | null = null;
+
 export async function clientFetchProducts(): Promise<Product[]> {
+  if (_productsCache) return _productsCache;
   try {
-    const res = await fetch(PRODUCTS_API, {
-      headers: {
-        // Critical: CF Bot Fight Mode blocks requests without User-Agent (error 1010)
-        "User-Agent": "GSMGC-Bot/1.0",
-      },
-    });
+    const res = await fetch('/wc_products.json');
     if (!res.ok) {
       console.warn(`[clientFetchProducts] API returned ${res.status}`);
       return [];
     }
-    const data: ProductsRawResponse = await res.json();
-    return data.products;
+    const data: Product[] = await res.json();
+    _productsCache = data;
+    return data;
   } catch (err) {
     console.warn(`[clientFetchProducts] fetch failed:`, err);
     return [];
@@ -155,18 +155,15 @@ export async function clientFetchProducts(): Promise<Product[]> {
 }
 
 export async function clientFetchCategories(): Promise<ProductCategory[]> {
+  if (_categoriesCache) return _categoriesCache;
   try {
-    const res = await fetch(CATEGORIES_URL, {
-      headers: {
-        // Critical: CF Bot Fight Mode blocks requests without User-Agent (error 1010)
-        "User-Agent": "GSMGC-Bot/1.0",
-      },
-    });
+    const res = await fetch('/wc_categories.json');
     if (!res.ok) {
       console.warn(`[clientFetchCategories] API returned ${res.status}`);
       return [];
     }
     const data: ProductCategory[] = await res.json();
+    _categoriesCache = data;
     return data;
   } catch (err) {
     console.warn(`[clientFetchCategories] fetch failed:`, err);
