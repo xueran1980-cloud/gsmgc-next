@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product, ProductCategory } from '@/lib/api';
@@ -22,85 +22,11 @@ const EXCLUDED_TOP_CATEGORIES = new Set([
   'Otros', 'Misc', 'Varios', 'OP',
 ]);
 
-const TYPE_KEYWORDS = [
-  'ACCESORIOS', 'AUDIO', 'BATERIA', 'BATERIAS', 'BAT', 'CABLE', 'CABLES',
-  'CARGADOR', 'CARGADORES', 'FUNDAS', 'FUNDA', 'HERRAMIENTAS',
-  'HERRAMIENTA', 'CAMARA', 'CAMARAS', 'PANTALLA', 'PANTALLAS',
-  'PLACA', 'FLEX', 'PROTECTOR', 'PROTECTORES',
-];
-
-const TYPE_ICON_MAP: Record<string, string> = {
-  'bateria': '\u{1F50B}', 'baterias': '\u{1F50B}', 'bat': '\u{1F50B}',
-  'cable': '\u{1F50C}', 'cables': '\u{1F50C}',
-  'cargador': '\u{1F50C}', 'cargadores': '\u{1F50C}',
-  'funda': '\u{1F4F1}', 'fundas': '\u{1F4F1}',
-  'pantalla': '\u{1F4FA}', 'pantallas': '\u{1F4FA}',
-  'protector': '\u{1F6E1}', 'protectores': '\u{1F6E1}',
-  'audifono': '\u{1F3A7}', 'auricular': '\u{1F3A7}', 'auriculares': '\u{1F3A7}', 'audio': '\u{1F3A7}',
-  'camara': '\u{1F4F8}', 'camaras': '\u{1F4F8}',
-  'placa': '\u{1F527}', 'flex': '\u{1F527}',
-  'herramienta': '\u{1F6E0}', 'herramientas': '\u{1F6E0}',
-  'accesorio': '\u{1F4E6}', 'accesorios': '\u{1F4E6}',
-};
-
-// ─── 配件类型硬编码规则（仅用于杂牌产品名模糊匹配兜底）─────────
-interface FallbackTypePattern {
-  slug: string;
-  label: string;
-  icon: string;
-  patterns: RegExp[];
-}
-
-const FALLBACK_TYPE_PATTERNS: FallbackTypePattern[] = [
-  { slug: 'cables-cargadores', label: 'Cables y Cargadores', icon: '\u{1F50C}',
-    patterns: [/\bcable\s+(type[ -]?c|lightning|usb[- ]?c)\s+/i, /\bcable\s+(datos|carga)\s+/i, /\bcargador\s+(type[ -]?c\s+to\s+lightning|con\s+cable|red|pared)/i] },
-  { slug: 'auriculares', label: 'Auriculares', icon: '\u{1F3A7}',
-    patterns: [/\bauricular(es)?\s*(bluetooth|\s*stereo)?$/i, /\baud[i\u00ED]fono(s)?\s*$/i] },
-  { slug: 'camaras', label: 'C\u00e1maras', icon: '\u{1F4F8}',
-    patterns: [/\bcamara\s+(trasera|frontal|original|compatib)/i, /\blente\s+de\s+camara\b/i] },
-  { slug: 'placas-flex', label: 'Placas / Flex', icon: '\u{1F527}',
-    patterns: [/\bplaca\s+(de\s+)?carga\s+/i, /\bflex\s+(main\s+para|de\s+carga\s+)/i] },
-];
-
-// ─── 辅助函数（对齐旧站）─────────────────────────────────────
-
-/**
- * 判断产品是否匹配某个 fallback 类型的名称模式
- */
-function matchFallbackType(productName: string, typeSlug: string): boolean {
-  const typeDef = FALLBACK_TYPE_PATTERNS.find(t => t.slug === typeSlug);
-  if (!typeDef) return false;
-  return typeDef.patterns.some(p => p.test(productName));
-}
-
-/**
- * 判断产品是否有品牌分类（即：属于某个品牌，不是杂牌）
- */
-function hasBrandCategory(
-  productCategories?: ProductCategory[],
-  brandCatNames?: Set<string>,
-): boolean {
-  if (!productCategories || !brandCatNames) return false;
-  return productCategories.some(c => brandCatNames.has(c.name || ''));
-}
-
-/**
- * 获取类型图标
- */
-function getTypeIcon(name: string): string {
-  const n = (name || '').toLowerCase().trim();
-  for (const [key, icon] of Object.entries(TYPE_ICON_MAP)) {
-    if (n.includes(key)) return icon;
-  }
-  return '\u{1F4E6}';
-}
-
 /**
  * 搜索关键词高亮（对齐旧站）
  */
 function HighlightText({ text, highlight }: { text: string; highlight: string }) {
   if (!highlight || !text) return <>{text}</>;
-  // 安全：截断超长搜索词，防止 ReDoS 攻击
   const safeHighlight = highlight.slice(0, 100);
   const escaped = safeHighlight.replace(/[.*+?^${}|()[\]\\]/g, '\\$&');
   try {
@@ -132,10 +58,8 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
   const categoryParam = searchParams.get('category') || '';
   const searchParam = searchParams.get('search') || '';
   const pageParam = Math.max(1, parseInt(searchParams.get('page') || '1'));
-  const productType = searchParams.get('type') || ''; // ★ 配件类型筛选
   const orderby = searchParams.get('orderby');
   const order = searchParams.get('order');
-  // ★ 终极修复：finalOrderby/finalOrder 是唯一排序源（对齐旧站默认 price-desc）
   const finalOrderby = orderby || 'price';
   const finalOrder = order || 'desc';
 
@@ -147,7 +71,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
     params.delete('page');
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-    window.scrollTo(0, 0); // ★ 对齐旧站
+    window.scrollTo(0, 0);
   }, [searchParams, pathname, router]);
 
   // ★ resetFilters — 清除所有筛选
@@ -161,13 +85,11 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
     let cancelled = false;
     setLoading(true);
 
-    // 构建 API 参数（透传给 WC REST API 或服务端过滤）
     const params = new URLSearchParams();
     if (finalOrderby) params.set('orderby', finalOrderby);
     if (finalOrder) params.set('order', finalOrder);
     if (categoryParam) params.set('category', categoryParam);
     if (searchParam) params.set('search', searchParam);
-    if (productType) params.set('type', productType); // ★ 方案 B：传 type 给服务端
     params.set('per_page', String(PER_PAGE));
     params.set('page', String(pageParam));
 
@@ -185,7 +107,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
       if (!cancelled) setLoading(false);
     });
     return () => { cancelled = true; };
-  }, [finalOrderby, finalOrder, categoryParam, searchParam, pageParam, productType]); // ★ 加 productType
+  }, [finalOrderby, finalOrder, categoryParam, searchParam, pageParam]);
 
   // ★ activeCategory — 同时匹配 id 和 slug（对齐旧站）
   const activeCategory = categories.find(c =>
@@ -193,39 +115,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
     (c.slug || '').toLowerCase() === categoryParam.toLowerCase()
   );
 
-  // ★ 图标映射使用文件级 TYPE_ICON_MAP 常量
-
-  // ★ 动态提取配件类型分类（对齐旧站）
-  const typeCategories = useMemo(() => {
-    const topLevelTypes = (categories || []).filter(c => {
-      if (c.parent !== 0) return false;
-      if ((c.count ?? 0) <= 0) return false;
-      const nameRaw = (c.name || '').trim();
-      const n = nameRaw.toUpperCase();
-      if (EXCLUDED_TOP_CATEGORIES.has(nameRaw) || EXCLUDED_TOP_CATEGORIES.has(n)) return false;
-      if (KNOWN_BRANDS.has(n)) return false;
-      for (const kw of TYPE_KEYWORDS) {
-        if (n.includes(kw)) return true;
-      }
-      return false;
-    });
-    const childTypes = (categories || []).filter(c => c.parent !== 0 && (c.count ?? 0) > 0);
-    const allTypes = [...topLevelTypes, ...childTypes];
-    const seen = new Set();
-    return allTypes
-      .filter(c => { if (seen.has(c.id)) return false; seen.add(c.id); return true; })
-      .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
-  }, [categories]);
-
-  // ★ activeType: 仅当用户明确选择了类型筛选时才有值（URL 有 ?type=）
-  const activeType = productType
-    ? [...(typeCategories || []), ...FALLBACK_TYPE_PATTERNS].find(t =>
-        (t.slug || '').toLowerCase() === productType.toLowerCase() ||
-        ('name' in t && (t as ProductCategory).name?.toLowerCase() === productType.toLowerCase())
-      )
-    : null;
-
-  // 分离品牌和配件类型 — 只把真正的品牌放 Marcas，按数量降序排列（对齐旧站）
+  // 分离品牌 — 只把真正的品牌放 Marcas，按数量降序排列（对齐旧站）
   const brandCategories = [...categories]
     .filter(c => {
       if (c.parent !== 0 || (c.count ?? 0) <= 0) return false;
@@ -235,56 +125,13 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
       // ❌ 排除 "Sin categorizar" / "Uncategorized"
       if (EXCLUDED_TOP_CATEGORIES.has(nameRaw) || EXCLUDED_TOP_CATEGORIES.has(n)) return false;
 
-      // ✅ 白名单：已知品牌直接通过（IPHONE/IPAD 都在这里）
+      // ✅ 白名单：已知品牌直接通过
       if (KNOWN_BRANDS.has(n)) return true;
 
-      // ❌ 黑名单：包含产品类型关键词的 → 移到 Tipo de Producto 区域
-      for (const kw of TYPE_KEYWORDS) {
-        if (n.includes(kw)) return false;
-      }
-
-      // 兜底：其他未知的顶级分类保留为品牌（老板以后加的新品牌）
+      // 兜底：其他未知的顶级分类保留为品牌
       return true;
     })
-    .sort((a, b) => (b.count ?? 0) - (a.count ?? 0)); // ★ 按数量从多到少排列
-
-  // ─── 延迟计算各类型的产品数量（对齐旧站）──
-  const [computedTypeCounts, setComputedTypeCounts] = useState<Record<string, number>>({});
-  const computedCountsInitRef = useRef(false);
-
-  useEffect(() => {
-    // Only run once when products and typeCategories are ready
-    if (!products.length || !typeCategories.length || computedCountsInitRef.current) return;
-    computedCountsInitRef.current = true;
-
-    // Build brand cat names set for fallback filtering
-    const brandCats = (categories || []).filter(c => {
-      if (c.parent !== 0) return false;
-      const nameRaw = (c.name || '').trim();
-      const n = nameRaw.toUpperCase().trim();
-      if (EXCLUDED_TOP_CATEGORIES.has(nameRaw) || EXCLUDED_TOP_CATEGORIES.has(n)) return false;
-      for (const kw of TYPE_KEYWORDS) { if (n.includes(kw)) return false; }
-      return true;
-    });
-    const brandCatNames = new Set(brandCats.map(c => c.name));
-
-    const counts: Record<string, number> = {};
-    for (const tc of typeCategories) {
-      counts[tc.slug] = products.filter(p =>
-        (p.categories || []).some(c =>
-          c.id === tc.id ||
-          (c.name || '').toLowerCase() === (tc.name || '').toLowerCase() ||
-          (c.slug || '').toLowerCase() === (tc.slug || '').toLowerCase()
-        )
-      ).length;
-    }
-    const miscProducts = products.filter(p => !hasBrandCategory(p.categories, brandCatNames));
-    for (const ft of FALLBACK_TYPE_PATTERNS) {
-      counts[ft.slug] = miscProducts.filter(p => matchFallbackType(p.name || '', ft.slug)).length;
-    }
-    setComputedTypeCounts(counts);
-  }, [products, typeCategories, categories]);
-
+    .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
 
   // ★ result 对象（统一分页计算，对齐旧站）
   const result = useMemo(() => {
@@ -344,7 +191,6 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
 
             <div className="flex items-center gap-3">
               {/* Sort — 对齐旧站选项顺序：price-desc first */}
-              {/* ★ 终极修复：select value 必须用 finalOrderby/finalOrder（唯一排序源）*/}
               <select
                 value={`${finalOrderby}-${finalOrder}`}
                 onChange={e => {
@@ -376,25 +222,17 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex gap-6">
-          {/* Sidebar filters (desktop) — 1:1 对齐旧站：Marcas + Tipo de Producto */}
+          {/* Sidebar filters (desktop) — 仅保留 Marcas */}
           <aside className="hidden lg:block w-60 shrink-0">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sticky top-[calc(var(--header-offset,64px)+1rem)]">
-              {/* ── Marcas（品牌）— 对齐旧站 ── */}
+              {/* ── Marcas（品牌）─ ─ */}
               <div className="mb-5">
                 <h3 className="font-bold text-sm text-gray-800 mb-2.5 tracking-tight">Marcas</h3>
                 <div className="flex flex-wrap gap-1.5 mb-3 max-h-[calc(100vh-18rem)] overflow-y-auto pr-0.5 scrollbar-thin">
                   <button
-                    onClick={() => {
-                      updateParam('category', '');
-                      // Also clear type + search
-                      const params = new URLSearchParams(searchParams.toString());
-                      params.delete('type'); params.delete('search');
-                      const qs = params.toString();
-                      router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-                      window.scrollTo(0, 0);
-                    }}
+                    onClick={() => resetFilters()}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 ${
-                      !categoryParam && !productType
+                      !categoryParam
                         ? 'bg-[#2563eb] text-white shadow-md shadow-blue-200 scale-105'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
@@ -409,10 +247,10 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                         key={brand.id}
                         onClick={() => {
                           updateParam('category', brandSlug);
-                          // ★ 切换品牌时清除 type 和 search（对齐旧站）
+                          // ★ 切换品牌时清除 search（对齐旧站）
                           const params = new URLSearchParams(searchParams.toString());
                           params.set('category', brandSlug);
-                          params.delete('type'); params.delete('page'); params.delete('search');
+                          params.delete('page'); params.delete('search');
                           const qs = params.toString();
                           router.push(`${pathname}?${qs}`, { scroll: false });
                           window.scrollTo(0, 0);
@@ -440,107 +278,6 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                     >Limpiar</button>
                   </p>
                 )}
-                {productType && !categoryParam && (
-                  <p className="text-[11px] text-purple-600 font-medium flex items-center gap-1 mt-2">
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
-                    <span className="capitalize">{productType.replace(/-/g, ' ')}</span>
-                    <button
-                      onClick={() => resetFilters()}
-                      className="ml-auto underline hover:no-underline"
-                    >Limpiar</button>
-                  </p>
-                )}
-              </div>
-
-              {/* 分隔线 */}
-              <div className="border-t border-gray-100 my-4" />
-
-              {/* ── Tipo de Producto（动态配件类型 + fallback）— 对齐旧站 ── */}
-              <div>
-                <h3 className="font-bold text-sm text-purple-700 mb-2.5 tracking-tight flex items-center gap-1.5">
-                  <span>{'\u{1F4CB}'}</span> Tipo de Producto
-                </h3>
-                <div className="max-h-[320px] overflow-y-auto pr-0.5 scrollbar-thin space-y-2">
-                  {/* 动态类型分类（来自 wc_categories.json）*/}
-                  {(typeCategories || []).map(tc => {
-                    const isActive = (tc.slug || '').toLowerCase() === (productType || '').toLowerCase();
-                    const count = computedTypeCounts[tc.slug] || 0;
-                    if (count === 0 && !isActive) return null;
-                    return (
-                      <button
-                        key={`tc-${tc.id}`}
-                        onClick={() => {
-                          if (isActive) {
-                            updateParam('type', '');
-                            const params = new URLSearchParams(searchParams.toString());
-                            params.delete('type'); params.delete('page'); params.delete('search');
-                            const qs = params.toString();
-                            router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-                          } else {
-                            updateParam('type', tc.slug);
-                            // ★ 切换类型时清除 category 和 search（对齐旧站）
-                            const params = new URLSearchParams(searchParams.toString());
-                            params.set('type', tc.slug);
-                            params.delete('category'); params.delete('page'); params.delete('search');
-                            const qs = params.toString();
-                            router.push(`${pathname}?${qs}`, { scroll: false });
-                          }
-                          window.scrollTo(0, 0);
-                        }}
-                        className={`w-full text-left px-2.5 py-2 rounded-xl transition-all duration-200 flex items-center gap-2 ${
-                          isActive
-                            ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
-                            : 'bg-gray-50 text-gray-600 hover:bg-purple-50 hover:text-purple-700'
-                        }`}
-                        title={`${tc.name} — ${count} productos`}
-                      >
-                        <span className="text-base leading-none shrink-0">{getTypeIcon(tc.name)}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[11px] font-medium truncate leading-tight">{tc.name}</div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                  {/* Fallback 类型（杂牌产品名称匹配，仅当有数量时显示） */}
-                  {FALLBACK_TYPE_PATTERNS.map(ft => {
-                    // 如果已有同 slug 的动态分类则跳过
-                    if ((typeCategories || []).some(tc => tc.slug === ft.slug)) return null;
-                    const isActive = ft.slug === productType;
-                    const count = computedTypeCounts[ft.slug] || 0;
-                    if (count === 0 && !isActive) return null;
-                    return (
-                      <button
-                        key={`fb-${ft.slug}`}
-                        onClick={() => {
-                          if (isActive) {
-                            updateParam('type', '');
-                          } else {
-                            updateParam('type', ft.slug);
-                          }
-                          // ★ 清除 category 和 search
-                          const params = new URLSearchParams(searchParams.toString());
-                          if (!isActive) params.set('type', ft.slug);
-                          else params.delete('type');
-                          params.delete('category'); params.delete('page'); params.delete('search');
-                          const qs = params.toString();
-                          router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-                          window.scrollTo(0, 0);
-                        }}
-                        className={`w-full text-left px-2.5 py-2 rounded-xl transition-all duration-200 flex items-center gap-2 ${
-                          isActive
-                            ? 'bg-purple-600 text-white shadow-md shadow-purple-200'
-                            : 'bg-gray-50 text-gray-500 hover:bg-purple-50 hover:text-purple-700 text-xs italic'
-                        }`}
-                        title={`${ft.label} — ${count} productos (misc)`}
-                      >
-                        <span className="text-base leading-none shrink-0">{ft.icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[11px] font-medium truncate leading-tight">{ft.label}</div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
               </div>
 
               {/* 快速统计（对齐旧站格式） */}
@@ -559,10 +296,8 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
               {searchParam
                 ? <>Resultados para <span className="text-[#2563eb]">"<HighlightText text={searchParam} highlight={searchParam} />"</span></>
                 : activeCategory
-                  ? `${activeCategory.name}` // ★ 无后缀（对齐旧站）
-                  : activeType
-                    ? `${('name' in activeType && (activeType as ProductCategory).name) || (activeType as FallbackTypePattern).label}`
-                    : 'Catálogo de Accesorios Móviles al Mayor'}
+                  ? `${activeCategory.name}`
+                  : 'Catálogo de Accesorios Móviles al Mayor'}
             </h1>
 
             {loading ? (
@@ -578,7 +313,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
               </div>
             ) : result.paginated.length === 0 ? (
               <div className="text-center py-20">
-                <div className="text-6xl mb-4">{'\u{1F50D}'}</div>
+                <div className="text-6xl mb-4">{'🔍'}</div>
                 <h2 className="text-xl font-bold text-gray-800 mb-2">No se encontraron productos</h2>
                 <p className="text-gray-500 mb-4">Prueba con otros filtros o categorías</p>
                 <button
@@ -629,7 +364,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
         </div>
       </div>
 
-      {/* ★ Mobile bottom sheet filter drawer（对齐旧站完整实现） */}
+      {/* ★ Mobile bottom sheet filter drawer（仅保留 Marcas） */}
       {filterOpen && (
         <div className="lg:hidden fixed inset-0 z-50">
           {/* Backdrop */}
@@ -666,7 +401,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                       window.scrollTo(0, 0);
                     }}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all ${
-                      !categoryParam && !productType ? 'bg-[#2563eb] text-white' : 'bg-gray-100 text-gray-600'
+                      !categoryParam ? 'bg-[#2563eb] text-white' : 'bg-gray-100 text-gray-600'
                     }`}
                   >Todas</button>
                   {brandCategories.map(brand => {
@@ -678,7 +413,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                         onClick={() => {
                           const params = new URLSearchParams(searchParams.toString());
                           params.set('category', brandSlug);
-                          params.delete('type'); params.delete('page'); params.delete('search');
+                          params.delete('page'); params.delete('search');
                           const qs = params.toString();
                           router.push(`${pathname}?${qs}`, { scroll: false });
                           setFilterOpen(false);
@@ -688,68 +423,6 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                           isActive ? 'bg-[#2563eb] text-white' : 'bg-gray-50 text-gray-600 hover:bg-blue-50'
                         }`}
                       >{brand.name}</button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Tipo de Producto section（mobile） */}
-              <div>
-                <h4 className="font-semibold text-xs text-purple-600 uppercase tracking-wider mb-2.5">Tipo de Producto</h4>
-                <div className="space-y-1.5">
-                  {(typeCategories || []).map(tc => {
-                    const isActive = (tc.slug || '').toLowerCase() === (productType || '').toLowerCase();
-                    const count = computedTypeCounts[tc.slug] || 0;
-                    if (count === 0 && !isActive) return null;
-                    return (
-                      <button
-                        key={`m-${tc.id}`}
-                        onClick={() => {
-                          const params = new URLSearchParams(searchParams.toString());
-                          if (isActive) params.delete('type');
-                          else { params.set('type', tc.slug); params.delete('category'); }
-                          params.delete('page'); params.delete('search');
-                          const qs = params.toString();
-                          router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-                          setFilterOpen(false);
-                          window.scrollTo(0, 0);
-                        }}
-                        className={`w-full text-left px-3 py-2.5 rounded-xl transition-all flex items-center gap-2.5 ${
-                          isActive ? 'bg-purple-600 text-white' : 'bg-gray-50 text-gray-600 hover:bg-purple-50'
-                        }`}
-                      >
-                        <span>{getTypeIcon(tc.name)}</span>
-                        <span className="text-[13px] font-medium">{tc.name}</span>
-                        <span className={`ml-auto text-[11px] ${isActive ? 'text-purple-200' : 'text-gray-400'}`}>{count}</span>
-                      </button>
-                    );
-                  })}
-                  {FALLBACK_TYPE_PATTERNS.map(ft => {
-                    if ((typeCategories || []).some(tc => tc.slug === ft.slug)) return null;
-                    const isActive = ft.slug === productType;
-                    const count = computedTypeCounts[ft.slug] || 0;
-                    if (count === 0 && !isActive) return null;
-                    return (
-                      <button
-                        key={`mf-${ft.slug}`}
-                        onClick={() => {
-                          const params = new URLSearchParams(searchParams.toString());
-                          if (isActive) params.delete('type');
-                          else { params.set('type', ft.slug); params.delete('category'); }
-                          params.delete('page'); params.delete('search');
-                          const qs = params.toString();
-                          router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-                          setFilterOpen(false);
-                          window.scrollTo(0, 0);
-                        }}
-                        className={`w-full text-left px-3 py-2.5 rounded-xl transition-all flex items-center gap-2.5 ${
-                          isActive ? 'bg-purple-600 text-white' : 'bg-gray-50 text-gray-500 hover:bg-purple-50'
-                        }`}
-                      >
-                        <span>{ft.icon}</span>
-                        <span className="text-[13px] font-medium">{ft.label}</span>
-                        <span className={`ml-auto text-[11px] ${isActive ? 'text-purple-200' : 'text-gray-400'}`}>{count}</span>
-                      </button>
                     );
                   })}
                 </div>
