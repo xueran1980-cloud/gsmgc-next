@@ -87,17 +87,38 @@ export async function fetchProducts(): Promise<Product[]> {
 }
 
 // ---------- 服务端获取单个产品 ----------
+// ✅ 修复：增加降级策略
 
 export async function fetchProductById(id: string): Promise<Product | null> {
+  // 策略1：尝试 /api/products/:id
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/products?id=${id}`, {
+        cache: 'no-store',
+        headers: { 'User-Agent': 'GSMGC-Next-Server/1.0' },
+      });
+      if (res.ok) return await res.json();
+    } catch (err) {
+      console.warn('[fetchProductById] /api/products failed, trying proxy...', err);
+    }
+  }
+
+  // 策略2：直连 WordPress 代理，然后按 ID 过滤
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/products?id=${id}`, {
+    const res = await fetch(PROXY_URL, {
       cache: 'no-store',
-      headers: { 'User-Agent': 'GSMGC-Next-Proxy/1.0' },
+      headers: {
+        'User-Agent': 'GSMGC-Next-Proxy/1.0',
+        'Accept': 'application/json',
+      },
     });
     if (!res.ok) return null;
-    return await res.json();
+    const json = await res.json();
+    if (!json.success || !Array.isArray(json.products)) return null;
+    const product = json.products.find((p: Product) => String(p.id) === String(id));
+    return product || null;
   } catch (err) {
-    console.warn('[fetchProductById] fetch failed:', err);
+    console.warn('[fetchProductById] proxy fetch failed:', err);
     return null;
   }
 }
