@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Package, Users, Zap, Percent, ShieldCheck, Truck, RotateCcw, HeadphonesIcon, BadgeCheck, Clock } from "lucide-react";
 
 const STATS = [
-  { value: "2.118", label: "Referencias", icon: Package, color: "text-blue-400" },
+  { value: "2118", label: "Referencias", icon: Package, color: "text-blue-400" },
   { value: "500+", label: "Clientes B2B", icon: Users, color: "text-green-400" },
   { value: "24h", label: "Envío a GC/TF", icon: Zap, color: "text-yellow-400" },
   { value: "7%", label: "IGIC Canarias", icon: Percent, color: "text-orange-400" },

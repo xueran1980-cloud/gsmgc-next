@@ -53,7 +53,7 @@ function MiCuentaContent() {
               <p className="font-semibold mb-1">¿Qué incluye la cuenta B2B?</p>
               <ul className="space-y-1 text-blue-700">
                 <li>✓ Precios mayorista exclusivos</li>
-                <li>✓ Acceso a catálogo completo (2.118 productos)</li>
+                <li>✓ Acceso a catálogo completo (2118 productos)</li>
                 <li>✓ Pedidos con pago por transferencia</li>
                 <li>✓ Historial de pedidos</li>
               </ul>
@@ -162,10 +162,7 @@ function MiCuentaContent() {
         ) : (
           /* ── Login panel ── */
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-            <div className="bg-blue-50 rounded-xl p-4 mb-6 text-sm text-blue-800">
-              <p className="font-semibold mb-1">Acceso de clientes B2B</p>
-              <p>El inicio de sesión te lleva directamente a tu área de cliente en gsmgc.es, donde podrás ver tus pedidos y datos.</p>
-            </div>
+            <h2 className="text-lg font-bold text-gray-900 mb-4 text-center">Accede a tu area de cliente B2B</h2>
 
             <a
               href={`${WP_SITE}/mi-cuenta/`}
@@ -173,32 +170,23 @@ function MiCuentaContent() {
               rel="noopener noreferrer"
               className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold py-3.5 rounded-xl transition shadow-md flex items-center justify-center gap-2 mb-4"
             >
-              <ExternalLink size={16} />
-              Ir a mi cuenta (gsmgc.es)
+              Iniciar sesión
             </a>
 
-            <p className="text-xs text-gray-400 text-center mb-6">
-              Se abrirá tu área de cliente en una nueva pestaña
-            </p>
-
-            <div className="border-t border-gray-100 pt-5 mt-5">
-              <p className="text-sm text-gray-500 text-center mb-3">¿Olvidaste tu contraseña?</p>
+            <div className="border-t border-gray-100 pt-4 mt-4 space-y-3">
               <a
                 href={`${WP_SITE}/mi-cuenta/lost-password/`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full border border-gray-200 hover:bg-gray-50 font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2 text-sm text-gray-700"
+                className="block text-sm text-gray-500 hover:text-[#2563eb] transition text-center"
               >
-                Recuperar contraseña
+                Olvidaste tu contrasena?
               </a>
-            </div>
-
-            <div className="text-center mt-6">
               <button
                 onClick={() => setMode('register')}
-                className="text-sm text-gray-500 hover:text-[#2563eb] transition"
+                className="block w-full text-sm text-gray-500 hover:text-[#2563eb] transition text-center"
               >
-                ¿No tienes cuenta? Regístrate
+                No tienes cuenta? Registrate
               </button>
             </div>
           </div>

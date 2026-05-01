@@ -216,7 +216,7 @@ export default function ContactoPage() {
             <div className="bg-gray-50 rounded-2xl p-6 mb-8 space-y-3">
               {[
                 { icon: MapPin, text: 'Las Palmas de Gran Canaria, Canarias, España' },
-                { icon: Clock, text: 'Lunes a Viernes: 10:00 – 14:00' },
+                { icon: Clock, text: 'Lunes a Viernes: 10:00 – 14:00 (festivos locales cerrado)' },
                 { icon: Phone, text: '688 560 560' },
                 { icon: Mail, text: 'info@gsmgc.es' },
               ].map(({ icon: Icon, text }) => (

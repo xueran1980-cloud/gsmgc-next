@@ -6,8 +6,8 @@ import type { Product } from "@/lib/api";
 import { getProductImage } from "@/lib/api";
 
 const HERO_STATS = [
-  { value: "2.118", label: "Productos" },
-  { value: "27", label: "Categorías" },
+  { value: "2118", label: "Productos" },
+  { value: "30", label: "Categorías" },
   { value: "24h", label: "Envío GC" },
   { value: "6m", label: "Garantía" },
 ];
@@ -166,9 +166,9 @@ export default function Hero({ featuredProducts }: { featuredProducts: Product[]
                       <Star key={i} size={12} className="text-yellow-400 fill-yellow-400" />
                     ))}
                   </div>
-                  <span className="text-white text-xs font-semibold">2.118+ productos</span>
+                  <span className="text-white text-xs font-semibold">2118+ productos</span>
                 </div>
-                <span className="text-blue-300 text-xs">27 categorías · 24h Canarias</span>
+                <span className="text-blue-300 text-xs">30 categorías · 24h Canarias</span>
               </div>
             </div>
 
