@@ -161,19 +161,10 @@ export async function clientFetchProducts(): Promise<Product[]> {
       return [];
     }
     const data: Product[] = await res.json();
-    // Normalize image URLs to relative paths (Next.js rewrite proxies to api.gsmgc.es)
-    // This avoids CF Bot Fight Mode blocking direct api.gsmgc.es requests from the browser
-    for (const p of data) {
-      if (p.images) {
-        for (const img of p.images) {
-          if (img.src) {
-            img.src = img.src
-              .replace('https://api.gsmgc.es/wp-content/uploads/', '/wp-content/uploads/')
-              .replace('https://gsmgc.es/wp-content/uploads/', '/wp-content/uploads/');
-          }
-        }
-      }
-    }
+    // Image URLs are already absolute https://gsmgc.es/wp-content/uploads/...
+    // No normalization needed - gsmgc.es domain is not blocked by CF Bot Fight Mode
+    // (Only api.gsmgc.es is blocked)
+    // Keep URLs as-is for consistency with old site.
     _productsCache = data;
     return data;
   } catch (err) {
