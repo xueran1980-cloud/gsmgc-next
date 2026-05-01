@@ -41,7 +41,7 @@ function filterBrandCategories(categories: ProductCategory[]) {
       }
       return true;
     })
-    .sort((a, b) => b.count - a.count);
+    .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
 }
 
 export default function BrandsSection({ categories }: BrandsSectionProps) {
