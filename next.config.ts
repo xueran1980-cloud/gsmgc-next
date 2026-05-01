@@ -31,9 +31,14 @@ const nextConfig: NextConfig = {
   // WP 后台代理（与现站一致）
   async rewrites() {
     return [
+      // 后台路径（现站已有）
       { source: "/wp-admin/:path*", destination: "https://api.gsmgc.es/wp-admin/:path*" },
       { source: "/wp-login.php", destination: "https://api.gsmgc.es/wp-login.php" },
       { source: "/wp-content/:path*", destination: "https://api.gsmgc.es/wp-content/:path*" },
+      // Edge Proxy 转发（fetchViaEdgeProxy 用）
+      { source: "/api/proxy/:path*", destination: "https://api.gsmgc.es/:path*" },
+      // WP REST API 直连 fallback（directFetchViaWpJson 用）
+      { source: "/wp-json/:path*", destination: "https://api.gsmgc.es/wp-json/:path*" },
     ];
   },
   // 安全头
