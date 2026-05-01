@@ -70,18 +70,33 @@ function sortProducts(
   orderby: string = 'price',
   order: string = 'desc'
 ): Product[] {
+  const list = [...products];
   const mult = order === 'asc' ? 1 : -1;
-  const sorted = [...products];
-  if (orderby === 'price') {
-    sorted.sort((a, b) => mult * (parseFloat(a.price || '0') - parseFloat(b.price || '0')));
-  } else if (orderby === 'title') {
-    sorted.sort((a, b) => mult * a.name.localeCompare(b.name, 'es'));
-  } else if (orderby === 'popularity') {
-    sorted.sort((a, b) => mult * ((a.total_sales || 0) - (b.total_sales || 0)));
-  } else if (orderby === 'date') {
-    sorted.sort((a, b) => mult * (new Date(b.date_created).getTime() - new Date(a.date_created).getTime()));
+
+  switch (orderby) {
+    case 'price':
+      return list.sort((a, b) =>
+        mult * (parseFloat(a.price || '0') - parseFloat(b.price || '0'))
+      );
+
+    case 'title':
+      return list.sort((a, b) =>
+        mult * a.name.localeCompare(b.name, 'es')
+      );
+
+    case 'popularity':
+      return list.sort((a, b) =>
+        mult * ((a.total_sales || 0) - (b.total_sales || 0))
+      );
+
+    case 'date':
+      return list.sort((a, b) =>
+        mult * (new Date(b.date_created).getTime() - new Date(a.date_created).getTime())
+      );
+
+    default:
+      return list;
   }
-  return sorted;
 }
 
 // ─── 辅助函数（对齐旧站）─────────────────────────────────────
