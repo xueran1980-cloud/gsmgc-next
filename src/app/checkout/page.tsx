@@ -70,8 +70,8 @@ export default function CheckoutPage() {
   const [authRetrying, setAuthRetrying] = useState(false);
   // ★ 订单成功数据（从 sessionStorage 恢复）
   const [successData, setSuccessData] = useState<{ orderId: number; paymentMethod: string } | null>(null);
-  // ★ AUTO-RECOVERY: 降级标记 — 订单已接收但WC未确认
-  const [isDegraded, setIsDegraded] = useState(false);
+  // ★ STATE CONSISTENCY: 统一三态 — 前端只消费 success/failed/processing
+  const [orderStatus, setOrderStatus] = useState<'success' | 'failed' | 'processing' | null>(null);
   // ★ v6.3: 防重复提交 — 请求级锁 + 时间窗口
   const [isSubmitting, setIsSubmitting] = useState(false);
   const lastSubmitTime = useRef(0);
@@ -371,13 +371,12 @@ export default function CheckoutPage() {
       });
 
       // Order created successfully — persist success state to sessionStorage
-      // ★ AUTO-RECOVERY: 检测降级标记
+      // ★ STATE CONSISTENCY: 归一化到三态
       const isOrderDegraded = result.degraded === true;
-      if (isOrderDegraded) {
-        console.warn('[AUTO-RECOVERY] ⚠️ Order accepted in degraded mode — pending WC confirmation');
-      }
+      const unifiedStatus: 'success' | 'processing' = isOrderDegraded ? 'processing' : 'success';
+      setOrderStatus(unifiedStatus);
 
-      // ★ ORDER-SAFETY: 数据一致性校验（仅非降级订单有完整数据）
+      // 一致性校验（仅完整订单）
       if (!isOrderDegraded) {
         const wcTotal = result.total ? parseFloat(result.total) : 0;
         const frontendTotal = parseFloat(totalPrice.toFixed(2));
@@ -406,7 +405,6 @@ export default function CheckoutPage() {
       };
       sessionStorage.setItem('gsmgc_order_success', JSON.stringify(orderSuccessData));
       setSuccessData(orderSuccessData);
-      setIsDegraded(isOrderDegraded);
       clearCart();
       setStep('success');
     } catch (err) {
@@ -636,24 +634,25 @@ export default function CheckoutPage() {
 
   // ── Pedido confirmado ──
   if (step === 'success') {
+    const isProcessing = orderStatus === 'processing';
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
         <div className="flex-1 flex items-center justify-center text-center px-4 py-16">
           <div className="max-w-lg w-full bg-white rounded-3xl border border-gray-100 shadow-xl p-10">
             <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
-              isDegraded ? 'bg-amber-100' : 'bg-green-100'
+              isProcessing ? 'bg-amber-100' : 'bg-green-100'
             }`}>
-              {isDegraded ? (
+              {isProcessing ? (
                 <Clock size={40} className="text-amber-500" />
               ) : (
                 <Check size={40} className="text-green-500" />
               )}
             </div>
             <h1 className="text-3xl font-black text-gray-900 mb-2">
-              {isDegraded ? '¡Pedido en proceso!' : '¡Pedido recibido!'}
+              {isProcessing ? '¡Pedido en proceso!' : '¡Pedido recibido!'}
             </h1>
             <p className="text-gray-500 mb-8">
-              {isDegraded
+              {isProcessing
                 ? 'Hemos recibido tu pedido y está pendiente de confirmación. Te notificaremos por email cuando se procese.'
                 : 'Gracias por tu pedido. Te hemos enviado una confirmación por email.'}
             </p>

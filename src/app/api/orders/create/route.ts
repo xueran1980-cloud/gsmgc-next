@@ -10,6 +10,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { recordMetric, classifyError, type ErrorCategory } from '@/lib/order-metrics';
+import { stateSuccess, stateFailed, stateProcessing } from '@/lib/order-state';
 
 // ★ 内存幂等缓存
 const IDEMPOTENCY_CACHE = new Map<string, { status: number; data: unknown; timestamp: number }>();
@@ -126,6 +127,7 @@ export async function POST(request: NextRequest) {
             code: 'DEGRADED_CF_BLOCKED',
           };
           recordRecoveryMetric(startTime, idempotencyKey, errorCategory, retryCount, true, 'degraded');
+          if (idempotencyKey) stateProcessing(idempotencyKey, 'CF_BLOCKED', retryCount);
           console.error(`[AUTO-RECOVERY] ⚠️ Degraded — retries exhausted (${elapsed}ms)`);
           return NextResponse.json(degradedData, {
             status: 200, // 用200让前端走成功路径，但带 degraded flag
@@ -152,9 +154,10 @@ export async function POST(request: NextRequest) {
             idempotencyHit: false, errorCategory: undefined, userId: body.billing?.email,
             idempotencyKey, orderId, retryCount, recoveryApplied, finalStatus });
 
-          // 缓存成功结果
+          // ★ STATE CONSISTENCY: 注册最终状态
           if (idempotencyKey) {
             IDEMPOTENCY_CACHE.set(idempotencyKey, { status: res.status, data, timestamp: Date.now() });
+            stateSuccess(idempotencyKey, orderId);
           }
 
           return NextResponse.json(data, { status: res.status, headers: { 'Cache-Control': 'no-store' } });
@@ -176,6 +179,7 @@ export async function POST(request: NextRequest) {
         errorCategory = classifyError(lastError, lastWcStatus);
         finalStatus = 'failed';
         recordRecoveryMetric(startTime, idempotencyKey, errorCategory, retryCount, false, 'failed');
+        if (idempotencyKey) stateFailed(idempotencyKey, `WC_${lastWcStatus}`, retryCount, recoveryApplied);
         console.error(`[AUTO-RECOVERY] ❌ Failed after ${retryCount} retries [${errorCategory}] WC${lastWcStatus}`);
 
         return NextResponse.json(
@@ -198,6 +202,7 @@ export async function POST(request: NextRequest) {
         errorCategory = classifyError(fetchErr);
         finalStatus = 'degraded';
         recordRecoveryMetric(startTime, idempotencyKey, errorCategory, retryCount, true, 'degraded');
+        if (idempotencyKey) stateProcessing(idempotencyKey, fetchErr.message || 'NETWORK_DEGRADED', retryCount);
 
         const elapsed = Date.now() - startTime;
         console.error(`[AUTO-RECOVERY] ⚠️ Degraded — all ${MAX_RETRIES + 1} attempts failed (${elapsed}ms): ${fetchErr.message}`);
