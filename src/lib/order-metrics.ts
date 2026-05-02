@@ -20,6 +20,10 @@ export interface OrderMetric {
   userId?: string | number;
   idempotencyKey?: string;
   orderId?: number;
+  // ★ AUTO-RECOVERY 字段
+  retryCount: number;
+  recoveryApplied: boolean;
+  finalStatus: 'success' | 'failed' | 'degraded';
 }
 
 export interface AggregatedMetrics {
@@ -35,6 +39,11 @@ export interface AggregatedMetrics {
   p95LatencyMs: number;
   p99LatencyMs: number;
   errorsByCategory: Record<string, number>;
+  // ★ AUTO-RECOVERY 统计
+  totalRetries: number;
+  recoveries: number;
+  degradations: number;
+  recoveryRate: number;
   alerts: Alert[];
 }
 
@@ -111,6 +120,13 @@ export function getAggregatedMetrics(): AggregatedMetrics {
     }
   }
 
+  // ★ AUTO-RECOVERY 统计
+  const totalRetries = metrics.reduce((s, m) => s + m.retryCount, 0);
+  const recoveries = metrics.filter(m => m.recoveryApplied).length;
+  const degradations = metrics.filter(m => m.finalStatus === 'degraded').length;
+  const retriedCount = metrics.filter(m => m.retryCount > 0).length;
+  const recoveryRate = retriedCount > 0 ? (recoveries / retriedCount) * 100 : 0;
+
   return {
     windowSize: WINDOW_SIZE,
     total,
@@ -124,7 +140,11 @@ export function getAggregatedMetrics(): AggregatedMetrics {
     p95LatencyMs: p95,
     p99LatencyMs: p99,
     errorsByCategory,
-    alerts: [...alerts].slice(-10), // 最近10条告警
+    totalRetries,
+    recoveries,
+    degradations,
+    recoveryRate: Math.round(recoveryRate * 100) / 100,
+    alerts: [...alerts].slice(-10),
   };
 }
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Check, Lock, CreditCard, Truck, AlertCircle, User, MapPin, RefreshCw, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Check, Lock, CreditCard, Truck, AlertCircle, User, MapPin, RefreshCw, ShoppingCart, Clock } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { createOrder, stockCheck } from '@/lib/woocommerce';
@@ -70,6 +70,8 @@ export default function CheckoutPage() {
   const [authRetrying, setAuthRetrying] = useState(false);
   // ★ 订单成功数据（从 sessionStorage 恢复）
   const [successData, setSuccessData] = useState<{ orderId: number; paymentMethod: string } | null>(null);
+  // ★ AUTO-RECOVERY: 降级标记 — 订单已接收但WC未确认
+  const [isDegraded, setIsDegraded] = useState(false);
   // ★ v6.3: 防重复提交 — 请求级锁 + 时间窗口
   const [isSubmitting, setIsSubmitting] = useState(false);
   const lastSubmitTime = useRef(0);
@@ -369,45 +371,42 @@ export default function CheckoutPage() {
       });
 
       // Order created successfully — persist success state to sessionStorage
-      // ★ ORDER-SAFETY: 数据一致性校验
-      const wcTotal = result.total ? parseFloat(result.total) : 0;
-      const frontendTotal = parseFloat(totalPrice.toFixed(2));
-      const itemCountMatch = result.line_items ? result.line_items.length === items.length : true;
-      const userIdMatch = result.customer_id ? result.customer_id === latestUser.id : true;
-
-      const consistencyReport = {
-        orderId: result.id || result.order_id,
-        frontendTotal, wcTotal,
-        totalMatch: Math.abs(frontendTotal - wcTotal) < 0.02,
-        itemCountMatch,
-        userIdMatch,
-        frontendItems: items.length, wcItems: result.line_items?.length || 'N/A',
-        frontendUserId: latestUser.id, wcUserId: result.customer_id || 'N/A',
-      };
-
-      console.log('[ORDER-SAFETY] ✅ Order created:', JSON.stringify({
-        ...consistencyReport,
-        wcStatus: result.status,
-        wcTotal: result.total,
-      }, null, 2));
-
-      if (!consistencyReport.totalMatch) {
-        console.warn('[ORDER-SAFETY] ⚠️ TOTAL MISMATCH:', JSON.stringify(consistencyReport));
+      // ★ AUTO-RECOVERY: 检测降级标记
+      const isOrderDegraded = result.degraded === true;
+      if (isOrderDegraded) {
+        console.warn('[AUTO-RECOVERY] ⚠️ Order accepted in degraded mode — pending WC confirmation');
       }
-      if (!consistencyReport.itemCountMatch) {
-        console.warn('[ORDER-SAFETY] ⚠️ ITEM COUNT MISMATCH:', JSON.stringify(consistencyReport));
-      }
-      if (!consistencyReport.userIdMatch) {
-        console.error('[ORDER-SAFETY] 🚨 USER ID MISMATCH — possible cross-account order!', JSON.stringify(consistencyReport));
+
+      // ★ ORDER-SAFETY: 数据一致性校验（仅非降级订单有完整数据）
+      if (!isOrderDegraded) {
+        const wcTotal = result.total ? parseFloat(result.total) : 0;
+        const frontendTotal = parseFloat(totalPrice.toFixed(2));
+        const itemCountMatch = result.line_items ? result.line_items.length === items.length : true;
+        const userIdMatch = result.customer_id ? result.customer_id === latestUser.id : true;
+
+        const consistencyReport = {
+          orderId: result.id || result.order_id,
+          frontendTotal, wcTotal,
+          totalMatch: Math.abs(frontendTotal - wcTotal) < 0.02,
+          itemCountMatch, userIdMatch,
+          frontendItems: items.length, wcItems: result.line_items?.length || 'N/A',
+          frontendUserId: latestUser.id, wcUserId: result.customer_id || 'N/A',
+        };
+        console.log('[ORDER-SAFETY] ✅ Order created:', JSON.stringify({ ...consistencyReport, wcStatus: result.status, wcTotal: result.total }, null, 2));
+        if (!consistencyReport.totalMatch) console.warn('[ORDER-SAFETY] ⚠️ TOTAL MISMATCH:', JSON.stringify(consistencyReport));
+        if (!consistencyReport.itemCountMatch) console.warn('[ORDER-SAFETY] ⚠️ ITEM COUNT MISMATCH:', JSON.stringify(consistencyReport));
+        if (!consistencyReport.userIdMatch) console.error('[ORDER-SAFETY] 🚨 USER ID MISMATCH — possible cross-account order!', JSON.stringify(consistencyReport));
       }
 
       const orderSuccessData = {
         orderId: result.id || result.order_id || Date.now(),
         paymentMethod: paymentMethod,
         timestamp: Date.now(),
+        degraded: isOrderDegraded,
       };
       sessionStorage.setItem('gsmgc_order_success', JSON.stringify(orderSuccessData));
       setSuccessData(orderSuccessData);
+      setIsDegraded(isOrderDegraded);
       clearCart();
       setStep('success');
     } catch (err) {
@@ -641,11 +640,23 @@ export default function CheckoutPage() {
       <div className="min-h-screen flex flex-col bg-gray-50">
         <div className="flex-1 flex items-center justify-center text-center px-4 py-16">
           <div className="max-w-lg w-full bg-white rounded-3xl border border-gray-100 shadow-xl p-10">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Check size={40} className="text-green-500" />
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
+              isDegraded ? 'bg-amber-100' : 'bg-green-100'
+            }`}>
+              {isDegraded ? (
+                <Clock size={40} className="text-amber-500" />
+              ) : (
+                <Check size={40} className="text-green-500" />
+              )}
             </div>
-            <h1 className="text-3xl font-black text-gray-900 mb-2">¡Pedido recibido!</h1>
-            <p className="text-gray-500 mb-8">Gracias por tu pedido. Te hemos enviado una confirmación por email.</p>
+            <h1 className="text-3xl font-black text-gray-900 mb-2">
+              {isDegraded ? '¡Pedido en proceso!' : '¡Pedido recibido!'}
+            </h1>
+            <p className="text-gray-500 mb-8">
+              {isDegraded
+                ? 'Hemos recibido tu pedido y está pendiente de confirmación. Te notificaremos por email cuando se procese.'
+                : 'Gracias por tu pedido. Te hemos enviado una confirmación por email.'}
+            </p>
 
             {paymentMethod === 'bacs' ? (
               <div className="bg-blue-50 rounded-2xl p-5 mb-6 text-left border border-blue-100">
