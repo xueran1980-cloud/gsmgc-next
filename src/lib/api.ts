@@ -1,5 +1,6 @@
 // GSMGC Next.js - 数据获取层
-// ★ v5.3: 本地缓存用动态 import('fs')，避免 Turbopack 打包进客户端 bundle
+// ★ 数据源：全部走 /api/proxy/ → api.gsmgc.es (WooCommerce)
+// ★ 禁止本地缓存、禁止 fs、禁止 SSG
 
 // ---------- 类型定义 ----------
 
@@ -37,70 +38,28 @@ export interface Product {
   min_qty: number;
 }
 
-// ---------- 数据源策略 ----------
+// ---------- 产品数据 ----------
 
+const API_PATH = '/wp-json/gsmgc/v1/products-raw';
 const API_ORIGIN = 'https://api.gsmgc.es';
-const PRODUCTS_PATH = '/wp-json/gsmgc/v1/products-raw';
-const LOCAL_CACHE_FILE = '.products-cache.json';
-
-const SERVER_HEADERS: HeadersInit = {
-  'User-Agent': 'GSMGC-Next-Server/1.0',
-  'Accept': 'application/json',
-};
-
-/**
- * 从本地缓存文件读取产品数据（用于 SSG 构建时）
- * 使用动态 import('fs') 避免 Turbopack 打包进客户端 bundle
- */
-async function readLocalProductsCache(): Promise<Product[] | null> {
-  // 浏览器端永远不执行
-  if (typeof window !== 'undefined') return null;
-  try {
-    const { join } = await import('path');
-    const fs = await import('fs');
-    const cachePath = join(process.cwd(), 'public', LOCAL_CACHE_FILE);
-    if (!fs.existsSync(cachePath)) return null;
-    const raw = fs.readFileSync(cachePath, 'utf-8');
-    const json = JSON.parse(raw);
-    if (json.success && Array.isArray(json.products)) {
-      console.log(`[fetchProducts] Using local cache: ${json.products.length} products`);
-      return json.products;
-    }
-    return null;
-  } catch (err) {
-    console.warn('[fetchProducts] Failed to read local cache:', err);
-    return null;
-  }
-}
 
 function getProductsUrl(): string {
+  // 客户端：走 /api/proxy/ rewrite（浏览器请求）
+  // 服务端：用绝对 URL（Next.js rewrite 在构建时/SSR 时不生效）
   if (typeof window === 'undefined') {
-    // 服务端：直连 api.gsmgc.es（Vercel runtime 不被 CF 拦截）
-    return `${API_ORIGIN}${PRODUCTS_PATH}`;
+    return `${API_ORIGIN}${API_PATH}`;
   }
-  // 客户端：走 /api/proxy（Vercel rewrite）
-  return `/api/proxy${PRODUCTS_PATH}`;
+  return `/api/proxy${API_PATH}`;
 }
 
 export async function fetchProducts(): Promise<Product[]> {
-  // ★ 策略 1：服务端构建时优先读本地缓存
-  if (typeof window === 'undefined') {
-    const localProducts = await readLocalProductsCache();
-    if (localProducts && localProducts.length > 0) {
-      return localProducts;
-    }
-  }
-
-  // ★ 策略 2：fetch 远程数据
   try {
-    const url = getProductsUrl();
-    const isServer = typeof window === 'undefined';
-    const res = await fetch(url, {
+    const res = await fetch(getProductsUrl(), {
       next: { revalidate: 60 },
-      headers: isServer ? SERVER_HEADERS : { 'Accept': 'application/json' },
+      headers: { 'Accept': 'application/json' },
     });
     if (!res.ok) {
-      console.warn(`[fetchProducts] returned ${res.status} from ${isServer ? 'direct' : 'proxy'}`);
+      console.warn(`[fetchProducts] returned ${res.status}`);
       return [];
     }
     const json = await res.json();
@@ -118,29 +77,12 @@ export async function fetchProducts(): Promise<Product[]> {
 // ---------- 服务端获取单个产品 ----------
 
 export async function fetchProductById(id: string): Promise<Product | null> {
-  // ★ 策略 1：服务端构建时优先读本地缓存
-  if (typeof window === 'undefined') {
-    const localProducts = await readLocalProductsCache();
-    if (localProducts && localProducts.length > 0) {
-      return localProducts.find((p: Product) => String(p.id) === String(id)) || null;
-    }
-  }
-
-  // ★ 策略 2：fetch 远程数据
   try {
-    const url = getProductsUrl();
-    const isServer = typeof window === 'undefined';
-    const res = await fetch(url, {
-      next: { revalidate: 60 },
-      headers: isServer ? SERVER_HEADERS : { 'Accept': 'application/json' },
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    if (!json.success || !Array.isArray(json.products)) return null;
-    const product = json.products.find((p: Product) => String(p.id) === String(id));
+    const products = await fetchProducts();
+    const product = products.find((p: Product) => String(p.id) === String(id));
     return product || null;
   } catch (err) {
-    console.warn('[fetchProductById] fetch failed:', err);
+    console.warn('[fetchProductById] failed:', err);
     return null;
   }
 }

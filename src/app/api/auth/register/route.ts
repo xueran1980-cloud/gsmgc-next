@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// ★ v5.1: 服务端绝对 URL
-const REGISTER_URL = 'https://api.gsmgc.es/wp-json/gsmgc/v1/register';
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const res = await fetch(REGISTER_URL, {
+    // ★ 走 /api/proxy/，不直连 api.gsmgc.es
+    const proxyHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'User-Agent': 'GSMGC-Next-Proxy/1.0',
+      'Accept': 'application/json',
+    };
+
+    // ★ 透传 Cookie（如果需要）
+    const cookieHeader = request.headers.get('Cookie');
+    if (cookieHeader) proxyHeaders['Cookie'] = cookieHeader;
+
+    const res = await fetch('/api/proxy/wp-json/gsmgc/v1/register', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'GSMGC-Next-Proxy/1.0',
-        'Accept': 'application/json',
-      },
+      headers: proxyHeaders,
       body: JSON.stringify(body),
     });
 

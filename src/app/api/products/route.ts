@@ -1,11 +1,7 @@
 // Next.js API Route — 代理到 WordPress 自定义端点 /products-raw
-// ★ v5.1: 服务端绝对 URL + User-Agent（绕过 CF Bot Fight Mode）
-//   构建时和运行时都直接连 api.gsmgc.es
+// ★ 全部走 /api/proxy/，不直连 api.gsmgc.es
 
 import { NextRequest, NextResponse } from 'next/server';
-
-// ★ v5.1: 服务端用绝对 URL，相对路径在 build time / Vercel runtime 不可靠
-const WP_PRODUCTS_RAW = 'https://api.gsmgc.es/wp-json/gsmgc/v1/products-raw';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,7 +25,7 @@ export async function GET(request: NextRequest) {
     const cookieHeader = request.headers.get('Cookie');
     if (cookieHeader) proxyHeaders['Cookie'] = cookieHeader;
 
-    const res = await fetch(WP_PRODUCTS_RAW, {
+    const res = await fetch('/api/proxy/wp-json/gsmgc/v1/products-raw', {
       headers: proxyHeaders,
       cache: 'no-store',
     });

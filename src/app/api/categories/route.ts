@@ -1,10 +1,7 @@
 // Next.js API Route — 代理到 WordPress 自定义端点 /categories-raw
-// ★ v5.1: 服务端绝对 URL + User-Agent
+// ★ 全部走 /api/proxy/，不直连 api.gsmgc.es
 
 import { NextRequest, NextResponse } from 'next/server';
-
-// ★ v5.1: 服务端用绝对 URL
-const WP_CATEGORIES_RAW = 'https://api.gsmgc.es/wp-json/gsmgc/v1/categories-raw';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +14,7 @@ export async function GET(request: NextRequest) {
     const cookieHeader = request.headers.get('Cookie');
     if (cookieHeader) proxyHeaders['Cookie'] = cookieHeader;
 
-    const res = await fetch(WP_CATEGORIES_RAW, {
+    const res = await fetch('/api/proxy/wp-json/gsmgc/v1/categories-raw', {
       headers: proxyHeaders,
       cache: 'no-store',
     });

@@ -1,6 +1,7 @@
 // GSMGC Product Detail Page
 // Route: /producto/[id]/[slug]
-// 统一数据源：只从 /api/products?id=<id> 获取实时数据
+// ★ SSR 动态渲染，实时数据（禁止 SSG）
+
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
@@ -18,26 +19,8 @@ import ShareButton from '@/components/ShareButton';
 import ProductDetailActions from './ProductDetailActions';
 import ProductCard from '@/components/ProductCard';
 
-// ---------- Static Params ----------
-// 从 public/product-ids.json 读取（仅用于 build-time 静态生成）
-// 运行时新产品走 ISR
-export const dynamicParams = true;
-
-interface StaticParam { id: string; slug: string }
-
-export async function generateStaticParams(): Promise<StaticParam[]> {
-  try {
-    // ★ 动态 import 避免客户端 bundle 包含 fs
-    const path = await import('path');
-    const fs = await import('fs');
-    const filePath = path.join(process.cwd(), 'public', 'product-ids.json');
-    if (!fs.existsSync(filePath)) return [];
-    const content = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(content);
-  } catch {
-    return [];
-  }
-}
+// ★ 强制动态渲染（SSR），禁止 SSG/SSG
+export const dynamic = 'force-dynamic';
 
 // ---------- Metadata ----------
 
@@ -79,14 +62,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 // ---------- Data ----------
-// 统一从 /api/products?id=<id> 获取实时数据（不再读 JSON）
 
 async function getProductById(id: string): Promise<{ product: Product | null; related: Product[] }> {
   const product = await fetchProductById(id);
   if (!product) return { product: null, related: [] };
 
-  // ★ Related Products：直接从 fetchProducts（本地缓存）获取，不走 /api/products
-  // 避免 cache: 'no-store' 导致整页降级为 Dynamic
+  // Related Products：从 fetchProducts() 获取（服务端走 /api/proxy/）
   let related: Product[] = [];
   const categoryId = product.categories?.[0]?.id;
   if (categoryId) {
