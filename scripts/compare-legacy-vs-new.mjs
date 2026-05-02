@@ -57,20 +57,16 @@ function formatTitle(name, maxChars = 60) {
 }
 
 // Legacy SPA 客户端逻辑模拟（对齐旧站 TiendaPage.jsx）
+// ★ slug only — brand = product_cat 视图，slug 是唯一标准
 function filterByCategory(products, category) {
   if (!category) return products;
-  const catId = parseInt(category);
-  const isNumeric = !isNaN(catId);
   const catSlug = category.toLowerCase().trim();
 
   return products.filter(p => {
     if (!p.categories) return false;
-    return p.categories.some(c => {
-      if (isNumeric && c.id === catId) return true;
-      if (catSlug && c.slug && String(c.slug).toLowerCase() === catSlug) return true;
-      if (catSlug && c.name && String(c.name).toLowerCase() === catSlug) return true;
-      return false;
-    });
+    return p.categories.some(c =>
+      c.slug && String(c.slug).toLowerCase() === catSlug
+    );
   });
 }
 
@@ -118,7 +114,12 @@ function sortProducts(products, orderby = 'popularity', order = 'desc') {
       va = parseFloat(a.price || '0');
       vb = parseFloat(b.price || '0');
     }
-    return order === 'asc' ? va - vb : vb - va;
+    const cmp = order === 'asc' ? va - vb : vb - va;
+    // 二级键：同值按 ID 排序（确定性 tie-break）
+    if (cmp === 0) {
+      return order === 'asc' ? (a.id - b.id) : (b.id - a.id);
+    }
+    return cmp;
   });
 }
 

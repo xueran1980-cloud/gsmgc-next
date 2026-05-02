@@ -49,26 +49,20 @@ function wcSearch(products: any[], query: string): any[] {
 function applyFilters(products: any[], params: FilterParams) {
   const { category, search, page, perPage, orderby, order } = params;
 
-  // 分类过滤 — 三模匹配（ID/slug/name）
+  // ★ 分类过滤 — slug only（brand = product_cat 视图，slug 是唯一标准）
   if (category) {
-    const catId = parseInt(category);
-    const isNumeric = !isNaN(catId);
     const catSlug = category.toLowerCase().trim();
 
     console.log('[FILTER DEBUG]', JSON.stringify({
-      inputCategory: category, isNumeric,
-      catId: isNumeric ? catId : null, catSlug,
+      inputCategory: category, catSlug,
       totalBeforeFilter: products.length,
     }));
 
     products = products.filter((p: any) => {
       if (!p.categories || !Array.isArray(p.categories)) return false;
-      return p.categories.some((c: any) => {
-        if (isNumeric && c.id === catId) return true;
-        if (catSlug && c.slug && String(c.slug).toLowerCase() === catSlug) return true;
-        if (catSlug && c.name && String(c.name).toLowerCase() === catSlug) return true;
-        return false;
-      });
+      return p.categories.some((c: any) =>
+        c.slug && String(c.slug).toLowerCase() === catSlug
+      );
     });
 
     console.log(`[FILTER DEBUG] result: ${products.length} products matched (filtered from ${params.category})`);
@@ -80,7 +74,7 @@ function applyFilters(products: any[], params: FilterParams) {
     console.log(`[SEARCH DEBUG] "${search}" → ${products.length} results`);
   }
 
-  // 排序
+  // 排序（★ 二级键 ID 确保确定性）
   products.sort((a: any, b: any) => {
     let va: any, vb: any;
     if (orderby === 'price') {
@@ -100,7 +94,12 @@ function applyFilters(products: any[], params: FilterParams) {
       va = parseFloat(a.price || '0');
       vb = parseFloat(b.price || '0');
     }
-    return order === 'asc' ? va - vb : vb - va;
+    const cmp = order === 'asc' ? va - vb : vb - va;
+    // ★ 二级键：同值按 ID 排序（确定性 tie-break）
+    if (cmp === 0) {
+      return order === 'asc' ? (a.id - b.id) : (b.id - a.id);
+    }
+    return cmp;
   });
 
   // 分页
