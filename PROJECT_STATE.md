@@ -66,6 +66,7 @@ CSS guard          → 层级扫描+prebuild hook
 deploy control     → dev→master 分支流+pre-push hook
 local dev fixture  → 绕过 SG CAPTCHA 的 dev 模式
 category config    → 统一配置 (category-config.ts)
+display formatting → WC theme 展示对齐 (display-formatter.ts)
 ```
 
 ---
@@ -91,13 +92,16 @@ category config    → 统一配置 (category-config.ts)
 
 ---
 
-## LAST STEP (2026-05-02 16:00)
+## LAST STEP (2026-05-02 16:35)
 
 ```
-✅ 本地全链路验收 13/13 通过
-✅ fixtures 创建 + API routes dev 模式
+✅ display-formatter.ts 创建 + 全部组件对接
+✅ 西班牙语价格格式 (10,50 €)
+✅ SEO excerpt (short_description) 显示
+✅ WC 默认排序 popularity
+✅ WC 风格搜索 (title+SKU 加权)
 ✅ TypeScript 0 错误
-✅ commit 9474f56 推送 dev 分支
+✅ commit 002826a 推送 dev 分支
 ⏳ 等待 Vercel 额度恢复
 ```
 
@@ -118,6 +122,7 @@ category config    → 统一配置 (category-config.ts)
 > 只记录变化，不重复历史。每次状态切换/系统改动追加一条。
 
 ```
+2026-05-02 16:35 | display-formatter 上线 | WC theme 展示逻辑对齐
 2026-05-02 16:30 | MODE: BLOCKED | PROJECT_STATE.md 创建
 2026-05-02 16:00 | fixtures 模式上线 | dev 数据源切换
 2026-05-02 14:00 | MODE: FREEZE 基线锁定 | 5层安全栈完成
