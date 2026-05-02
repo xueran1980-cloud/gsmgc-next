@@ -76,8 +76,8 @@ export default function ProductCard({ product, compact = false }: { product: Pro
   const imgUrl = getProductImage(product);
 
   // ── compact variant (for carousels) ──
-  // ★ 移除 authLoading skeleton — 产品卡片应始终可见，价格由 PriceOrLoginPrompt 处理
-  return (
+  if (compact) {
+    return (
       <Link
         href={getProductUrl(product)}
         className="flex-shrink-0 w-44 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all p-3 group relative"
@@ -140,6 +140,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
         </div>
       </Link>
     );
+  }
 
   // ── standard card ──
   return (

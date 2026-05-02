@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ShoppingCart, Check, MessageCircle, Lock, AlertCircle } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import PriceWithIGIC from '@/components/PriceWithIGIC';
+import { PriceOrLoginPrompt } from '@/components/PriceOrLoginPrompt';
 import type { ProductImage } from '@/lib/api';
 
 interface ProductDetailActionsProps {
@@ -107,7 +107,7 @@ export default function ProductDetailActions({ product, waMsg }: ProductDetailAc
             {/* Price block */}
             <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl border border-blue-100 p-5 mb-6">
               <div className="flex items-end gap-3 flex-wrap">
-                <PriceWithIGIC price={product.price || '0'} size="xl" />
+                <PriceOrLoginPrompt price={product.price || '0'} regularPrice={product.regular_price} />
                 {hasDiscount && (
                   <span className="text-xl text-gray-300 line-through mb-0.5">
                     €{parseFloat(product.regular_price).toFixed(2)}
@@ -298,7 +298,7 @@ export default function ProductDetailActions({ product, waMsg }: ProductDetailAc
           <div className="flex items-center gap-3 max-w-lg mx-auto">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-gray-900 truncate">{product.name}</p>
-              <PriceWithIGIC price={product.price || '0'} size="sm" />
+              <PriceOrLoginPrompt price={product.price || '0'} regularPrice={product.regular_price} />
             </div>
             <button
               onClick={handleAdd}

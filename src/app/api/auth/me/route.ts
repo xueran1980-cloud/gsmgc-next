@@ -47,25 +47,34 @@ function getCookie(req: NextRequest, name: string): string | null {
  */
 async function checkViaCustomAPI(token: string): Promise<{ logged_in: boolean; user?: Record<string, unknown> }> {
   try {
-    const res = await fetch(`${GSMGC_API_DIRECT}/wp-json/gsmgc/v1/me`, {
+    const url = `${GSMGC_API_DIRECT}/wp-json/gsmgc/v1/me`;
+    console.log('[api/auth/me] Checking via custom API:', url);
+    const res = await fetch(url, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'User-Agent': 'GSMGC-Next.js/1.0',
       },
-      // 服务端发起，不受浏览器 CORS 限制
       cache: 'no-store',
     });
 
-    if (!res.ok) return { logged_in: false };
+    console.log('[api/auth/me] Response status:', res.status);
+    console.log('[api/auth/me] Response headers:', Object.fromEntries(res.headers.entries()));
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.warn('[api/auth/me] Non-OK response:', text.substring(0, 200));
+      return { logged_in: false };
+    }
 
     const data = await res.json();
+    console.log('[api/auth/me] Response data:', JSON.stringify(data).substring(0, 200));
+    
     if (data.logged_in && data.user && (data.user as Record<string, unknown>).id) {
       return { logged_in: true, user: data.user as Record<string, unknown> };
     }
     if (data.id) {
-      // 直接返回 user 对象的情况
       return { logged_in: true, user: data as unknown as Record<string, unknown> };
     }
     return { logged_in: false };
