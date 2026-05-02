@@ -67,6 +67,7 @@ deploy control     → dev→master 分支流+pre-push hook
 local dev fixture  → 绕过 SG CAPTCHA 的 dev 模式
 category config    → 统一配置 (category-config.ts)
 display formatting → WC theme 展示对齐 (display-formatter.ts)
+comparison system  → Legacy vs New 对比工具 (scripts/compare-legacy-vs-new.mjs)
 ```
 
 ---
@@ -92,16 +93,17 @@ display formatting → WC theme 展示对齐 (display-formatter.ts)
 
 ---
 
-## LAST STEP (2026-05-02 16:35)
+## LAST STEP (2026-05-02 17:00)
 
 ```
-✅ display-formatter.ts 创建 + 全部组件对接
-✅ 西班牙语价格格式 (10,50 €)
-✅ SEO excerpt (short_description) 显示
-✅ WC 默认排序 popularity
-✅ WC 风格搜索 (title+SKU 加权)
-✅ TypeScript 0 错误
-✅ commit 002826a 推送 dev 分支
+✅ comparison script 创建 + 首次全量对比运行
+✅ 5/5 品牌数量一致
+✅ 3/5 品牌排序 100% 一致 (samsung/iphone/huawei)
+✅ 搜索 4/4 结果一致
+✅ 价格格式 Spanish comma 0 错误
+✅ 分页 5/5 品牌页数一致
+⚠️ xiaomi/oppo 同 total_sales 排序非确定性 (非 bug)
+✅ commit 13c96b8 推送 dev
 ⏳ 等待 Vercel 额度恢复
 ```
 
@@ -122,6 +124,7 @@ display formatting → WC theme 展示对齐 (display-formatter.ts)
 > 只记录变化，不重复历史。每次状态切换/系统改动追加一条。
 
 ```
+2026-05-02 17:00 | comparison script 完成 | Legacy vs New 对比系统
 2026-05-02 16:35 | display-formatter 上线 | WC theme 展示逻辑对齐
 2026-05-02 16:30 | MODE: BLOCKED | PROJECT_STATE.md 创建
 2026-05-02 16:00 | fixtures 模式上线 | dev 数据源切换
