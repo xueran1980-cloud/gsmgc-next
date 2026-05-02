@@ -25,7 +25,9 @@ export async function GET(request: NextRequest) {
     const cookieHeader = request.headers.get('Cookie');
     if (cookieHeader) proxyHeaders['Cookie'] = cookieHeader;
 
-    const res = await fetch('/api/proxy/wp-json/gsmgc/v1/products-raw', {
+    const proxyUrl = `${request.nextUrl.origin}/api/proxy/wp-json/gsmgc/v1/products-raw`;
+
+    const res = await fetch(proxyUrl, {
       headers: proxyHeaders,
       cache: 'no-store',
     });

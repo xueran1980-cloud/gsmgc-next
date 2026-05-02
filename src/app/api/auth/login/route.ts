@@ -15,7 +15,9 @@ export async function POST(request: NextRequest) {
     const cookieHeader = request.headers.get('Cookie');
     if (cookieHeader) proxyHeaders['Cookie'] = cookieHeader;
 
-    const res = await fetch('/api/proxy/wp-json/gsmgc/v1/login', {
+    const proxyUrl = `${request.nextUrl.origin}/api/proxy/wp-json/gsmgc/v1/login`;
+
+    const res = await fetch(proxyUrl, {
       method: 'POST',
       headers: proxyHeaders,
       body: JSON.stringify(body),
