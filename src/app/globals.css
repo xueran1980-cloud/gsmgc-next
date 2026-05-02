@@ -21,58 +21,60 @@
   --font-family-sans: 'Inter', system-ui, sans-serif;
 }
 
+/* ── 所有 base 样式必须在 @layer base 内 ── */
+/* Tailwind v4: @layer utilities > @layer base，但未分层样式 > @layer utilities */
 @layer base {
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
+
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+    width: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
     font-family: 'Inter', system-ui, sans-serif;
     color: #111827;
     background: #ffffff;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .grid > * {
+    min-width: 0;
+  }
+
+  .card, .product-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #f1f1f1; }
-::-webkit-scrollbar-thumb { background: #2563eb; border-radius: 3px; }
+/* Custom scrollbar — 组件级样式放 @layer components */
+@layer components {
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #f1f1f1; }
+  ::-webkit-scrollbar-thumb { background: #2563eb; border-radius: 3px; }
 
-/* Carousel scroll */
-.carousel-container {
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: #2563eb #e5e7eb;
-}
-.carousel-container::-webkit-scrollbar { height: 4px; }
-.carousel-container::-webkit-scrollbar-thumb { background: #2563eb; border-radius: 2px; }
-.carousel-item { scroll-snap-align: start; }
-
-/* ── P0 layout baseline（对齐旧站 index.css）── */
-html, body {
-  overflow-x: hidden;
-  width: 100%;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-.grid > * {
-  min-width: 0;
-}
-
-.card, .product-card {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  .carousel-container {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #2563eb #e5e7eb;
+  }
+  .carousel-container::-webkit-scrollbar { height: 4px; }
+  .carousel-container::-webkit-scrollbar-thumb { background: #2563eb; border-radius: 2px; }
+  .carousel-item { scroll-snap-align: start; }
 }
