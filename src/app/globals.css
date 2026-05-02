@@ -53,16 +53,16 @@
   .grid > * {
     min-width: 0;
   }
+}
 
+/* ── 组件样式：@layer components → 优先级 > base，但 < utilities ── */
+@layer components {
   .card, .product-card {
     display: flex;
     flex-direction: column;
     height: 100%;
   }
-}
 
-/* Custom scrollbar — 组件级样式放 @layer components */
-@layer components {
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: #f1f1f1; }
   ::-webkit-scrollbar-thumb { background: #2563eb; border-radius: 3px; }
