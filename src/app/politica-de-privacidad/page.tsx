@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Política de Privacidad - GSMGC",
   description: "Política de privacidad y protección de datos. Cómo tratamos la información de nuestros clientes B2B.",
-  alternates: { canonical: "https://gsmgc.es/politica-de-privacidad" },
+  alternates: { canonical: null },
 };
 
 // Content synced from live site gsmgc.es (2026-04-29)

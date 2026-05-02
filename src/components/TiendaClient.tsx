@@ -29,6 +29,7 @@ const REAL_CATEGORY_NAMES = new Set([
   'cristales templados', 'teclados', 'repuestos', 'conectores',
   'flex', 'altavoces', 'vibradores', 'cámaras', 'camaras',
   'tactiles', 'táctiles', 'displays',
+  'cable de datos', 'protector de pantalla', 'protector',
 ]);
 
 /**

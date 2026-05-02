@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Devoluciones y Garantías - GSMGC",
   description: "Política de devoluciones y garantías para distribuidores. Plazos, condiciones y procedimiento.",
-  alternates: { canonical: "https://gsmgc.es/devoluciones" },
+  alternates: { canonical: null },
 };
 
 // Content synced from live site gsmgc.es (2026-04-29)

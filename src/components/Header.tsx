@@ -126,14 +126,12 @@ export default function Header() {
                 <User size={13} /> Acceso
               </Link>
             )}
-            <a
-              href="https://gsmgc.es/mi-cuenta/?action=register&redirect_to=https://gsmgc-next.vercel.app/mi-cuenta/"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/mi-cuenta?register=1"
               className="bg-[#ea580c] hover:bg-orange-500 px-3 py-0.5 rounded text-white text-xs font-bold transition"
             >
               Solicitar cuenta
-            </a>
+            </Link>
           </span>
         </div>
       </div>
@@ -301,14 +299,12 @@ export default function Header() {
               >
                 <User size={16} /> Mi cuenta
               </Link>
-              <a
-                href="https://gsmgc.es/mi-cuenta/?action=register&redirect_to=https://gsmgc-next.vercel.app/mi-cuenta/"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/mi-cuenta?register=1"
                 className="block bg-[#2563eb] text-white text-center font-bold py-2.5 rounded-xl text-sm hover:bg-[#1d4ed8] transition"
               >
                 Solicitar cuenta mayorista
-              </a>
+              </Link>
             </div>
           </nav>
         )}

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Envíos y Entregas - GSMGC Canarias",
   description: "Política de envíos y entregas a Gran Canaria, Tenerife y todas las islas. Tiempos de entrega y condiciones.",
-  alternates: { canonical: "https://gsmgc.es/envios-y-entregas" },
+  alternates: { canonical: null },
 };
 
 // Content synced from live site gsmgc.es (2026-04-29)
