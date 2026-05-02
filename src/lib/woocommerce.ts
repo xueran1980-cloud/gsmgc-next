@@ -114,7 +114,16 @@ export async function createOrderWC(orderData: CreateOrderRequest): Promise<Crea
 
 // 获取客户订单列表
 export async function getCustomerOrders(): Promise<any> {
-  const res = await smartFetch('/my-orders');
+  const token = getAuthToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch('/api/orders', {
+    method: 'GET',
+    headers,
+    credentials: 'same-origin',
+    cache: 'no-store',
+  });
   if (!res.ok) throw new Error('Error al obtener pedidos');
   return res.json();
 }
