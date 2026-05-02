@@ -47,11 +47,16 @@ const API_ORIGIN = 'https://api.gsmgc.es';
 
 function getProductsUrl(): string {
   // 客户端：走 /api/proxy/ rewrite（浏览器请求自动带 cookie）
-  // 服务端：用绝对 URL（Node.js fetch 不支持相对路径）
-  if (typeof window === 'undefined') {
-    return `${API_ORIGIN}${API_PATH}`;
+  if (typeof window !== 'undefined') {
+    return `/api/proxy${API_PATH}`;
   }
-  return `/api/proxy${API_PATH}`;
+  // 服务端：通过 Vercel proxy（CF 拦截直连 api.gsmgc.es）
+  const vercelUrl = process.env.VERCEL_URL || process.env.NEXT_PUBLIC_VERCEL_URL;
+  if (vercelUrl) {
+    return `https://${vercelUrl}/api/proxy${API_PATH}`;
+  }
+  // Fallback（构建时/本地）: 直连
+  return `${API_ORIGIN}${API_PATH}`;
 }
 
 export async function fetchProducts(): Promise<Product[]> {
