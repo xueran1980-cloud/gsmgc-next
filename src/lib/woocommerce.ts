@@ -51,6 +51,8 @@ interface CreateOrderResponse {
   order_key: string;
   status: string;
   total: string;
+  line_items?: Array<{ product_id: number; quantity: number; total: string }>;
+  customer_id?: number;
 }
 
 // ★ createOrder 走 Next.js API Route（绕过 CF Bot Fight Mode）
