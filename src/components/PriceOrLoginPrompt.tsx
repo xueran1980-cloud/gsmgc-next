@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useWpLoggedIn } from "@/hooks/useWpLoggedIn";
+import { useAuth } from "@/context/AuthContext";
 import { Lock } from "lucide-react";
 
 const IGIC_RATE = 0.07;
@@ -15,9 +15,11 @@ export function PriceOrLoginPrompt({
   regularPrice?: string;
   compact?: boolean;
 }) {
-  const isLoggedIn = useWpLoggedIn();
+  // ✅ 统一使用 AuthContext（token 系统），与 ProductCard 保持一致
+  // 旧逻辑用 useWpLoggedIn（检查 WP cookie），在新站域名下永远返回 false
+  const { isLoggedIn, loading } = useAuth();
 
-  if (isLoggedIn === "loading") {
+  if (loading) {
     return (
       <div className="animate-pulse">
         <div className="h-4 bg-gray-200 rounded w-16 mb-1" />
@@ -26,7 +28,7 @@ export function PriceOrLoginPrompt({
     );
   }
 
-  if (isLoggedIn !== true) {
+  if (!isLoggedIn) {
     // 游客视图 — 1:1 对齐现站 ProductCard.jsx
     if (compact) {
       return (
@@ -40,7 +42,7 @@ export function PriceOrLoginPrompt({
       <div>
         <div className="text-sm text-gray-500 mb-1">Precio exclusivo B2B</div>
         <Link
-          href="/mi-cuenta?register=1"
+          href="/mi-cuenta"
           className="text-[#2563eb] font-semibold text-sm hover:underline"
         >
           <Lock size={15} className="inline mr-1" />
@@ -63,7 +65,7 @@ export function PriceOrLoginPrompt({
       </span>
       {hasDiscount && (
         <span className="text-[10px] text-gray-400 line-through ml-1">
-          €{parseFloat(regularPrice).toFixed(2)}
+          €{parseFloat(regularPrice!).toFixed(2)}
         </span>
       )}
       <div className="text-xs text-gray-500">

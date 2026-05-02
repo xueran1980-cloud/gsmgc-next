@@ -158,8 +158,13 @@ export function generateSlug(name: string): string {
 
 // ---------- 客户端工具函数 ----------
 
-export function getProductImage(product: Product): string {
-  return product.images?.[0]?.src || '/product-placeholder.svg';
+export function getProductImage(product: Product & { image?: ProductImage }): string {
+  // ★ 完整 fallback 链：images[0].src → image.src → placeholder
+  return (
+    product.images?.[0]?.src ||
+    product.image?.src ||
+    '/product-placeholder.svg'
+  );
 }
 
 export function formatPrice(priceStr: string): string {

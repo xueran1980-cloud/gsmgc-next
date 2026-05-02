@@ -9,6 +9,7 @@ import {
   Monitor, Wrench, Package, LayoutGrid,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import CartDrawer from '@/components/CartDrawer';
 
 const NAV_LINKS = [
@@ -57,6 +58,7 @@ function NavDropdown({ items, onClose }: { items: NonNullable<typeof NAV_LINKS[n
 
 export default function Header() {
   const { totalItems } = useCart();
+  const { isLoggedIn, user } = useAuth();
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -109,12 +111,21 @@ export default function Header() {
             🇮🇨 Envío en 24h a Canarias · Garantía 6 meses · Solo mayoristas
           </span>
           <span className="flex items-center gap-3">
-            <Link
-              href="/mi-cuenta"
-              className="hover:text-blue-200 transition flex items-center gap-1 text-xs"
-            >
-              <User size={13} /> Acceso
-            </Link>
+            {isLoggedIn && user ? (
+              <Link
+                href="/mi-cuenta"
+                className="hover:text-blue-200 transition flex items-center gap-1 text-xs font-semibold"
+              >
+                <User size={13} /> {(user.firstName as string) || (user as any).first_name || (user as any).displayName || 'Mi cuenta'}
+              </Link>
+            ) : (
+              <Link
+                href="/mi-cuenta"
+                className="hover:text-blue-200 transition flex items-center gap-1 text-xs"
+              >
+                <User size={13} /> Acceso
+              </Link>
+            )}
             <a
               href="https://gsmgc.es/mi-cuenta/?action=register&redirect_to=https://gsmgc-next.vercel.app/mi-cuenta/"
               target="_blank"

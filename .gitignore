@@ -45,3 +45,4 @@ capture-dom.js
 old-*.yml
 new-*.yml
 v2-*.yml
+.env*.local

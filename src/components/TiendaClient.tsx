@@ -22,6 +22,15 @@ const EXCLUDED_TOP_CATEGORIES = new Set([
   'Otros', 'Misc', 'Varios', 'OP',
 ]);
 
+// 真实商品分类（非品牌）— 排除已知品牌
+const REAL_CATEGORY_NAMES = new Set([
+  'pantallas', 'fundas', 'baterias', 'baterías', 'cables', 'cargadores',
+  'audio', 'auriculares', 'herramientas', 'accesorios', 'cristales',
+  'cristales templados', 'teclados', 'repuestos', 'conectores',
+  'flex', 'altavoces', 'vibradores', 'cámaras', 'camaras',
+  'tactiles', 'táctiles', 'displays',
+]);
+
 /**
  * 搜索关键词高亮（对齐旧站）
  */
@@ -128,8 +137,34 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
       // ✅ 白名单：已知品牌直接通过
       if (KNOWN_BRANDS.has(n)) return true;
 
+      // ❌ 排除已知商品分类（不是品牌）
+      if (REAL_CATEGORY_NAMES.has(nameRaw.toLowerCase())) return false;
+
       // 兜底：其他未知的顶级分类保留为品牌
       return true;
+    })
+    .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
+
+  // 真实商品分类（Categorías） — 排除品牌，按数量降序
+  const realCategories = [...categories]
+    .filter(c => {
+      if ((c.count ?? 0) <= 0) return false;
+      const nameRaw = (c.name || '').trim();
+      const n = nameRaw.toUpperCase();
+
+      // ❌ 排除 "Sin categorizar"
+      if (EXCLUDED_TOP_CATEGORIES.has(nameRaw) || EXCLUDED_TOP_CATEGORIES.has(n)) return false;
+
+      // ❌ 排除已知品牌（品牌不算 categoría）
+      if (KNOWN_BRANDS.has(n)) return false;
+
+      // ✅ 已知真实分类名
+      if (REAL_CATEGORY_NAMES.has(nameRaw.toLowerCase())) return true;
+
+      // ✅ 子分类（parent !== 0）也显示
+      if (c.parent !== 0) return true;
+
+      return false;
     })
     .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
 
@@ -222,13 +257,13 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex gap-6">
-          {/* Sidebar filters (desktop) — 仅保留 Marcas */}
+          {/* Sidebar filters (desktop) — Marcas + Categorías */}
           <aside className="hidden lg:block w-60 shrink-0">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sticky top-[calc(var(--header-offset,64px)+1rem)]">
               {/* ── Marcas（品牌）─ ─ */}
               <div className="mb-5">
                 <h3 className="font-bold text-sm text-gray-800 mb-2.5 tracking-tight">Marcas</h3>
-                <div className="flex flex-wrap gap-1.5 mb-3 max-h-[calc(100vh-18rem)] overflow-y-auto pr-0.5 scrollbar-thin">
+                <div className="flex flex-wrap gap-1.5 mb-3 max-h-48 overflow-y-auto pr-0.5 scrollbar-thin">
                   <button
                     onClick={() => resetFilters()}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 ${
@@ -279,6 +314,42 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                   </p>
                 )}
               </div>
+
+              {/* ── Categorías（真实分类）─ ─ */}
+              {realCategories.length > 0 && (
+                <div className="border-t border-gray-100 pt-4">
+                  <h3 className="font-bold text-sm text-gray-800 mb-2.5 tracking-tight">Categorías</h3>
+                  <div className="space-y-0.5 max-h-64 overflow-y-auto pr-0.5 scrollbar-thin">
+                    {realCategories.map(cat => {
+                      const catSlug = String(cat.id);
+                      const isActive = catSlug === categoryParam || (cat.slug || '').toLowerCase() === (categoryParam || '').toLowerCase();
+                      return (
+                        <button
+                          key={cat.id}
+                          onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString());
+                            params.set('category', catSlug);
+                            params.delete('page'); params.delete('search');
+                            const qs = params.toString();
+                            router.push(`${pathname}?${qs}`, { scroll: false });
+                            window.scrollTo(0, 0);
+                          }}
+                          className={`w-full text-left flex items-center justify-between px-2.5 py-2 rounded-lg text-xs transition-all ${
+                            isActive
+                              ? 'bg-[#2563eb] text-white font-semibold'
+                              : 'text-gray-600 hover:bg-blue-50 hover:text-[#2563eb]'
+                          }`}
+                        >
+                          <span className="truncate">{cat.name}</span>
+                          <span className={`ml-1.5 text-[10px] shrink-0 ${isActive ? 'text-blue-100' : 'text-gray-400'}`}>
+                            {cat.count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* 快速统计（对齐旧站格式） */}
               <div className="mt-4 pt-3 border-t border-gray-100">
@@ -427,6 +498,38 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                   })}
                 </div>
               </div>
+
+              {/* Categorías section（mobile） */}
+              {realCategories.length > 0 && (
+                <div className="border-t border-gray-100 pt-4">
+                  <h4 className="font-semibold text-xs text-gray-500 uppercase tracking-wider mb-2.5">Categorías</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {realCategories.map(cat => {
+                      const catSlug = String(cat.id);
+                      const isActive = catSlug === categoryParam || (cat.slug || '').toLowerCase() === (categoryParam || '').toLowerCase();
+                      return (
+                        <button
+                          key={cat.id}
+                          onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString());
+                            params.set('category', catSlug);
+                            params.delete('page'); params.delete('search');
+                            const qs = params.toString();
+                            router.push(`${pathname}?${qs}`, { scroll: false });
+                            setFilterOpen(false);
+                            window.scrollTo(0, 0);
+                          }}
+                          className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all whitespace-nowrap ${
+                            isActive ? 'bg-[#2563eb] text-white' : 'bg-gray-50 text-gray-600 hover:bg-blue-50'
+                          }`}
+                        >
+                          {cat.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
