@@ -1,10 +1,39 @@
 // Next.js API Route — 代理到 WordPress 自定义端点 /categories-raw
-// ★ 全部走 /api/proxy/，不直连 api.gsmgc.es
+// ★ 生产：走 /api/proxy/ | 开发：本地 fixture（绕过 SG CAPTCHA）
 
 import { NextRequest, NextResponse } from 'next/server';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// 开发模式：使用本地 fixture
+function loadDevFixture(): any[] | null {
+  if (process.env.NODE_ENV !== 'development') return null;
+  try {
+    const raw = readFileSync(
+      join(process.cwd(), 'fixtures', 'categories-raw.json'),
+      'utf-8'
+    );
+    const json = JSON.parse(raw);
+    if (json.success && Array.isArray(json.categories)) {
+      console.log('[DEV FIXTURE] /categories loaded from fixture');
+      return json.categories;
+    }
+  } catch (e) {
+    console.warn('[DEV FIXTURE] Failed to load categories fixture:', (e as Error).message);
+  }
+  return null;
+}
 
 export async function GET(request: NextRequest) {
   try {
+    // ★ 开发模式：使用 fixture 数据
+    const devData = loadDevFixture();
+    if (devData) {
+      return NextResponse.json(devData, {
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    }
+
     const proxyHeaders: Record<string, string> = {
       'User-Agent': 'GSMGC-Next-Server/1.0',
       'Accept': 'application/json',
