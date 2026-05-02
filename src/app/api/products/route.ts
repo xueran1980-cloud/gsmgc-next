@@ -57,6 +57,18 @@ export async function GET(request: NextRequest) {
       const isNumeric = !isNaN(catId);
       const catSlug = category.toLowerCase().trim();
 
+      // ★ FILTER DEBUG: 数据验证日志
+      const sampleProduct = json.products[0];
+      console.log('[FILTER DEBUG]', JSON.stringify({
+        inputCategory: category,
+        isNumeric,
+        catId: isNumeric ? catId : null,
+        catSlug,
+        totalBeforeFilter: json.products.length,
+        sampleProductCategories: sampleProduct?.categories?.slice(0, 3) || [],
+        sampleProductName: sampleProduct?.name?.substring(0, 40) || 'N/A',
+      }));
+
       products = products.filter((p: any) => {
         if (!p.categories || !Array.isArray(p.categories)) return false;
         return p.categories.some((c: any) => {
@@ -70,7 +82,7 @@ export async function GET(request: NextRequest) {
         });
       });
 
-      console.log(`[API /products] Filtered by category="${category}" (id=${isNumeric ? catId : 'slug'}, slug="${catSlug}"): ${products.length} products`);
+      console.log(`[FILTER DEBUG] result: ${products.length} products matched (filtered from ${json.products.length})`);
     }
 
     // 搜索过滤
