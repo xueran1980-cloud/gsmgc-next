@@ -50,13 +50,9 @@ function getProductsUrl(): string {
   if (typeof window !== 'undefined') {
     return `/api/proxy${API_PATH}`;
   }
-  // 服务端：通过 Vercel proxy（CF 拦截直连 api.gsmgc.es）
-  const vercelUrl = process.env.VERCEL_URL || process.env.NEXT_PUBLIC_VERCEL_URL;
-  if (vercelUrl) {
-    return `https://${vercelUrl}/api/proxy${API_PATH}`;
-  }
-  // Fallback（构建时/本地）: 直连
-  return `${API_ORIGIN}${API_PATH}`;
+  // 服务端：走 Next.js API Route（已验证可用，CF 不拦截）
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gsmgc-next.vercel.app';
+  return `${siteUrl}/api/products?per_page=5000`;
 }
 
 export async function fetchProducts(): Promise<Product[]> {
@@ -70,11 +66,13 @@ export async function fetchProducts(): Promise<Product[]> {
       return [];
     }
     const json = await res.json();
-    if (!json.success || !Array.isArray(json.products)) {
-      console.warn('[fetchProducts] invalid response format');
-      return [];
-    }
-    return json.products;
+    // 兼容两种响应格式：
+    // - /api/products → 直接返回 Product[]
+    // - products-raw → { success: true, products: Product[] }
+    if (Array.isArray(json)) return json;
+    if (json.success && Array.isArray(json.products)) return json.products;
+    console.warn('[fetchProducts] invalid response format');
+    return [];
   } catch (err) {
     console.warn('[fetchProducts] fetch failed:', err);
     return [];
