@@ -1,6 +1,5 @@
-// GSMGC Next.js - 数据获取层（统一数据源）
-// 所有产品数据必须来自 /api/products（Next.js API Route → WC REST API）
-// 禁止使用 wc_products.json / products-raw / 任何本地 JSON 缓存
+// GSMGC Next.js - 数据获取层
+// ★ v5.3: 本地缓存用动态 import('fs')，避免 Turbopack 打包进客户端 bundle
 
 // ---------- 类型定义 ----------
 
@@ -38,79 +37,102 @@ export interface Product {
   min_qty: number;
 }
 
-// ---------- 服务端获取所有产品（ISR/SSR） ----------
-// ✅ 修复：Server Component 中必须使用绝对 URL
-// 降级策略：先尝试 /api/products，失败后直连 WordPress 代理
+// ---------- 数据源策略 ----------
 
-const PROXY_URL = 'https://gsmgc-next.vercel.app/api/proxy/wp-json/gsmgc/v1/products-raw';
+const API_ORIGIN = 'https://api.gsmgc.es';
+const PRODUCTS_PATH = '/wp-json/gsmgc/v1/products-raw';
+const LOCAL_CACHE_FILE = '.products-cache.json';
+
+const SERVER_HEADERS: HeadersInit = {
+  'User-Agent': 'GSMGC-Next-Server/1.0',
+  'Accept': 'application/json',
+};
+
+/**
+ * 从本地缓存文件读取产品数据（用于 SSG 构建时）
+ * 使用动态 import('fs') 避免 Turbopack 打包进客户端 bundle
+ */
+async function readLocalProductsCache(): Promise<Product[] | null> {
+  // 浏览器端永远不执行
+  if (typeof window !== 'undefined') return null;
+  try {
+    const { join } = await import('path');
+    const fs = await import('fs');
+    const cachePath = join(process.cwd(), 'public', LOCAL_CACHE_FILE);
+    if (!fs.existsSync(cachePath)) return null;
+    const raw = fs.readFileSync(cachePath, 'utf-8');
+    const json = JSON.parse(raw);
+    if (json.success && Array.isArray(json.products)) {
+      console.log(`[fetchProducts] Using local cache: ${json.products.length} products`);
+      return json.products;
+    }
+    return null;
+  } catch (err) {
+    console.warn('[fetchProducts] Failed to read local cache:', err);
+    return null;
+  }
+}
+
+function getProductsUrl(): string {
+  if (typeof window === 'undefined') {
+    // 服务端：直连 api.gsmgc.es（Vercel runtime 不被 CF 拦截）
+    return `${API_ORIGIN}${PRODUCTS_PATH}`;
+  }
+  // 客户端：走 /api/proxy（Vercel rewrite）
+  return `/api/proxy${PRODUCTS_PATH}`;
+}
 
 export async function fetchProducts(): Promise<Product[]> {
-  // 策略1：尝试 /api/products（需要 NEXT_PUBLIC_BASE_URL）
-  if (process.env.NEXT_PUBLIC_BASE_URL) {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/products`, {
-        cache: 'no-store',
-        headers: { 'User-Agent': 'GSMGC-Next-Server/1.0' },
-      });
-      if (res.ok) {
-        const data: Product[] = await res.json();
-        return data;
-      }
-    } catch (err) {
-      console.warn('[fetchProducts] /api/products failed, trying proxy...', err);
+  // ★ 策略 1：服务端构建时优先读本地缓存
+  if (typeof window === 'undefined') {
+    const localProducts = await readLocalProductsCache();
+    if (localProducts && localProducts.length > 0) {
+      return localProducts;
     }
   }
 
-  // 策略2：直连 WordPress 代理（绕过 /api/products）
+  // ★ 策略 2：fetch 远程数据
   try {
-    const res = await fetch(PROXY_URL, {
-      cache: 'no-store',
-      headers: {
-        'User-Agent': 'GSMGC-Next-Proxy/1.0',
-        'Accept': 'application/json',
-      },
+    const url = getProductsUrl();
+    const isServer = typeof window === 'undefined';
+    const res = await fetch(url, {
+      next: { revalidate: 60 },
+      headers: isServer ? SERVER_HEADERS : { 'Accept': 'application/json' },
     });
     if (!res.ok) {
-      console.warn(`[fetchProducts] proxy returned ${res.status}`);
+      console.warn(`[fetchProducts] returned ${res.status} from ${isServer ? 'direct' : 'proxy'}`);
       return [];
     }
     const json = await res.json();
     if (!json.success || !Array.isArray(json.products)) {
-      console.warn('[fetchProducts] invalid proxy response');
+      console.warn('[fetchProducts] invalid response format');
       return [];
     }
     return json.products;
   } catch (err) {
-    console.warn('[fetchProducts] proxy fetch failed:', err);
+    console.warn('[fetchProducts] fetch failed:', err);
     return [];
   }
 }
 
 // ---------- 服务端获取单个产品 ----------
-// ✅ 修复：增加降级策略
 
 export async function fetchProductById(id: string): Promise<Product | null> {
-  // 策略1：尝试 /api/products/:id
-  if (process.env.NEXT_PUBLIC_BASE_URL) {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/products?id=${id}`, {
-        cache: 'no-store',
-        headers: { 'User-Agent': 'GSMGC-Next-Server/1.0' },
-      });
-      if (res.ok) return await res.json();
-    } catch (err) {
-      console.warn('[fetchProductById] /api/products failed, trying proxy...', err);
+  // ★ 策略 1：服务端构建时优先读本地缓存
+  if (typeof window === 'undefined') {
+    const localProducts = await readLocalProductsCache();
+    if (localProducts && localProducts.length > 0) {
+      return localProducts.find((p: Product) => String(p.id) === String(id)) || null;
     }
   }
 
-  // 策略2：直连 WordPress 代理，然后按 ID 过滤
+  // ★ 策略 2：fetch 远程数据
   try {
-    const res = await fetch(PROXY_URL, {
-      cache: 'no-store',
-      headers: {
-        'User-Agent': 'GSMGC-Next-Proxy/1.0',
-        'Accept': 'application/json',
-      },
+    const url = getProductsUrl();
+    const isServer = typeof window === 'undefined';
+    const res = await fetch(url, {
+      next: { revalidate: 60 },
+      headers: isServer ? SERVER_HEADERS : { 'Accept': 'application/json' },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -118,14 +140,12 @@ export async function fetchProductById(id: string): Promise<Product | null> {
     const product = json.products.find((p: Product) => String(p.id) === String(id));
     return product || null;
   } catch (err) {
-    console.warn('[fetchProductById] proxy fetch failed:', err);
+    console.warn('[fetchProductById] fetch failed:', err);
     return null;
   }
 }
 
 // ---------- 分类数据 ----------
-
-const CATEGORIES_URL = '/api/products';
 
 export async function fetchCategories(): Promise<ProductCategory[]> {
   try {
@@ -159,7 +179,6 @@ export function generateSlug(name: string): string {
 // ---------- 客户端工具函数 ----------
 
 export function getProductImage(product: Product & { image?: ProductImage }): string {
-  // ★ 完整 fallback 链：images[0].src → image.src → placeholder
   return (
     product.images?.[0]?.src ||
     product.image?.src ||

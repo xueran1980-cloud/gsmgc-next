@@ -46,3 +46,6 @@ old-*.yml
 new-*.yml
 v2-*.yml
 .env*.local
+
+# build cache (generated before build)
+public/.products-cache.json

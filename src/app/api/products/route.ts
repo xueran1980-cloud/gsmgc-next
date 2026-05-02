@@ -1,14 +1,12 @@
 // Next.js API Route — 代理到 WordPress 自定义端点 /products-raw
-// 数据最终来源仍是 WooCommerce（由 mu-plugins 内部调用 WC REST API）
-// 前端只做渲染，分类统一使用 WC 分类系统
+// ★ v5.1: 服务端绝对 URL + User-Agent（绕过 CF Bot Fight Mode）
+//   构建时和运行时都直接连 api.gsmgc.es
 
 import { NextRequest, NextResponse } from 'next/server';
 
+// ★ v5.1: 服务端用绝对 URL，相对路径在 build time / Vercel runtime 不可靠
 const WP_PRODUCTS_RAW = 'https://api.gsmgc.es/wp-json/gsmgc/v1/products-raw';
 
-/**
- * 将 WC REST API 参数映射到 /products-raw 支持的参数
- */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -21,15 +19,13 @@ export async function GET(request: NextRequest) {
     const orderby = searchParams.get('orderby') || 'price';
     const order = searchParams.get('order') || 'desc';
 
-    // ★ 直接请求 api.gsmgc.es（不走 rewrite），透传登录态
+    // ★ 透传 headers（cookie + auth）
     const proxyHeaders: Record<string, string> = {
-      'User-Agent': 'GSMGC-Next-Proxy/1.0',
+      'User-Agent': 'GSMGC-Next-Server/1.0',
       'Accept': 'application/json',
     };
-    // 透传 Authorization（Bearer token）
     const authHeader = request.headers.get('Authorization');
     if (authHeader) proxyHeaders['Authorization'] = authHeader;
-    // 透传 cookie（如果有 WP logged-in cookie）
     const cookieHeader = request.headers.get('Cookie');
     if (cookieHeader) proxyHeaders['Cookie'] = cookieHeader;
 
@@ -55,8 +51,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // ★ 前端传来的参数在 Next.js 端执行过滤/排序/分页
-    // （因为 /products-raw 返回全量数据，前端参数需要服务端处理）
     let products: any[] = json.products;
 
     // 分类过滤

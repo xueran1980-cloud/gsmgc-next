@@ -1,17 +1,15 @@
 // Next.js API Route — 代理到 WordPress 自定义端点 /categories-raw
-// 数据最终来源仍是 WooCommerce（由 mu-plugins 内部调用 WC REST API）
-// 前端只做渲染，分类数据100%来自 WC 后端
+// ★ v5.1: 服务端绝对 URL + User-Agent
 
 import { NextRequest, NextResponse } from 'next/server';
 
-// ★ 走 Vercel rewrite 代理（/api/proxy/wp-json/...），避免直连被 CF Bot Fight Mode 拦截
-const WP_CATEGORIES_RAW = '/api/proxy/wp-json/gsmgc/v1/categories-raw';
+// ★ v5.1: 服务端用绝对 URL
+const WP_CATEGORIES_RAW = 'https://api.gsmgc.es/wp-json/gsmgc/v1/categories-raw';
 
 export async function GET(request: NextRequest) {
   try {
-    // ★ 直接请求 api.gsmgc.es，透传登录态
     const proxyHeaders: Record<string, string> = {
-      'User-Agent': 'GSMGC-Next-Proxy/1.0',
+      'User-Agent': 'GSMGC-Next-Server/1.0',
       'Accept': 'application/json',
     };
     const authHeader = request.headers.get('Authorization');

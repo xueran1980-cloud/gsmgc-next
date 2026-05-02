@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// ★ v5.1: 服务端绝对 URL
 const LOGIN_URL = 'https://api.gsmgc.es/wp-json/gsmgc/v1/login';
 
 export async function POST(request: NextRequest) {

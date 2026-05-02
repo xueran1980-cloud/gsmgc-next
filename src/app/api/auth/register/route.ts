@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// ★ v5.1: 服务端绝对 URL
 const REGISTER_URL = 'https://api.gsmgc.es/wp-json/gsmgc/v1/register';
 
 export async function POST(request: NextRequest) {

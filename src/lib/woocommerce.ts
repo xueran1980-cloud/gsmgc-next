@@ -1,11 +1,11 @@
 // WooCommerce REST API — 订单创建 + 库存校验 + 订单查询
-// 对齐旧站 woocommerce.js: createOrder 走 smartFetch（带 Bearer token）
-// createOrderWC 保留走 WC Basic Auth（无登录结账备用）
+// ★ v5.0: 单通道 — createOrder 走 smartFetch（/api/proxy），createOrderWC 也走 proxy
+//   禁止直连 api.gsmgc.es
 
 import { smartFetch } from '@/api/auth';
 
-const WC_SITE = 'https://api.gsmgc.es';
-const WC_ENDPOINT = `${WC_SITE}/wp-json/wc/v3`;
+// ★ v5.0: WC Basic Auth 也走 proxy，禁止直连
+const WC_PROXY = '/api/proxy/wp-json/wc/v3';
 
 function getBasicAuthHeader(): string {
   const user = process.env.NEXT_PUBLIC_WP_USER;
@@ -52,7 +52,7 @@ interface CreateOrderResponse {
   total: string;
 }
 
-// ★ 对齐旧站：createOrder 走 smartFetch（带 Bearer token），不是 WC Basic Auth
+// ★ createOrder 走 smartFetch（带 Bearer token，内部走 /api/proxy）
 export async function createOrder(orderData: Record<string, unknown>): Promise<CreateOrderResponse> {
   const res = await smartFetch('/create-order', {
     method: 'POST',
@@ -60,7 +60,6 @@ export async function createOrder(orderData: Record<string, unknown>): Promise<C
     body: JSON.stringify(orderData),
   });
 
-  // ★ v5.0.3: 检测 HTML 响应（后端 Fatal Error 泄漏的 WordPress 页面）
   const ct = (res.headers.get('Content-Type') || '').toLowerCase();
   if (ct.includes('text/html')) {
     console.error('[GSMGC] create-order received HTML response (Fatal Error leak)');
@@ -71,7 +70,6 @@ export async function createOrder(orderData: Record<string, unknown>): Promise<C
     let errMsg: string;
     try {
       const err = await res.json();
-      // ★ 防止 HTML 内容泄漏到 UI
       if (typeof err.message === 'string' && (err.message.includes('<p>') || err.message.includes('<html') || err.message.includes('wordpress.org'))) {
         errMsg = 'Error al procesar el pedido. Por favor, contacta con nosotros.';
       } else if (err.code === 'FATAL_ERROR' || err.code === 'ORDER_CREATION_FAILED') {
@@ -87,16 +85,16 @@ export async function createOrder(orderData: Record<string, unknown>): Promise<C
   return res.json();
 }
 
-// WC Basic Auth 备用下单（无登录场景）
+// ★ v5.0: WC Basic Auth 备用下单也走 proxy（不直连 api.gsmgc.es）
 export async function createOrderWC(orderData: CreateOrderRequest): Promise<CreateOrderResponse> {
   const auth = getBasicAuthHeader();
 
-  const res = await fetch(`${WC_ENDPOINT}/orders`, {
+  const res = await fetch(`${WC_PROXY}/orders`, {
     method: 'POST',
     headers: {
       Authorization: auth,
       'Content-Type': 'application/json',
-      'User-Agent': 'GSMGC-Frontend/1.0',
+      'User-Agent': 'GSMGC-Next.js/1.0',
     },
     body: JSON.stringify(orderData),
   });
@@ -109,21 +107,21 @@ export async function createOrderWC(orderData: CreateOrderRequest): Promise<Crea
   return res.json();
 }
 
-// ★ 对齐旧站：获取客户订单列表
+// 获取客户订单列表
 export async function getCustomerOrders(): Promise<any> {
   const res = await smartFetch('/my-orders');
   if (!res.ok) throw new Error('Error al obtener pedidos');
   return res.json();
 }
 
-// ★ 对齐旧站：获取单个订单详情
+// 获取单个订单详情
 export async function getOrder(orderId: number | string): Promise<any> {
   const res = await smartFetch(`/orders/${orderId}`);
   if (!res.ok) throw new Error('Error al obtener el pedido');
   return res.json();
 }
 
-// ★ v7.3: 删除订单内单个产品（恢复库存 + 重算总额）
+// 删除订单内单个产品
 export async function removeOrderItem(orderId: number | string, itemId: number | string): Promise<any> {
   const res = await smartFetch(`/orders/${orderId}/remove-item`, {
     method: 'POST',
@@ -143,8 +141,7 @@ export async function removeOrderItem(orderId: number | string, itemId: number |
   return res.json();
 }
 
-// ★ v5.0: 结账前库存实时校验
-// 调用后端 /gsmgc/v1/stock-check 端点，验证购物车中每个产品的最新库存
+// 结账前库存实时校验
 export interface StockCheckItem {
   product_id: number;
   quantity: number;

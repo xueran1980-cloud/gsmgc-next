@@ -10,7 +10,9 @@ import {
   ShieldCheck,
   Truck,
 } from 'lucide-react';
-import { generateSlug, fetchProductById, type Product } from '@/lib/api';
+import {
+  fetchProductById, fetchProducts, generateSlug, type Product,
+} from '@/lib/api';
 import ImageGallery from '@/components/ImageGallery';
 import ShareButton from '@/components/ShareButton';
 import ProductDetailActions from './ProductDetailActions';
@@ -25,13 +27,14 @@ interface StaticParam { id: string; slug: string }
 
 export async function generateStaticParams(): Promise<StaticParam[]> {
   try {
-    const fs = require('fs');
-    const path = require('path');
+    // ★ 动态 import 避免客户端 bundle 包含 fs
+    const path = await import('path');
+    const fs = await import('fs');
     const filePath = path.join(process.cwd(), 'public', 'product-ids.json');
+    if (!fs.existsSync(filePath)) return [];
     const content = fs.readFileSync(filePath, 'utf-8');
     return JSON.parse(content);
   } catch {
-    // product-ids.json 不存在时返回空数组，新产品通过 ISR 按需生成
     return [];
   }
 }
@@ -82,22 +85,18 @@ async function getProductById(id: string): Promise<{ product: Product | null; re
   const product = await fetchProductById(id);
   if (!product) return { product: null, related: [] };
 
-  // 获取同分类的相关产品（调用 /api/products?category=<id>&per_page=7）
+  // ★ Related Products：直接从 fetchProducts（本地缓存）获取，不走 /api/products
+  // 避免 cache: 'no-store' 导致整页降级为 Dynamic
   let related: Product[] = [];
   const categoryId = product.categories?.[0]?.id;
   if (categoryId) {
     try {
-      const base = process.env.NEXT_PUBLIC_BASE_URL || '';
-      const res = await fetch(`${base}/api/products?category=${categoryId}&per_page=7`, {
-        cache: 'no-store',
-        headers: { 'User-Agent': 'GSMGC-Next-Proxy/1.0' },
-      });
-      if (res.ok) {
-        const all: Product[] = await res.json();
-        related = all.filter((p) => String(p.id) !== id).slice(0, 6);
-      }
+      const allProducts = await fetchProducts();
+      related = allProducts
+        .filter((p) => p.categories?.some((c) => c.id === categoryId) && String(p.id) !== id)
+        .slice(0, 6);
     } catch (err) {
-      console.warn('[getProductById] Failed to fetch related:', err);
+      console.warn('[getProductById] Failed to get related:', err);
     }
   }
 
