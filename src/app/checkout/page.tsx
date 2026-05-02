@@ -73,6 +73,9 @@ export default function CheckoutPage() {
   // ★ v6.3: 防重复提交 — 请求级锁 + 时间窗口
   const [isSubmitting, setIsSubmitting] = useState(false);
   const lastSubmitTime = useRef(0);
+  // ★ ORDER-SAFETY: 稳定幂等key — 同一个下单会话复用同一key
+  //    之前每次 submit 用 crypto.randomUUID() 生成新key = 无法防重复
+  const idempotencyKey = useRef<string>('');
 
   // ★ v6.1: latestUser ref — 用于 UI 展示，确保 billingInfo 和 orderBilling 用同一个数据源
   //    refreshUser 成功后更新此 ref，billingInfo 从这里读数据而非 state.user
@@ -318,14 +321,35 @@ export default function CheckoutPage() {
         quantity: item.qty,
       }));
 
+      // ★ ORDER-SAFETY: 生成并缓存稳定幂等key — 整个下单会话共享同一key
+      if (!idempotencyKey.current) {
+        idempotencyKey.current = `gsmgc-${latestUser.id}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+      }
+
+      // ★ ORDER-SAFETY: 记录下单前购物车快照（用于失败追溯）
+      const cartSnapshot = items.map(item => ({
+        id: item.id, sku: item.sku, name: item.name, qty: item.qty,
+        price: item.price, subtotal: (parseFloat(item.price || '0') * item.qty).toFixed(2)
+      }));
+      const orderRequestPayload = {
+        userId: latestUser.id,
+        email: orderBilling.email,
+        idempotencyKey: idempotencyKey.current,
+        cartSize: items.length,
+        cartTotal: totalPrice.toFixed(2),
+        cartSnapshot,
+        timestamp: new Date().toISOString(),
+      };
+      console.log('[ORDER-SAFETY] 📦 Creating order:', JSON.stringify(orderRequestPayload, null, 2));
+
       const paymentInfo = paymentMethod === 'bacs'
         ? { payment_method: 'bacs', payment_method_title: 'Transferencia Bancaria (BACS)' }
         : { payment_method: 'cod', payment_method_title: 'Contra Reembolso' };
 
       const result = await createOrder({
         ...paymentInfo,
-        // ★ v6.3: 幂等性 key — 防止网络重试或双击创建重复订单
-        idempotency_key: crypto.randomUUID(),
+        // ★ ORDER-SAFETY: 稳定幂等key — 同一会话复用，后端用此防重复
+        idempotency_key: idempotencyKey.current,
         billing: orderBilling,
         shipping: {
           first_name: orderBilling.first_name,
@@ -345,6 +369,38 @@ export default function CheckoutPage() {
       });
 
       // Order created successfully — persist success state to sessionStorage
+      // ★ ORDER-SAFETY: 数据一致性校验
+      const wcTotal = result.total ? parseFloat(result.total) : 0;
+      const frontendTotal = parseFloat(totalPrice.toFixed(2));
+      const itemCountMatch = result.line_items ? result.line_items.length === items.length : true;
+      const userIdMatch = result.customer_id ? result.customer_id === latestUser.id : true;
+
+      const consistencyReport = {
+        orderId: result.id || result.order_id,
+        frontendTotal, wcTotal,
+        totalMatch: Math.abs(frontendTotal - wcTotal) < 0.02,
+        itemCountMatch,
+        userIdMatch,
+        frontendItems: items.length, wcItems: result.line_items?.length || 'N/A',
+        frontendUserId: latestUser.id, wcUserId: result.customer_id || 'N/A',
+      };
+
+      console.log('[ORDER-SAFETY] ✅ Order created:', JSON.stringify({
+        ...consistencyReport,
+        wcStatus: result.status,
+        wcTotal: result.total,
+      }, null, 2));
+
+      if (!consistencyReport.totalMatch) {
+        console.warn('[ORDER-SAFETY] ⚠️ TOTAL MISMATCH:', JSON.stringify(consistencyReport));
+      }
+      if (!consistencyReport.itemCountMatch) {
+        console.warn('[ORDER-SAFETY] ⚠️ ITEM COUNT MISMATCH:', JSON.stringify(consistencyReport));
+      }
+      if (!consistencyReport.userIdMatch) {
+        console.error('[ORDER-SAFETY] 🚨 USER ID MISMATCH — possible cross-account order!', JSON.stringify(consistencyReport));
+      }
+
       const orderSuccessData = {
         orderId: result.id || result.order_id || Date.now(),
         paymentMethod: paymentMethod,
@@ -355,7 +411,18 @@ export default function CheckoutPage() {
       clearCart();
       setStep('success');
     } catch (err) {
-      console.error('Order error:', err);
+      // ★ ORDER-SAFETY: 详细失败日志 — 包含用户ID、时间、原因
+      const failLog = {
+        userId: latestUser?.id || user?.id || 'unknown',
+        email: latestUser?.email || user?.email || 'unknown',
+        idempotencyKey: idempotencyKey.current || 'not_generated',
+        cartSize: items.length,
+        cartTotal: totalPrice.toFixed(2),
+        errorType: err instanceof Error ? err.constructor.name : typeof err,
+        errorMessage: err instanceof Error ? err.message : String(err),
+        timestamp: new Date().toISOString(),
+      };
+      console.error('[ORDER-SAFETY] ❌ Order FAILED:', JSON.stringify(failLog, null, 2));
 
       let errorMessage = 'Error al procesar el pedido. Inténtalo de nuevo.';
 

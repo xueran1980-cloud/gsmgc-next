@@ -42,6 +42,7 @@ interface CreateOrderRequest {
   status: string;
   customer_note: string;
   meta_data: Array<{ key: string; value: string }>;
+  idempotency_key?: string; // ★ ORDER-SAFETY: 幂等key
 }
 
 interface CreateOrderResponse {
