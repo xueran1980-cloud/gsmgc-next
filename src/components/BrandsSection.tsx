@@ -2,27 +2,15 @@
 
 import Link from "next/link";
 import type { ProductCategory } from "@/lib/api";
+import { BRAND_CATEGORY_NAMES, EXCLUDED_CATEGORY_NAMES, PRODUCT_TYPE_CATEGORY_NAMES } from '@/config/category-config';
 
-const EXCLUDED_TOP_CATEGORIES = new Set([
-  'sin categorizar', 'uncategorized', 'sin categoria',
-  'otros', 'otro', 'misc', 'varios',
-]);
+// ★ SINGLE SOURCE: 品牌 = product_cat 中的品牌节点（不是独立 taxonomy）
+//   所有分类数据来自 WooCommerce categories API
 
-const TYPE_KEYWORDS = [
-  'ACCESORIOS', 'AUDIO', 'BATERIA', 'CABLE', 'CARGADOR', 'FUNDAS',
-  'HERRAMIENTAS', 'PANTALLA', 'PROTECTOR',
-];
-
-const KNOWN_BRANDS = new Set([
-  'APPLE', 'IPHONE', 'IPAD', 'SAMSUNG', 'XIAOMI', 'HUAWEI', 'OPPO',
-  'VIVO', 'ONEPLUS', 'MOTOROLA', 'TCL', 'ZTE', 'ALCATEL', 'NOKIA',
-]);
-
-const FALLBACK_BRANDS = [
-  "Apple", "Samsung", "Xiaomi", "Huawei", "Oppo", "Vivo", "OnePlus",
-  "Motorola", "TCL", "ZTE", "Alcatel", "Nokia", "Honor", "Lenovo",
-  "Realme", "Google", "Sony", "LG", "Asus", "BlackBerry",
-];
+// 兜底：当 categories 数据未加载时显示
+const FALLBACK_BRANDS = Array.from(BRAND_CATEGORY_NAMES).map(n =>
+  n.charAt(0) + n.slice(1).toLowerCase()
+).filter(b => b.length > 1);
 
 interface BrandsSectionProps {
   categories?: ProductCategory[];
@@ -34,11 +22,10 @@ function filterBrandCategories(categories: ProductCategory[]) {
     .filter(c => {
       if (c.parent !== 0 || c.count == null || c.count <= 0) return false;
       const n = (c.name || '').trim().toUpperCase();
-      if (EXCLUDED_TOP_CATEGORIES.has(c.name) || EXCLUDED_TOP_CATEGORIES.has(n)) return false;
-      if (KNOWN_BRANDS.has(n)) return true;
-      for (const kw of TYPE_KEYWORDS) {
-        if (n.includes(kw)) return false;
-      }
+      if (EXCLUDED_CATEGORY_NAMES.has(c.name) || EXCLUDED_CATEGORY_NAMES.has(n)) return false;
+      if (BRAND_CATEGORY_NAMES.has(n)) return true;
+      // 排除已知产品类型分类
+      if (PRODUCT_TYPE_CATEGORY_NAMES.has((c.name || '').toLowerCase())) return false;
       return true;
     })
     .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
@@ -54,7 +41,11 @@ export default function BrandsSection({ categories }: BrandsSectionProps) {
         <h2 className="text-2xl font-black text-gray-900 mb-6">Marcas</h2>
         <div className="flex flex-wrap gap-3">
           {brands.map((brand) => {
-            const slug = typeof brand === 'string' ? brand.toLowerCase() : (brand.slug || brand.name || '').toLowerCase();
+            // ★ 品牌 = product_cat 节点
+            //   slug 来自 WooCommerce product_cat.slug，不是独立 brand 字段
+            const slug = typeof brand === 'string'
+              ? brand.toLowerCase()
+              : (brand.slug || brand.name || '').toLowerCase();
             const label = typeof brand === 'string' ? brand : brand.name;
             return (
               <Link

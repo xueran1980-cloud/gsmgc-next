@@ -5,32 +5,9 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product, ProductCategory } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
+import { BRAND_CATEGORY_NAMES, PRODUCT_TYPE_CATEGORY_NAMES, EXCLUDED_CATEGORY_NAMES } from '@/config/category-config';
 
 const PER_PAGE = 24;
-
-// ─── 品牌常量（对齐旧站 ShopPage.jsx）─────────
-const KNOWN_BRANDS = new Set([
-  'APPLE', 'IPHONE', 'IPAD', 'SAMSUNG', 'XIAOMI', 'HUAWEI', 'OPPO',
-  'VIVO', 'ONEPLUS', 'MOTOROLA', 'TCL', 'ZTE', 'ALCATEL', 'NOKIA',
-  'HONOR', 'LENOVO', 'REALME', 'GOOGLE', 'SONY', 'LG', 'ASUS', 'BLACKBERRY',
-]);
-
-const EXCLUDED_TOP_CATEGORIES = new Set([
-  'sin categorizar', 'uncategorized', 'sin categoria',
-  'Sin categorizar', 'Uncategorized', 'Sin categoría',
-  'otros', 'op', 'otro', 'misc', 'varios',
-  'Otros', 'Misc', 'Varios', 'OP',
-]);
-
-// 真实商品分类（非品牌）— 排除已知品牌
-const REAL_CATEGORY_NAMES = new Set([
-  'pantallas', 'fundas', 'baterias', 'baterías', 'cables', 'cargadores',
-  'audio', 'auriculares', 'herramientas', 'accesorios', 'cristales',
-  'cristales templados', 'teclados', 'repuestos', 'conectores',
-  'flex', 'altavoces', 'vibradores', 'cámaras', 'camaras',
-  'tactiles', 'táctiles', 'displays',
-  'cable de datos', 'protector de pantalla', 'protector',
-]);
 
 /**
  * 搜索关键词高亮（对齐旧站）
@@ -157,13 +134,13 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
       const n = nameRaw.toUpperCase();
 
       // ❌ 排除 "Sin categorizar" / "Uncategorized"
-      if (EXCLUDED_TOP_CATEGORIES.has(nameRaw) || EXCLUDED_TOP_CATEGORIES.has(n)) return false;
+      if (EXCLUDED_CATEGORY_NAMES.has(nameRaw) || EXCLUDED_CATEGORY_NAMES.has(n)) return false;
 
-      // ✅ 白名单：已知品牌直接通过
-      if (KNOWN_BRANDS.has(n)) return true;
+      // ✅ 白名单：已知品牌直接通过（品牌 = product_cat，不是独立系统）
+      if (BRAND_CATEGORY_NAMES.has(n)) return true;
 
       // ❌ 排除已知商品分类（不是品牌）
-      if (REAL_CATEGORY_NAMES.has(nameRaw.toLowerCase())) return false;
+      if (PRODUCT_TYPE_CATEGORY_NAMES.has(nameRaw.toLowerCase())) return false;
 
       // 兜底：其他未知的顶级分类保留为品牌
       return true;
@@ -178,13 +155,13 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
       const n = nameRaw.toUpperCase();
 
       // ❌ 排除 "Sin categorizar"
-      if (EXCLUDED_TOP_CATEGORIES.has(nameRaw) || EXCLUDED_TOP_CATEGORIES.has(n)) return false;
+      if (EXCLUDED_CATEGORY_NAMES.has(nameRaw) || EXCLUDED_CATEGORY_NAMES.has(n)) return false;
 
       // ❌ 排除已知品牌（品牌不算 categoría）
-      if (KNOWN_BRANDS.has(n)) return false;
+      if (BRAND_CATEGORY_NAMES.has(n)) return false;
 
       // ✅ 已知真实分类名
-      if (REAL_CATEGORY_NAMES.has(nameRaw.toLowerCase())) return true;
+      if (PRODUCT_TYPE_CATEGORY_NAMES.has(nameRaw.toLowerCase())) return true;
 
       // ✅ 子分类（parent !== 0）也显示
       if (c.parent !== 0) return true;
