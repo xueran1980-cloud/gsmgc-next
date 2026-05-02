@@ -1,5 +1,6 @@
 // Next.js API Route — 代理到 WordPress 自定义端点 /products-raw
 // ★ 生产：走 /api/proxy/ | 开发：本地 fixture（绕过 SG CAPTCHA）
+// ★ WC theme 对齐：默认排序 popularity，搜索匹配 title+SKU
 
 import { NextRequest, NextResponse } from 'next/server';
 import { readFileSync } from 'fs';
@@ -14,6 +15,35 @@ interface FilterParams {
   perPage: number;
   orderby: string;
   order: string;
+}
+
+/**
+ * WC 风格搜索：匹配 title + SKU（不搜 description）
+ * 加权评分：精确匹配 > 开头匹配 > 包含匹配
+ */
+function wcSearch(products: any[], query: string): any[] {
+  const lower = query.toLowerCase().trim();
+  if (!lower) return products;
+
+  const scored = products.map((p) => {
+    let score = 0;
+    const name = (p.name || '').toLowerCase();
+    const sku = (p.sku || '').toLowerCase();
+
+    if (name === lower) score += 100;
+    if (sku === lower) score += 90;
+    if (name.startsWith(lower)) score += 50;
+    if (sku.startsWith(lower)) score += 40;
+    if (name.includes(lower)) score += 20;
+    if (sku.includes(lower)) score += 10;
+
+    return { product: p, score };
+  });
+
+  return scored
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(({ product }) => product);
 }
 
 function applyFilters(products: any[], params: FilterParams) {
@@ -44,14 +74,10 @@ function applyFilters(products: any[], params: FilterParams) {
     console.log(`[FILTER DEBUG] result: ${products.length} products matched (filtered from ${params.category})`);
   }
 
-  // 搜索过滤
+  // ★ WC 风格搜索（title + SKU 加权评分）
   if (search) {
-    const lower = search.toLowerCase();
-    products = products.filter((p: any) => {
-      const name = (p.name || '').toLowerCase();
-      const sku = (p.sku || '').toLowerCase();
-      return name.includes(lower) || sku.includes(lower);
-    });
+    products = wcSearch(products, search);
+    console.log(`[SEARCH DEBUG] "${search}" → ${products.length} results`);
   }
 
   // 排序
@@ -117,7 +143,7 @@ export async function GET(request: NextRequest) {
       search: searchParams.get('search') || '',
       page: parseInt(searchParams.get('page') || '1'),
       perPage: parseInt(searchParams.get('per_page') || '24'),
-      orderby: searchParams.get('orderby') || 'price',
+      orderby: searchParams.get('orderby') || 'popularity',
       order: searchParams.get('order') || 'desc',
     };
 

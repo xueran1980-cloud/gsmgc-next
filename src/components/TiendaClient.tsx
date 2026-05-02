@@ -47,7 +47,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
   const pageParam = Math.max(1, parseInt(searchParams.get('page') || '1'));
   const orderby = searchParams.get('orderby');
   const order = searchParams.get('order');
-  const finalOrderby = orderby || 'price';
+  const finalOrderby = orderby || 'popularity'; // ★ WC 默认：popularity
   const finalOrder = order || 'desc';
 
   // ★ 参数透传给 /api/products（后端处理排序/筛选）
@@ -222,7 +222,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Sort — 对齐旧站选项顺序：price-desc first */}
+              {/* Sort — WC theme 对齐：popularity first */}
               <select
                 value={`${finalOrderby}-${finalOrder}`}
                 onChange={e => {
@@ -232,10 +232,10 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                 }}
                 className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
               >
-                <option value="price-desc">Precio: mayor a menor</option>
-                <option value="price-asc">Precio: menor a mayor</option>
-                <option value="date-desc">Más nuevos</option>
                 <option value="popularity-desc">Más vendidos</option>
+                <option value="price-asc">Precio: menor a mayor</option>
+                <option value="price-desc">Precio: mayor a menor</option>
+                <option value="date-desc">Más recientes</option>
                 <option value="title-asc">Nombre A-Z</option>
               </select>
 

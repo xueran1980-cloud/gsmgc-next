@@ -1,17 +1,18 @@
 /**
  * PriceWithIGIC — 显示 BASE 价格 + IGIC 含税价
  *
+ * ★ WC theme 对齐：西班牙语格式（逗号小数）
+ *
  * 用法：
  *   <PriceWithIGIC price={6.00} size="lg" />
- *   →  6.00 €
- *      IGIC 6.42 €
+ *   →  6,00 €
+ *      IGIC incl. 6,42 €
  */
+import { formatSpanishPrice, calcIGIC } from '@/lib/display-formatter';
+
 const IGIC_RATE = 0.07;
 
-export function igicAmount(base: number): number {
-  return Math.round(base * IGIC_RATE * 100) / 100;
-}
-
+/** 计算含 IGIC 价格（数字） */
 export function priceWithIgic(base: number): number {
   return Math.round(base * (1 + IGIC_RATE) * 100) / 100;
 }
@@ -28,7 +29,7 @@ export default function PriceWithIGIC({
   className = '',
 }: PriceWithIGICProps) {
   const base = parseFloat(String(price || 0));
-  const total = priceWithIgic(base);
+  const total = calcIGIC(base);
 
   const sizeClasses: Record<string, { main: string; sub: string; total: string }> = {
     sm: { main: 'text-sm', sub: 'text-[11px]', total: 'text-xs' },
@@ -41,10 +42,10 @@ export default function PriceWithIGIC({
   return (
     <div className={className}>
       <span className={`font-black text-[#2563eb] ${s.main} leading-none`}>
-        {base.toFixed(2)} €
+        {formatSpanishPrice(base)}
       </span>
       <div className={`${s.sub} text-gray-500 mt-0.5 leading-none`}>
-        <span className="font-medium">IGIC</span> <span className="font-semibold text-gray-700">{total.toFixed(2)} €</span>
+        IGIC incl. <span className="font-semibold text-gray-700">{formatSpanishPrice(total)}</span>
       </div>
     </div>
   );

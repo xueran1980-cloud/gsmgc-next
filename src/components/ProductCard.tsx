@@ -6,40 +6,21 @@ import { ShoppingCart, Eye, Lock } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import type { Product } from "@/lib/api";
-import { getProductImage } from "@/lib/api";
-import { PriceOrLoginPrompt } from "./PriceOrLoginPrompt";
+import { formatProduct, type DisplayProduct } from "@/lib/display-formatter";
 
-function generateSlug(name: string): string {
-  if (!name) return "";
-  return name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+// ── Badge components ──
 
-function getProductUrl(product: Product): string {
-  const slug = generateSlug(product.name);
-  return slug ? `/producto/${product.id}/${slug}` : `/producto/${product.id}`;
-}
-
-function DiscountBadge({ regular_price, price }: { regular_price: string; price: string }) {
-  const r = parseFloat(regular_price);
-  const p = parseFloat(price);
-  if (!r || !p || r <= p) return null;
-  const pct = Math.round((1 - p / r) * 100);
-  if (pct < 1) return null;
+function DiscountBadge({ displayPrice }: { displayPrice: DisplayProduct['displayPrice'] }) {
+  if (!displayPrice.showOfertaBadge) return null;
   return (
     <span className="absolute top-2 left-2 z-10 bg-[#ea580c] text-white text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-sm">
-      -{pct}%
+      -{displayPrice.discountPct}%
     </span>
   );
 }
 
-function StockBadge({ stock_status, stock_quantity }: { stock_status: string; stock_quantity: number | null }) {
-  if (stock_status !== "instock") return null;
-  if (stock_quantity !== null && stock_quantity !== undefined && stock_quantity <= 1) {
+function StockBadge({ displayStock }: { displayStock: DisplayProduct['displayStock'] }) {
+  if (displayStock.status === 'lowstock') {
     return (
       <span className="absolute top-2 right-2 z-10 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm">
         ¡Última!
@@ -49,12 +30,18 @@ function StockBadge({ stock_status, stock_quantity }: { stock_status: string; st
   return null;
 }
 
+// ── ProductCard ──
+
 export default function ProductCard({ product, compact = false }: { product: Product; compact?: boolean }) {
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const { isLoggedIn, loading: authLoading } = useAuth();
+
+  // ★ 所有展示数据通过 formatter
+  const d = formatProduct(product);
+  const inStock = d.displayStock.status === 'instock' || d.displayStock.status === 'lowstock';
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -72,31 +59,81 @@ export default function ProductCard({ product, compact = false }: { product: Pro
     setTimeout(() => setAdded(false), 1500);
   };
 
-  const inStock = product.stock_status === "instock";
-  const imgUrl = getProductImage(product);
+  // ── Price display (WC theme aligned) ──
+  const PriceDisplay = ({ compact: c }: { compact?: boolean }) => {
+    const { isLoggedIn, loading } = useAuth();
 
-  // ── compact variant (for carousels) ──
+    if (loading) {
+      return (
+        <div className="animate-pulse">
+          <div className={`bg-gray-200 rounded ${c ? 'h-3 w-12' : 'h-4 w-16'} mb-1`} />
+          <div className={`bg-gray-200 rounded ${c ? 'h-2 w-10' : 'h-3 w-12'}`} />
+        </div>
+      );
+    }
+
+    if (!isLoggedIn) {
+      // 游客视图 — 1:1 对齐现站
+      if (c) {
+        return (
+          <div className="text-[10px] text-gray-400 italic">
+            <Lock size={9} className="inline mr-0.5" />
+            Ver precio
+          </div>
+        );
+      }
+      return (
+        <div>
+          <div className="text-sm text-gray-500 mb-1">Precio exclusivo B2B</div>
+          <Link href="/mi-cuenta" className="text-[#2563eb] font-semibold text-sm hover:underline">
+            <Lock size={15} className="inline mr-1" />
+            Registrate para ver precio
+          </Link>
+        </div>
+      );
+    }
+
+    // 登录用户视图 — WC theme 风格
+    const sizeClass = c ? 'text-xs' : 'text-sm';
+    return (
+      <div>
+        <span className={`font-black text-[#2563eb] ${sizeClass}`}>
+          {d.displayPrice.baseFormatted}
+        </span>
+        {d.displayPrice.hasDiscount && (
+          <span className="text-[10px] text-gray-400 line-through ml-1">
+            {d.displayPrice.regularFormatted}
+          </span>
+        )}
+        <div className={`${c ? 'text-[9px]' : 'text-xs'} text-gray-500`}>
+          IGIC incl. {d.displayPrice.igicFormatted}
+        </div>
+      </div>
+    );
+  };
+
+  // ── compact variant (carousels) ──
   if (compact) {
     return (
       <Link
-        href={getProductUrl(product)}
+        href={d.productUrl}
         className="flex-shrink-0 w-44 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all p-3 group relative"
       >
-        <DiscountBadge regular_price={product.regular_price} price={product.price} />
+        <DiscountBadge displayPrice={d.displayPrice} />
         <div className="bg-gray-50 rounded-lg h-24 flex items-center justify-center mb-3 overflow-hidden">
-          {imgUrl && !imgUrl.includes("placeholder") && !imgError ? (
+          {d.imageUrl && !d.imageUrl.includes("placeholder") && !imgError ? (
             <>
               {!imgLoaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
               <img
-                src={imgUrl}
-                alt={product.name}
-              className={`w-full aspect-square object-cover group-hover:scale-105 transition-transform ${imgLoaded ? "" : "opacity-0"}`}
-              loading="eager"
-              decoding="async"
-              width={300}
-              height={300}
-              onLoad={() => setImgLoaded(true)}
-              onError={() => setImgError(true)}
+                src={d.imageUrl}
+                alt={d.displayTitle.display}
+                className={`w-full aspect-square object-cover group-hover:scale-105 transition-transform ${imgLoaded ? "" : "opacity-0"}`}
+                loading="eager"
+                decoding="async"
+                width={300}
+                height={300}
+                onLoad={() => setImgLoaded(true)}
+                onError={() => setImgError(true)}
               />
             </>
           ) : (
@@ -108,14 +145,20 @@ export default function ProductCard({ product, compact = false }: { product: Pro
             />
           )}
         </div>
-        <h3 className="text-xs font-semibold text-gray-800 leading-tight line-clamp-2 mb-1.5 group-hover:text-[#2563eb] transition">
-          {product.name}
+        {/* ★ WC theme: title line-clamp-2 + SEO excerpt below */}
+        <h3
+          className="text-xs font-semibold text-gray-800 leading-tight line-clamp-2 mb-1 group-hover:text-[#2563eb] transition"
+          title={d.displayTitle.truncated ? d.displayTitle.full : undefined}
+        >
+          {d.displayTitle.display}
         </h3>
-        {product.sku && (
-          <div className="text-[10px] text-gray-400 mb-1.5 font-mono">SKU: {product.sku}</div>
+        {d.seoExcerpt && (
+          <p className="text-[10px] text-gray-400 leading-tight line-clamp-2 mb-1.5">
+            {d.seoExcerpt}
+          </p>
         )}
-        <div className="flex items-center justify-between">
-          <PriceOrLoginPrompt price={product.price} regularPrice={product.regular_price} compact />
+        <div className="flex items-center justify-between mt-auto">
+          <PriceDisplay compact />
           {inStock && isLoggedIn ? (
             <button
               onClick={handleAdd}
@@ -145,12 +188,12 @@ export default function ProductCard({ product, compact = false }: { product: Pro
   // ── standard card ──
   return (
     <Link
-      href={getProductUrl(product)}
+      href={d.productUrl}
       className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-blue-100 transition-all p-4 group flex flex-col h-full relative overflow-hidden"
     >
       {/* Badges */}
-      <DiscountBadge regular_price={product.regular_price} price={product.price} />
-      <StockBadge stock_status={product.stock_status} stock_quantity={product.stock_quantity ?? null} />
+      <DiscountBadge displayPrice={d.displayPrice} />
+      <StockBadge displayStock={d.displayStock} />
 
       {/* Out-of-stock overlay */}
       {!inStock && (
@@ -163,12 +206,12 @@ export default function ProductCard({ product, compact = false }: { product: Pro
 
       {/* Image */}
       <div className="bg-gray-50 rounded-xl h-40 flex items-center justify-center mb-4 overflow-hidden relative">
-        {imgUrl && !imgUrl.includes("placeholder") && !imgError ? (
+        {d.imageUrl && !d.imageUrl.includes("placeholder") && !imgError ? (
           <>
             {!imgLoaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
               <img
-                src={imgUrl}
-                alt={product.name}
+                src={d.imageUrl}
+                alt={d.displayTitle.display}
                 className={`w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-300 ${imgLoaded ? "" : "opacity-0"}`}
               loading="lazy"
               decoding="async"
@@ -190,25 +233,26 @@ export default function ProductCard({ product, compact = false }: { product: Pro
 
       {/* Content */}
       <div className="flex-1 flex flex-col">
-        <h3 className="font-semibold text-gray-800 leading-tight line-clamp-2 mb-1 group-hover:text-[#2563eb] transition text-sm">
-          {product.name}
+        {/* ★ WC theme: title + SEO excerpt */}
+        <h3
+          className="font-semibold text-gray-800 leading-tight line-clamp-2 mb-1 group-hover:text-[#2563eb] transition text-sm"
+          title={d.displayTitle.truncated ? d.displayTitle.full : undefined}
+        >
+          {d.displayTitle.display}
         </h3>
-        {product.sku && (
-          <div className="text-[11px] text-gray-400 font-mono mb-2">SKU: {product.sku}</div>
+        {/* SEO excerpt (short_description) — WC theme 标准 */}
+        {d.seoExcerpt && (
+          <p className="text-xs text-gray-400 leading-relaxed line-clamp-2 mb-2">
+            {d.seoExcerpt}
+          </p>
         )}
-        {/* Stock quantity indicator */}
-        {inStock && (product.stock_quantity ?? 0) > 5 && (
-          <div className="text-[11px] text-green-600 font-medium mb-1 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block" />
-            {product.stock_quantity!} disponibles
-          </div>
-        )}
+        {/* SKU — WC theme: 列表页不显示 */}
       </div>
 
       {/* Price + CTA */}
       <div className="flex items-end gap-2 mt-3 pt-3 border-t border-gray-50">
         <div className="flex-1">
-          <PriceOrLoginPrompt price={product.price} regularPrice={product.regular_price} />
+          <PriceDisplay />
         </div>
 
         {/* Actions */}
@@ -235,7 +279,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
               )}
             </button>
             <Link
-              href={getProductUrl(product)}
+              href={d.productUrl}
               onClick={(e) => e.stopPropagation()}
               className="rounded-xl p-2.5 border border-gray-200 text-gray-400 hover:border-[#2563eb] hover:text-[#2563eb] transition"
               title="Ver detalles"

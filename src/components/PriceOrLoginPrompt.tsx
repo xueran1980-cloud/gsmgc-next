@@ -3,9 +3,14 @@
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { Lock } from "lucide-react";
+import { formatSpanishPrice, calcIGIC, type DisplayPrice } from "@/lib/display-formatter";
 
-const IGIC_RATE = 0.07;
-
+/**
+ * PriceOrLoginPrompt — 统一价格/登录提示组件
+ *
+ * ★ 所有价格渲染必须经过此组件（或 formatDisplayPrice）
+ * ★ WC theme 对齐：西班牙语格式 + IGIC incluido
+ */
 export function PriceOrLoginPrompt({
   price,
   regularPrice,
@@ -15,21 +20,18 @@ export function PriceOrLoginPrompt({
   regularPrice?: string;
   compact?: boolean;
 }) {
-  // ✅ 统一使用 AuthContext（token 系统），与 ProductCard 保持一致
-  // 旧逻辑用 useWpLoggedIn（检查 WP cookie），在新站域名下永远返回 false
   const { isLoggedIn, loading } = useAuth();
 
   if (loading) {
     return (
       <div className="animate-pulse">
-        <div className="h-4 bg-gray-200 rounded w-16 mb-1" />
-        <div className="h-3 bg-gray-200 rounded w-12" />
+        <div className={`bg-gray-200 rounded ${compact ? 'h-3 w-12' : 'h-4 w-16'} mb-1`} />
+        <div className={`bg-gray-200 rounded ${compact ? 'h-2 w-10' : 'h-3 w-12'}`} />
       </div>
     );
   }
 
   if (!isLoggedIn) {
-    // 游客视图 — 1:1 对齐现站 ProductCard.jsx
     if (compact) {
       return (
         <div className="text-[10px] text-gray-400 italic">
@@ -41,10 +43,7 @@ export function PriceOrLoginPrompt({
     return (
       <div>
         <div className="text-sm text-gray-500 mb-1">Precio exclusivo B2B</div>
-        <Link
-          href="/mi-cuenta"
-          className="text-[#2563eb] font-semibold text-sm hover:underline"
-        >
+        <Link href="/mi-cuenta" className="text-[#2563eb] font-semibold text-sm hover:underline">
           <Lock size={15} className="inline mr-1" />
           Registrate para ver precio
         </Link>
@@ -52,24 +51,26 @@ export function PriceOrLoginPrompt({
     );
   }
 
-  // 登录用户视图 — 1:1 对齐现站 PriceWithIGIC.jsx
+  // ★ 登录用户：使用 formatter
   const base = parseFloat(price || "0");
-  const igicTotal = base * (1 + IGIC_RATE);
-  const hasDiscount =
-    regularPrice && parseFloat(regularPrice) > base;
+  const igic = calcIGIC(base);
+  const regular = regularPrice ? parseFloat(regularPrice) : 0;
+  const hasDiscount = regular > 0 && base > 0 && regular > base;
+
+  const sizeClass = compact ? 'text-xs' : 'text-sm';
 
   return (
     <div>
-      <span className="font-black text-[#2563eb]">
-        {base.toFixed(2)} €
+      <span className={`font-black text-[#2563eb] ${sizeClass}`}>
+        {formatSpanishPrice(base)}
       </span>
       {hasDiscount && (
         <span className="text-[10px] text-gray-400 line-through ml-1">
-          €{parseFloat(regularPrice!).toFixed(2)}
+          {formatSpanishPrice(regular)}
         </span>
       )}
-      <div className="text-xs text-gray-500">
-        <span className="font-medium">IGIC</span> {igicTotal.toFixed(2)} €
+      <div className={`${compact ? 'text-[9px]' : 'text-xs'} text-gray-500`}>
+        IGIC incl. {formatSpanishPrice(igic)}
       </div>
     </div>
   );
