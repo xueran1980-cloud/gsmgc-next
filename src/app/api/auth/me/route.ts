@@ -11,15 +11,19 @@
  *   { logged_in: true, user: {...} }
  *   { logged_in: false }
  *
- * 部署注意：
- *   - Vercel 上此路由运行在 Node.js 环境，可发起服务端 fetch 到 api.gsmgc.es
- *   - 若浏览器未发送 cookie，仅 Bearer token 方式可用
- *   - wordpress_logged_in cookie 仅在同一个域名下才会被浏览器发送
+ * ★ v2: 所有请求走 Vercel proxy（/api/proxy/wp-json/...），避免直连 api.gsmgc.es
+ *       被 CF Bot Fight Mode 拦截（202 sgcaptcha challenge）
+ *       Vercel rewrite proxy 不会被 CF 拦截，因为请求来自 CF 自己的边缘节点
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { GSMGC_API_DIRECT } from '@/config/api';
 
-const WP_API_BASE = `${GSMGC_API_DIRECT}/wp-json`;
+// ★ v2: 所有请求走 Vercel proxy，不走直连
+// Vercel proxy 是 rewrite（/api/proxy/:path* → api.gsmgc.es/:path*），
+// 由 CF 边缘节点处理，不会被 Bot Fight Mode 拦截
+const PROXY_BASE = 'https://gsmgc-next.vercel.app/api/proxy';
+const WP_API_DIRECT = `${GSMGC_API_DIRECT}`;
+const WP_API_PROXY = `${PROXY_BASE}/wp-json/gsmgc/v1`;
 
 /**
  * 从请求中解析 Bearer token
@@ -33,90 +37,64 @@ function getBearerToken(req: NextRequest): string | null {
 }
 
 /**
- * 从请求 cookie 中读取指定 cookie 值
- */
-function getCookie(req: NextRequest, name: string): string | null {
-  const cookieHeader = req.headers.get('cookie') || '';
-  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
-/**
  * 调用自定义 /me 端点（gsmgc/v1/me）
- * 此端点接受 Bearer token，返回 { user: {...} }
+ * ★ v2: 优先走 Vercel proxy，fallback 到直连
  */
 async function checkViaCustomAPI(token: string): Promise<{ logged_in: boolean; user?: Record<string, unknown> }> {
-  try {
-    const url = `${GSMGC_API_DIRECT}/wp-json/gsmgc/v1/me`;
-    console.log('[api/auth/me] Checking via custom API:', url);
-    const res = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'User-Agent': 'GSMGC-Next.js/1.0',
-      },
-      cache: 'no-store',
-    });
+  // ★ 策略：先走 proxy（不会被 CF 拦截），失败再走直连
+  const endpoints = [
+    `${WP_API_PROXY}/me`,   // Vercel proxy（优先）
+    `${GSMGC_API_DIRECT}/me`, // 直连（fallback）
+  ];
 
-    console.log('[api/auth/me] Response status:', res.status);
-    console.log('[api/auth/me] Response headers:', Object.fromEntries(res.headers.entries()));
+  for (const url of endpoints) {
+    try {
+      console.log('[api/auth/me] Trying:', url.includes('proxy') ? 'PROXY' : 'DIRECT');
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'User-Agent': 'GSMGC-Next.js/1.0',
+        },
+        cache: 'no-store',
+      });
 
-    if (!res.ok) {
-      const text = await res.text();
-      console.warn('[api/auth/me] Non-OK response:', text.substring(0, 200));
+      // 检查是否被 CF/SG 拦截（返回 HTML 而不是 JSON）
+      const ct = res.headers.get('Content-Type') || '';
+      if (ct.includes('text/html')) {
+        console.warn('[api/auth/me] Got HTML response (blocked), trying next endpoint');
+        continue; // 被拦截，尝试下一个
+      }
+
+      if (!res.ok) {
+        console.warn('[api/auth/me] Non-OK response:', res.status, 'from', url.includes('proxy') ? 'PROXY' : 'DIRECT');
+        continue;
+      }
+
+      const data = await res.json();
+      console.log('[api/auth/me] Response data:', JSON.stringify(data).substring(0, 300));
+
+      // gsmgc-auth.php 返回格式: { success: true, user: {...} } 或 { logged_in: true, user: {...} }
+      if (data.success && data.user && (data.user as Record<string, unknown>).id) {
+        return { logged_in: true, user: data.user as Record<string, unknown> };
+      }
+      if (data.logged_in && data.user && (data.user as Record<string, unknown>).id) {
+        return { logged_in: true, user: data.user as Record<string, unknown> };
+      }
+      if (data.id) {
+        return { logged_in: true, user: data as unknown as Record<string, unknown> };
+      }
+
+      console.warn('[api/auth/me] No valid user in response:', JSON.stringify(data).substring(0, 200));
       return { logged_in: false };
+    } catch (err) {
+      console.warn('[api/auth/me] Check failed for', url.includes('proxy') ? 'PROXY' : 'DIRECT', ':', (err as Error).message);
+      continue; // 继续尝试下一个
     }
-
-    const data = await res.json();
-    console.log('[api/auth/me] Response data:', JSON.stringify(data).substring(0, 200));
-    
-    if (data.logged_in && data.user && (data.user as Record<string, unknown>).id) {
-      return { logged_in: true, user: data.user as Record<string, unknown> };
-    }
-    if (data.id) {
-      return { logged_in: true, user: data as unknown as Record<string, unknown> };
-    }
-    return { logged_in: false };
-  } catch (err) {
-    console.warn('[api/auth/me] Custom API check failed:', (err as Error).message);
-    return { logged_in: false };
   }
-}
 
-/**
- * 调用 WP REST API /wp/v2/users/me
- * 需要 wordpress_logged_in cookie（服务端请求可附带）
- */
-async function checkViaWPCookie(req: NextRequest): Promise<{ logged_in: boolean; user?: Record<string, unknown> }> {
-  try {
-    const wpCookie = getCookie(req, 'wordpress_logged_in_gsmgc');
-    // wordpress_logged_in 的完整 cookie 名需与 WP 配置匹配
-    // 常见格式：wordpress_logged_in_<hash_suffix>
-    // 此处转发所有 wordpress 开头的 cookie
-    const allCookies = req.headers.get('cookie') || '';
-
-    const res = await fetch(`${WP_API_BASE}/wp/v2/users/me`, {
-      method: 'GET',
-      headers: {
-        'Cookie': allCookies,
-        'Content-Type': 'application/json',
-        'User-Agent': 'GSMGC-Next.js/1.0',
-      },
-      cache: 'no-store',
-    });
-
-    if (!res.ok) return { logged_in: false };
-
-    const user = await res.json();
-    if (user && user.id) {
-      return { logged_in: true, user: user as unknown as Record<string, unknown> };
-    }
-    return { logged_in: false };
-  } catch (err) {
-    console.warn('[api/auth/me] WP cookie check failed:', (err as Error).message);
-    return { logged_in: false };
-  }
+  return { logged_in: false };
 }
 
 export async function GET(req: NextRequest) {
@@ -127,13 +105,6 @@ export async function GET(req: NextRequest) {
     if (result.logged_in) {
       return NextResponse.json(result);
     }
-    // token 无效，尝试 cookie 方式
-  }
-
-  // 方式 2：WP cookie（需浏览器同域发送 cookie）
-  const cookieCheck = await checkViaWPCookie(req);
-  if (cookieCheck.logged_in) {
-    return NextResponse.json(cookieCheck);
   }
 
   // 均未通过
