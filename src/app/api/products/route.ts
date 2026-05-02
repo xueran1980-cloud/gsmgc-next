@@ -51,12 +51,26 @@ export async function GET(request: NextRequest) {
 
     let products: any[] = json.products;
 
-    // 分类过滤
+    // ★ 分类过滤 — 同时支持 ID 和 slug
     if (category) {
       const catId = parseInt(category);
-      products = products.filter((p: any) =>
-        p.categories && p.categories.some((c: any) => c.id === catId)
-      );
+      const isNumeric = !isNaN(catId);
+      const catSlug = category.toLowerCase().trim();
+
+      products = products.filter((p: any) => {
+        if (!p.categories || !Array.isArray(p.categories)) return false;
+        return p.categories.some((c: any) => {
+          // 优先匹配 ID（数字查询）
+          if (isNumeric && c.id === catId) return true;
+          // 也匹配 slug（品牌用slug查询）
+          if (catSlug && c.slug && String(c.slug).toLowerCase() === catSlug) return true;
+          // 兜底：匹配名称
+          if (catSlug && c.name && String(c.name).toLowerCase() === catSlug) return true;
+          return false;
+        });
+      });
+
+      console.log(`[API /products] Filtered by category="${category}" (id=${isNumeric ? catId : 'slug'}, slug="${catSlug}"): ${products.length} products`);
     }
 
     // 搜索过滤
@@ -97,7 +111,13 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(totalCount / perPage);
     const paginated = products.slice((page - 1) * perPage, page * perPage);
 
-    return NextResponse.json(paginated, {
+    return NextResponse.json({
+      products: paginated,
+      totalCount,
+      totalPages,
+      page,
+      perPage,
+    }, {
       headers: { 'Cache-Control': 'no-store' },
     });
   } catch (err: any) {

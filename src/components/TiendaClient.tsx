@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product, ProductCategory } from '@/lib/api';
@@ -116,9 +116,23 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
         cache: 'no-store',
       }).then(r => r.json()),
       fetch('/api/categories', { cache: 'no-store' }).then(r => r.json()),
-    ]).then(([prods, cats]) => {
+    ]).then(([prodData, cats]) => {
       if (!cancelled) {
-        setProducts(prods || []);
+        // ★ 新的API响应格式: { products, totalCount, totalPages, page, perPage }
+        if (prodData && Array.isArray(prodData.products)) {
+          setProducts(prodData.products);
+          setTotalCount(prodData.totalCount || prodData.products.length);
+          setTotalPages(prodData.totalPages || 1);
+        } else if (Array.isArray(prodData)) {
+          // 兼容旧格式（纯数组）
+          setProducts(prodData);
+          setTotalCount(prodData.length);
+          setTotalPages(1);
+        } else {
+          setProducts([]);
+          setTotalCount(0);
+          setTotalPages(0);
+        }
         setCategories(cats || []);
         setLoading(false);
       }
@@ -179,19 +193,14 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
     })
     .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
 
-  // ★ result 对象（统一分页计算，对齐旧站）
-  const result = useMemo(() => {
-    const totalCount = products.length;
-    const totalPages = Math.ceil(totalCount / PER_PAGE);
-    const page = Math.max(1, Math.min(pageParam, totalPages || 1));
-    const paginated = products.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-    return { totalCount, totalPages, page, paginated };
-  }, [products, pageParam]);
+  // ★ result 对象 — 使用 API 返回的分页元数据
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   // Smart page numbers with ellipsis（对齐旧站）
   function renderPagination() {
-    if (result.totalPages <= 1) return null;
-    const { page, totalPages } = result;
+    if (totalPages <= 1) return null;
+    const page = pageParam;
     const delta = 2;
     const pages: React.ReactNode[] = [];
     let prev: number | null = null;
@@ -364,9 +373,9 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
 
               {/* 快速统计（对齐旧站格式） */}
               <div className="mt-4 pt-3 border-t border-gray-100">
-                <p className="text-[11px] text-gray-400">
-                  {result.totalCount > 0 ? `${result.totalCount} productos` : ''}{searchParam ? ` · "${searchParam}"` : ''}
-                </p>
+              <p className="text-[11px] text-gray-400">
+                {totalCount > 0 ? `${totalCount} productos` : ''}{searchParam ? ` · "${searchParam}"` : ''}
+              </p>
               </div>
             </div>
           </aside>
@@ -393,7 +402,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                   </div>
                 ))}
               </div>
-            ) : result.paginated.length === 0 ? (
+            ) : products.length === 0 ? (
               <div className="text-center py-20">
                 <div className="text-6xl mb-4">{'🔍'}</div>
                 <h2 className="text-xl font-bold text-gray-800 mb-2">No se encontraron productos</h2>
@@ -410,30 +419,30 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                 {/* 统计信息（对齐旧站：搜索时显示 resultado(s) 格式） */}
                 <p className="text-sm text-gray-500 mb-4">
                   {searchParam
-                    ? <>{result.totalCount} resultado{result.totalCount !== 1 ? 's' : ''} para "<span className="font-medium text-gray-700">{searchParam}"</span></>
-                    : `${result.totalCount} productos`
+                    ? <>{totalCount} resultado{totalCount !== 1 ? 's' : ''} para "<span className="font-medium text-gray-700">{searchParam}"</span></>
+                    : `${totalCount} productos`
                   }
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
-                  {result.paginated.map(p => (
+                  {products.map(p => (
                     <ProductCard key={p.id} product={p} />
                   ))}
                 </div>
 
                 {/* Pagination */}
-                {result.totalPages > 1 && (
+                {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-10">
                     <button
-                      onClick={() => updateParam('page', String(result.page - 1))}
-                      disabled={result.page <= 1}
+                      onClick={() => updateParam('page', String(pageParam - 1))}
+                      disabled={pageParam <= 1}
                       className="p-2 rounded-lg border border-gray-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
                     >
                       <ChevronLeft size={18} />
                     </button>
                     {renderPagination()}
                     <button
-                      onClick={() => updateParam('page', String(result.page + 1))}
-                      disabled={result.page >= result.totalPages}
+                      onClick={() => updateParam('page', String(pageParam + 1))}
+                      disabled={pageParam >= totalPages}
                       className="p-2 rounded-lg border border-gray-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
                     >
                       <ChevronRight size={18} />
