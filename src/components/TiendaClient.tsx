@@ -102,9 +102,19 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
     params.set('per_page', String(PER_PAGE));
     params.set('page', String(pageParam));
 
+    // ★ 构建请求 headers：透传 Bearer token 给 /api/products → WP 后端
+    const fetchHeaders: Record<string, string> = {};
+    try {
+      const token = localStorage.getItem('gsmgc_auth_token');
+      if (token) fetchHeaders['Authorization'] = `Bearer ${token}`;
+    } catch {}
+
     Promise.all([
-      fetch(`/api/products?${params.toString()}`).then(r => r.json()),
-      fetch('/api/categories').then(r => r.json()),
+      fetch(`/api/products?${params.toString()}`, {
+        headers: fetchHeaders,
+        cache: 'no-store',
+      }).then(r => r.json()),
+      fetch('/api/categories', { cache: 'no-store' }).then(r => r.json()),
     ]).then(([prods, cats]) => {
       if (!cancelled) {
         setProducts(prods || []);

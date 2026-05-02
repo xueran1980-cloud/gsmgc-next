@@ -4,18 +4,22 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const PROXY_BASE = '/api/proxy/wp-json/gsmgc/v1';
+const WP_CATEGORIES_RAW = 'https://api.gsmgc.es/wp-json/gsmgc/v1/categories-raw';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    // ★ 直接请求 api.gsmgc.es，透传登录态
+    const proxyHeaders: Record<string, string> = {
+      'User-Agent': 'GSMGC-Next-Proxy/1.0',
+      'Accept': 'application/json',
+    };
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader) proxyHeaders['Authorization'] = authHeader;
+    const cookieHeader = request.headers.get('Cookie');
+    if (cookieHeader) proxyHeaders['Cookie'] = cookieHeader;
 
-    // 调用 WordPress /categories-raw 端点
-    const res = await fetch(`${request.nextUrl.origin}/api/proxy/wp-json/gsmgc/v1/categories-raw`, {
-      headers: {
-        'User-Agent': 'GSMGC-Next-Proxy/1.0',
-        'Accept': 'application/json',
-      },
+    const res = await fetch(WP_CATEGORIES_RAW, {
+      headers: proxyHeaders,
       cache: 'no-store',
     });
 

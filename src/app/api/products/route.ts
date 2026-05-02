@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const PROXY_BASE = '/api/proxy/wp-json/gsmgc/v1';
+const WP_PRODUCTS_RAW = 'https://api.gsmgc.es/wp-json/gsmgc/v1/products-raw';
 
 /**
  * 将 WC REST API 参数映射到 /products-raw 支持的参数
@@ -21,14 +21,20 @@ export async function GET(request: NextRequest) {
     const orderby = searchParams.get('orderby') || 'price';
     const order = searchParams.get('order') || 'desc';
 
-    // 调用 WordPress /products-raw 端点
-    const url = new URL(`${PROXY_BASE}/products-raw`, 'http://localhost');
+    // ★ 直接请求 api.gsmgc.es（不走 rewrite），透传登录态
+    const proxyHeaders: Record<string, string> = {
+      'User-Agent': 'GSMGC-Next-Proxy/1.0',
+      'Accept': 'application/json',
+    };
+    // 透传 Authorization（Bearer token）
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader) proxyHeaders['Authorization'] = authHeader;
+    // 透传 cookie（如果有 WP logged-in cookie）
+    const cookieHeader = request.headers.get('Cookie');
+    if (cookieHeader) proxyHeaders['Cookie'] = cookieHeader;
 
-    const res = await fetch(`${request.nextUrl.origin}/api/proxy/wp-json/gsmgc/v1/products-raw`, {
-      headers: {
-        'User-Agent': 'GSMGC-Next-Proxy/1.0',
-        'Accept': 'application/json',
-      },
+    const res = await fetch(WP_PRODUCTS_RAW, {
+      headers: proxyHeaders,
       cache: 'no-store',
     });
 

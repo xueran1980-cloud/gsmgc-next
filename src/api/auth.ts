@@ -461,10 +461,15 @@ export async function resetPassword(loginVal: string, key: string, password: str
 
 export async function getCurrentUser(): Promise<GsmgcUser | null> {
   // ★ 改用统一端点 /api/auth/me（Next.js API route，服务端代理到后端）
+  // ★ 必须带 Bearer token，否则 /api/auth/me 无法识别用户
   try {
+    const token = getAuthToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const res = await fetch('/api/auth/me', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       cache: 'no-store',
     });
     if (!res.ok) return null;
@@ -480,10 +485,15 @@ export async function getCurrentUser(): Promise<GsmgcUser | null> {
 
 export async function getCurrentUserSafe(): Promise<GsmgcUser | null> {
   // ★ 改用统一端点 /api/auth/me（Next.js API route，服务端代理）
+  // ★ 必须带 Bearer token
   try {
+    const token = getAuthToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const res = await fetch('/api/auth/me', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       cache: 'no-store',
     });
     if (!res.ok) return null;
@@ -499,10 +509,15 @@ export async function getCurrentUserSafe(): Promise<GsmgcUser | null> {
 
 export async function checkAuth(): Promise<{ authenticated: boolean; user?: GsmgcUser; [key: string]: unknown }> {
   // ★ 改用统一端点 /api/auth/me（Next.js API route，服务端代理，单次请求即完成鉴权）
+  // ★ 必须带 Bearer token
   try {
+    const token = getAuthToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const res = await fetch('/api/auth/me', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       cache: 'no-store',
     });
     const data = await res.json();
@@ -525,10 +540,15 @@ export async function checkAuth(): Promise<{ authenticated: boolean; user?: Gsmg
  */
 export async function deepCheckAuth(): Promise<{ authenticated: boolean; user?: GsmgcUser }> {
   // ★ 改用统一端点 /api/auth/me（Next.js API route，服务端完成高置信鉴权）
+  // ★ 必须带 Bearer token
   try {
+    const token = getAuthToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const res = await fetch('/api/auth/me', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       cache: 'no-store',
     });
     const data = await res.json();
