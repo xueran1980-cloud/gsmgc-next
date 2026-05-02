@@ -7,14 +7,14 @@
 
 ---
 
-## MODE: FREEZE (deploy: BLOCKED)
+## MODE: READY_TO_DEPLOY (deploy: BLOCKED → 等待 UTC 00:00)
 
-**主模式**：🧊 PRODUCTION FREEZE — 数据解释逻辑已锁定  
-**部署**：Vercel 额度耗尽，UTC 00:00 恢复后合并部署
+**主模式**：🔒 PRODUCTION FREEZE — 数据解释逻辑已锁定  
+**部署**：Vercel 待恢复 → 部署后进入 GO-LIVE 验证
 
 > 冻结生效：2026-05-02 17:16  
 > 新站与现站 6/6 维度 100% 对齐  
-> 任何数据解释逻辑改动 = 违规
+> 部署前验证全部通过，等待 Vercel 恢复
 
 ---
 
@@ -125,14 +125,55 @@ state alignment    → 6/6 维度 100% 对齐 (slug-only + tie-break)
 
 ---
 
-## LAST STEP (2026-05-02 17:16)
+## LAST STEP (2026-05-02 17:20)
 
 ```
-🔒 PRODUCTION FREEZE — FINAL STATE LOCK
-✅ 6/6 维度 Legacy vs New 100% 对齐
-✅ 数据解释逻辑全部锁定
-⏳ Vercel 待 UTC 00:00 恢复后部署
+🚀 READY_TO_DEPLOY
+✅ 部署前全量验证通过
+   - 8/8 P0 页面 200
+   - 6/6 Legacy vs New 对比 ALL GOOD
+   - 搜索: 3 结果 "pantalla iphone"
+   - 产品页: 200
+   - API: 2076 产品 + 30 分类
+⏳ Vercel 待 UTC 00:00 恢复 → merge dev → master
 ```
+
+## GO-LIVE CHECKLIST
+
+### 步骤 1: 部署（UTC 00:00 后执行）
+```bash
+git checkout master && git merge dev && git push origin master
+```
+Vercel 自动触发 Production Deploy（已配置 production branch = master）
+
+### 步骤 2: P0 验证（部署后立即）
+- [ ] `gsmgc-next.vercel.app/tienda` → 200
+- [ ] `gsmgc-next.vercel.app/tienda?category=samsung` → 427 产品
+- [ ] 分页可点击，数据变化
+- [ ] 搜索 "pantalla iphone" → 3 结果
+- [ ] `gsmgc-next.vercel.app/producto/:id` → 正常
+- [ ] `/api/orders/create` → 不被拦截
+
+### 步骤 3: Cloudflare 校准
+- [ ] `/api/*` → 跳过 Bot Fight Mode
+- [ ] 放行 Vercel IP
+- [ ] 不缓存: `/api/orders/*` `/checkout`
+- [ ] 限流: `POST /api/orders/create`
+
+### 步骤 4: 实单测试
+- [ ] 成功下单 1 次
+- [ ] 模拟失败（断网/刷新）→ 不重复下单
+- [ ] 状态一致（success / processing）
+
+### 步骤 5: 最终对比
+```bash
+node scripts/compare-legacy-vs-new.mjs
+```
+- [ ] 6/6 ALL GREEN
+
+### GO / NO-GO
+- [ ] GO: 全部 ✅ → 上线
+- [ ] NO-GO: 任一 ❌ → 回滚
 
 ---
 
@@ -151,6 +192,7 @@ state alignment    → 6/6 维度 100% 对齐 (slug-only + tie-break)
 > 只记录变化，不重复历史。每次状态切换/系统改动追加一条。
 
 ```
+2026-05-02 17:20 | 🚀 READY_TO_DEPLOY | 部署前全量验证通过，GO-LIVE checklist 就绪
 2026-05-02 17:16 | 🔒 PRODUCTION FREEZE | 数据解释逻辑锁定，6/6 对齐
 2026-05-02 17:14 | STATE ALIGNMENT 完成 | slug-only + 确定性排序 + 100% 对齐
 2026-05-02 17:00 | comparison script 完成 | Legacy vs New 对比系统
