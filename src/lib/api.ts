@@ -1,6 +1,8 @@
 // GSMGC Next.js - 数据获取层
-// ★ 数据源：全部走 /api/proxy/ → api.gsmgc.es (WooCommerce)
+// ★ 数据源：全部 → api.gsmgc.es (WooCommerce)
 // ★ 禁止本地缓存、禁止 fs、禁止 SSG
+// ★ 服务端：绝对 URL（Node.js fetch 要求）
+// ★ 客户端：/api/proxy/ rewrite（浏览器自动带 cookie）
 
 // ---------- 类型定义 ----------
 
@@ -44,8 +46,8 @@ const API_PATH = '/wp-json/gsmgc/v1/products-raw';
 const API_ORIGIN = 'https://api.gsmgc.es';
 
 function getProductsUrl(): string {
-  // 客户端：走 /api/proxy/ rewrite（浏览器请求）
-  // 服务端：用绝对 URL（Next.js rewrite 在构建时/SSR 时不生效）
+  // 客户端：走 /api/proxy/ rewrite（浏览器请求自动带 cookie）
+  // 服务端：用绝对 URL（Node.js fetch 不支持相对路径）
   if (typeof window === 'undefined') {
     return `${API_ORIGIN}${API_PATH}`;
   }
