@@ -411,34 +411,55 @@ export default function CheckoutPage() {
       clearCart();
       setStep('success');
     } catch (err) {
-      // ★ ORDER-SAFETY: 详细失败日志 — 包含用户ID、时间、原因
+      // ★ ORDER-SAFETY + RUNTIME OBSERVABILITY: 错误分类 + 详细日志
+      // 尝试从 WC response body 提取 errorCategory
+      let errorCategory = 'UNKNOWN_ERROR';
+      try {
+        if (err instanceof Error && err.message) {
+          const parsed = JSON.parse(err.message);
+          if (parsed.errorCategory) errorCategory = parsed.errorCategory;
+        }
+      } catch { /* not JSON */ }
+
+      // 基于错误消息分类
+      if (err instanceof Error) {
+        const msg = err.message.toLowerCase();
+        if (msg.includes('network') || msg.includes('fetch failed') || msg.includes('timeout')) errorCategory = 'NETWORK_ERROR';
+        else if (msg.includes('403') || msg.includes('auth')) errorCategory = 'AUTH_ERROR';
+        else if (msg.includes('stock') || msg.includes('409') || msg.includes('insuficiente')) errorCategory = 'VALIDATION_ERROR';
+        else if (msg.includes('proxy') || msg.includes('html') || msg.includes('sgcaptcha')) errorCategory = 'NETWORK_ERROR';
+      }
+
       const failLog = {
         userId: latestUser?.id || user?.id || 'unknown',
         email: latestUser?.email || user?.email || 'unknown',
         idempotencyKey: idempotencyKey.current || 'not_generated',
         cartSize: items.length,
         cartTotal: totalPrice.toFixed(2),
+        errorCategory,
         errorType: err instanceof Error ? err.constructor.name : typeof err,
         errorMessage: err instanceof Error ? err.message : String(err),
         timestamp: new Date().toISOString(),
       };
-      console.error('[ORDER-SAFETY] ❌ Order FAILED:', JSON.stringify(failLog, null, 2));
+      console.error(`[OBSERVABILITY] ❌ Order FAILED [${errorCategory}]:`, JSON.stringify(failLog, null, 2));
 
-      let errorMessage = 'Error al procesar el pedido. Inténtalo de nuevo.';
+      // ★ RUNTIME OBSERVABILITY: 按错误分类生成用户提示
+      const categoryMessages: Record<string, string> = {
+        NETWORK_ERROR: 'Error de conexión. Verifica tu internet y vuelve a intentarlo.',
+        TIMEOUT_ERROR: 'El servidor está tardando demasiado. Puedes reintentar con el mismo pedido.',
+        WC_ERROR: 'Error interno del servidor de pedidos. Estamos trabajando en ello.',
+        VALIDATION_ERROR: 'Uno o más productos ya no tienen stock suficiente. Revisa tu carrito.',
+        AUTH_ERROR: 'Tu sesión ha expirado. Por favor, recarga la página e inicia sesión de nuevo.',
+        UNKNOWN_ERROR: 'Error inesperado al procesar el pedido. Contacta con soporte.',
+      };
+      let errorMessage = categoryMessages[errorCategory] || categoryMessages.UNKNOWN_ERROR;
 
+      // 保留特定错误的详细信息
       if (err instanceof Error && err.message) {
         if (err.message === 'AUTH_EXPIRED') {
           errorMessage = 'Tu sesión ha expirado durante el proceso. Por favor, recarga la página e inténtalo de nuevo.';
-        } else if (err.message.includes('403')) {
-          errorMessage = 'Error de autenticación del sistema de pedidos. Contacta con nosotros.';
         } else if (err.message.includes('insuficiente') || err.message.includes('INSUFFICIENT_STOCK') || err.message.includes('409')) {
           errorMessage = 'Uno o más productos ya no tienen stock suficiente. Revisa tu carrito.';
-        } else if (err.message.includes('credentials')) {
-          errorMessage = 'Sistema de pedidos temporalmente no disponible. Contáctanos por WhatsApp.';
-        } else if (err.message.includes('network')) {
-          errorMessage = 'Error de conexión. Verifica tu internet e inténtalo de nuevo.';
-        } else {
-          errorMessage = err.message;
         }
       }
 
@@ -890,13 +911,38 @@ export default function CheckoutPage() {
 
             {/* Error */}
             {step === 'error' && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-2 text-red-700 text-sm">
-                <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                <div>
-                  <strong>Error al procesar el pedido</strong>
-                  <p className="mt-1 text-xs whitespace-pre-line">{errorMsg}</p>
-                  <a href={`https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent('Hola! Tuve un problema al intentar realizar un pedido en GSMGC. ¿Podrían ayudarme? Gracias.')}`} className="mt-2 inline-block text-xs font-semibold underline">
-                    Contactar por WhatsApp
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
+                <div className="flex items-start gap-2 text-red-700 text-sm">
+                  <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                  <div>
+                    <strong>Error al procesar el pedido</strong>
+                    <p className="mt-1 text-xs whitespace-pre-line">{errorMsg}</p>
+                  </div>
+                </div>
+
+                {/* ★ RUNTIME OBSERVABILITY: 重试按钮 — 网络/超时错误可立即重试 */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep('form');
+                      setErrorMsg('');
+                      setErrors({});
+                      setIsSubmitting(false);
+                      // 保留同一 idempotencyKey — 后端幂等缓存防重复
+                    }}
+                    className="flex-1 bg-[#2563eb] text-white font-bold py-2.5 rounded-xl text-sm hover:bg-[#1d4ed8] transition flex items-center justify-center gap-1.5"
+                  >
+                    <RefreshCw size={14} />
+                    Reintentar con el mismo pedido
+                  </button>
+                  <a
+                    href={`https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent('Hola! Tuve un problema al intentar realizar un pedido en GSMGC. Error: ' + errorMsg.substring(0, 100))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-green-600 text-white font-bold py-2.5 px-4 rounded-xl text-sm hover:bg-green-700 transition flex items-center gap-1.5 shrink-0"
+                  >
+                    WhatsApp
                   </a>
                 </div>
               </div>
