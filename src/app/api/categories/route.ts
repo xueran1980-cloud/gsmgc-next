@@ -4,7 +4,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const WP_CATEGORIES_RAW = 'https://api.gsmgc.es/wp-json/gsmgc/v1/categories-raw';
+// ★ 走 Vercel rewrite 代理（/api/proxy/wp-json/...），避免直连被 CF Bot Fight Mode 拦截
+const WP_CATEGORIES_RAW = '/api/proxy/wp-json/gsmgc/v1/categories-raw';
 
 export async function GET(request: NextRequest) {
   try {

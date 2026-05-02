@@ -76,17 +76,8 @@ export default function ProductCard({ product, compact = false }: { product: Pro
   const imgUrl = getProductImage(product);
 
   // ── compact variant (for carousels) ──
-  if (compact) {
-    if (authLoading) {
-      return (
-        <div className="flex-shrink-0 w-44 bg-white rounded-xl border border-gray-100 shadow-sm p-3 animate-pulse">
-          <div className="bg-gray-200 rounded-lg h-24 mb-3" />
-          <div className="h-3 bg-gray-200 rounded w-3/4 mb-1" />
-          <div className="h-3 bg-gray-200 rounded w-1/2" />
-        </div>
-      );
-    }
-    return (
+  // ★ 移除 authLoading skeleton — 产品卡片应始终可见，价格由 PriceOrLoginPrompt 处理
+  return (
       <Link
         href={getProductUrl(product)}
         className="flex-shrink-0 w-44 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all p-3 group relative"
@@ -100,7 +91,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
                 src={imgUrl}
                 alt={product.name}
               className={`w-full aspect-square object-cover group-hover:scale-105 transition-transform ${imgLoaded ? "" : "opacity-0"}`}
-              loading="lazy"
+              loading="eager"
               decoding="async"
               width={300}
               height={300}
@@ -149,7 +140,6 @@ export default function ProductCard({ product, compact = false }: { product: Pro
         </div>
       </Link>
     );
-  }
 
   // ── standard card ──
   return (
@@ -206,10 +196,10 @@ export default function ProductCard({ product, compact = false }: { product: Pro
           <div className="text-[11px] text-gray-400 font-mono mb-2">SKU: {product.sku}</div>
         )}
         {/* Stock quantity indicator */}
-        {inStock && product.stock_quantity !== null && product.stock_quantity !== undefined && product.stock_quantity > 5 && (
+        {inStock && (product.stock_quantity ?? 0) > 5 && (
           <div className="text-[11px] text-green-600 font-medium mb-1 flex items-center gap-1">
             <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block" />
-            {product.stock_quantity} disponibles
+            {product.stock_quantity!} disponibles
           </div>
         )}
       </div>
