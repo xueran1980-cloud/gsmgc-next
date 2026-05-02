@@ -2,7 +2,7 @@
 // ★ v5.0: 单通道 — createOrder 走 smartFetch（/api/proxy），createOrderWC 也走 proxy
 //   禁止直连 api.gsmgc.es
 
-import { smartFetch } from '@/api/auth';
+import { smartFetch, getAuthToken } from '@/api/auth';
 
 // ★ v5.0: WC Basic Auth 也走 proxy，禁止直连
 const WC_PROXY = '/api/proxy/wp-json/wc/v3';
@@ -52,12 +52,17 @@ interface CreateOrderResponse {
   total: string;
 }
 
-// ★ createOrder 走 smartFetch（带 Bearer token，内部走 /api/proxy）
+// ★ createOrder 走 Next.js API Route（绕过 CF Bot Fight Mode）
 export async function createOrder(orderData: Record<string, unknown>): Promise<CreateOrderResponse> {
-  const res = await smartFetch('/create-order', {
+  const token = getAuthToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch('/api/orders/create', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(orderData),
+    credentials: 'same-origin',
   });
 
   const ct = (res.headers.get('Content-Type') || '').toLowerCase();
