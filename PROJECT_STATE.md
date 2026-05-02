@@ -3,15 +3,46 @@
 > ⚡ 终局状态系统 — 唯一进度真相源  
 > Git + 本文件 + 本地运行 = 三大真相源  
 > Chat 不作为记忆 · 人工不记录进度  
-> 更新：2026-05-02 16:30
+> 更新：2026-05-02 17:16
 
 ---
 
-## MODE: BLOCKED
+## MODE: FREEZE (deploy: BLOCKED)
 
-**原因**：Vercel 免费版 100次/日 deploy 额度耗尽  
-**恢复时间**：每日 UTC 00:00（加那利群岛 01:00）  
-**恢复后动作**：合并 dev → master → Vercel 自动 Production Deploy  
+**主模式**：🧊 PRODUCTION FREEZE — 数据解释逻辑已锁定  
+**部署**：Vercel 额度耗尽，UTC 00:00 恢复后合并部署
+
+> 冻结生效：2026-05-02 17:16  
+> 新站与现站 6/6 维度 100% 对齐  
+> 任何数据解释逻辑改动 = 违规
+
+---
+
+## 🔒 冻结范围（禁止修改）
+
+| 系统 | 锁定的规则 |
+|------|-----------|
+| category filtering | **slug-only**，禁止 `parseInt` / `name` / `id` 匹配 |
+| brand | **= product_cat 视图**，禁止独立 brand 系统 |
+| search | **title + SKU 加权匹配**，禁止改动评分模型 |
+| sorting | **primary + id tie-break**，禁止改排序规则 |
+| pagination | **API totalCount/totalPages**，禁止前端 `slice()` 假分页 |
+| API structure | **禁止改路由/响应格式/字段名** |
+
+## ✅ 允许操作（仅限）
+
+1. **UI 对齐** — 视觉、间距、样式（不改数据逻辑）
+2. **文案修复** — 标题截断、价格显示格式
+3. **Bug 修复** — 500 / 下单失败 / 登录异常
+4. **性能优化** — 加载速度、bundle 大小（不改行为）
+
+## ❌ 禁止操作
+
+- 修改过滤/排序/搜索逻辑
+- 修改 API 结构或数据流向
+- 引入新架构（SWR / realtime / websocket / event system）
+- 改 WooCommerce 数据结构
+- "顺手优化逻辑"  
 
 > 状态切换规则：
 > - 额度耗尽 → `BLOCKED`
@@ -58,7 +89,7 @@
 ```
 auth flow          → 登录/注册/me 全链路
 product listing    → /tienda SSR + filter/search/sort
-brand filtering    → slug/id/name 三模匹配，product_cat 统一
+brand filtering    → slug-only，product_cat 统一
 pagination fix     → API 元数据驱动，前后端统一
 checkout safety    → 幂等+日志+一致性校验+重试+降级+三态
 observability      → 指标面板+错误分级+自动告警
@@ -68,6 +99,7 @@ local dev fixture  → 绕过 SG CAPTCHA 的 dev 模式
 category config    → 统一配置 (category-config.ts)
 display formatting → WC theme 展示对齐 (display-formatter.ts)
 comparison system  → Legacy vs New 对比工具 (scripts/compare-legacy-vs-new.mjs)
+state alignment    → 6/6 维度 100% 对齐 (slug-only + tie-break)
 ```
 
 ---
@@ -93,17 +125,13 @@ comparison system  → Legacy vs New 对比工具 (scripts/compare-legacy-vs-new
 
 ---
 
-## LAST STEP (2026-05-02 17:14)
+## LAST STEP (2026-05-02 17:16)
 
 ```
-✅ STATE ALIGNMENT MODE 完成
-✅ 分类过滤: slug-only (移除 parseInt/name)
-✅ 排序: 二级键 ID tie-break (确定性)
-✅ fixtures 更新同步 live 数据
-✅ Legacy vs New 对比 6/6 维度 100% 对齐
-✅ TypeScript 0 错误
-✅ commit af393c9 推送 dev
-⏳ 等待 Vercel 额度恢复
+🔒 PRODUCTION FREEZE — FINAL STATE LOCK
+✅ 6/6 维度 Legacy vs New 100% 对齐
+✅ 数据解释逻辑全部锁定
+⏳ Vercel 待 UTC 00:00 恢复后部署
 ```
 
 ---
@@ -113,7 +141,7 @@ comparison system  → Legacy vs New 对比工具 (scripts/compare-legacy-vs-new
 ```
 1. Vercel 恢复 → git checkout master && git merge dev && git push origin master
 2. gsmgc-next.vercel.app/tienda?category=samsung → 验证 427 产品
-3. 验证通过 → MODE: FREEZE
+3. 验证通过 → 部署完成，保持 FREEZE
 ```
 
 ---
@@ -123,6 +151,7 @@ comparison system  → Legacy vs New 对比工具 (scripts/compare-legacy-vs-new
 > 只记录变化，不重复历史。每次状态切换/系统改动追加一条。
 
 ```
+2026-05-02 17:16 | 🔒 PRODUCTION FREEZE | 数据解释逻辑锁定，6/6 对齐
 2026-05-02 17:14 | STATE ALIGNMENT 完成 | slug-only + 确定性排序 + 100% 对齐
 2026-05-02 17:00 | comparison script 完成 | Legacy vs New 对比系统
 2026-05-02 16:35 | display-formatter 上线 | WC theme 展示逻辑对齐
