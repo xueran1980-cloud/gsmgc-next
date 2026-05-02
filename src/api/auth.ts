@@ -207,16 +207,23 @@ export async function login(email: string, password: string, remember = false): 
 
   // ★ 登录后验证 /me（用 getCurrentUserSafe 避免 401 熔断清掉刚保存的 token）
   let user: GsmgcUser = data.user || data;
+
+  // ★ Bug fix: 无论 /me 返回什么，先缓存登录响应的用户（避免跨页面丢失）
+  if (user && user.id) {
+    setCachedUser(user);
+  }
+
   try {
     const meUser = await getCurrentUserSafe();
     if (meUser && meUser.id) {
       user = meUser;
       setCachedUser(meUser);
       console.log('[GSMGC] Login: /me verification passed');
+    } else {
+      console.log('[GSMGC] Login: /me returned no user, using login response (cached)');
     }
   } catch (meErr) {
-    console.warn('[GSMGC] Login: /me verification failed, using login response:', (meErr as Error).message);
-    if (user && user.id) setCachedUser(user);
+    console.warn('[GSMGC] Login: /me verification failed:', (meErr as Error).message);
   }
 
   return user;
