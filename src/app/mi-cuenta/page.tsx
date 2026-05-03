@@ -265,7 +265,9 @@ function LoggedInView({ user, onLogout }: { user: any; onLogout: () => Promise<v
                             <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
                               <div className="flex justify-between col-span-2 sm:col-span-1"><span className="text-gray-500">Pedido</span><span className="font-medium">#{orderDetail.number || orderDetail.id}</span></div>
                               <div className="flex justify-between"><span className="text-gray-500">Estado</span>{statusBadge(orderDetail.status)}</div>
-                              <div className="flex justify-between"><span className="text-gray-500">Total</span><span className="font-bold">{toBasePrice(orderDetail.total || 0)}</span></div>
+                              <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>{toBasePrice(orderDetail.total || 0)}</span></div>
+                              <div className="flex justify-between"><span className="text-gray-500">IGIC (7%)</span><span className="text-gray-600">{(() => { const base = parseFloat(orderDetail.total || 0) / 1.07; return (base * 0.07).toFixed(2); })()} €</span></div>
+                              <div className="flex justify-between border-t border-gray-200 pt-1 mt-1"><span className="text-gray-500 font-semibold">Total</span><span className="font-bold">{parseFloat(orderDetail.total || 0).toFixed(2)} €</span></div>
                               <div className="flex justify-between"><span className="text-gray-500">Pago</span><span className="text-xs">{paymentLabel(orderDetail.payment_method)}</span></div>
                               {orderDetail.date_created ? (
                                 <div className="flex justify-between col-span-2 sm:col-span-1"><span className="text-gray-500">Fecha</span><span>{orderDetail.date_created}</span></div>
@@ -294,7 +296,7 @@ function LoggedInView({ user, onLogout }: { user: any; onLogout: () => Promise<v
                                         <p className="text-[11px] text-gray-400 mt-0.5">x{item.quantity}</p>
                                       </div>
                                       <div className="text-right shrink-0">
-                                        <span className="font-semibold text-sm text-gray-900">{toBasePrice(item.total || 0)}</span>
+                                        <span className="font-semibold text-sm text-gray-900">{parseFloat(item.total || 0).toFixed(2)} €</span>
                                       </div>
                                       {/* ★ v7.3: 删除按钮（仅 completed 状态显示，且订单多于1个产品） */}
                                       {orderDetail.status === 'completed' && orderDetail.line_items.length > 1 && (
