@@ -103,8 +103,13 @@ export function getDisplayTitle(product: Product): string {
 export function matchCategory(products: Product[], slug: string): Product[] {
   const target = slug.toLowerCase().trim();
   if (!target) return products;
+  // slug match（优先）；纯数字则同时尝试 ID match（无 slug 的分类 fallback）
+  const targetId = /^\d+$/.test(target) ? parseInt(target) : null;
   return products.filter(p =>
-    p.categories?.some(c => c.slug?.toLowerCase() === target)
+    p.categories?.some(c =>
+      c.slug?.toLowerCase() === target ||
+      (targetId !== null && c.id === targetId)
+    )
   );
 }
 
