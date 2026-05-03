@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product, ProductCategory } from '@/lib/api';
@@ -32,7 +32,7 @@ function HighlightText({ text, highlight }: { text: string; highlight: string })
   }
 }
 
-export default function TiendaClient({
+export default function TiendaClientInner({
   categories: categoriesProp,
   apiEndpoint = '/api/products', // ★ 可选 — 分页优化 /api/products-v2 使用
   initialProducts,
@@ -208,7 +208,7 @@ export default function TiendaClient({
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50${!loading ? ' animate-page-enter' : ''}`} suppressHydrationWarning>
+    <div className={`min-h-screen bg-gray-50${!loading ? ' animate-page-enter' : ''}`}>
       {/* Header bar */}
       <div className="bg-white border-b border-gray-100 sticky top-[--header-offset] z-10">
         <div className="max-w-7xl mx-auto px-4 py-3">
@@ -538,5 +538,27 @@ export default function TiendaClient({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * ★ SSR 安全包装：Suspense 隔离 useSearchParams，
+ *    防止 hydration mismatch (#418)
+ */
+export function TiendaClient(props: {
+  categories?: ProductCategory[];
+  apiEndpoint?: string;
+  initialProducts?: Product[];
+  initialTotal?: number;
+  initialPage?: number;
+}) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2563eb]" />
+      </div>
+    }>
+      <TiendaClientInner {...props} />
+    </Suspense>
   );
 }

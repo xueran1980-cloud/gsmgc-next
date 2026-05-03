@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 import type { Product } from '@/lib/api';
-import TiendaClient from '@/components/TiendaClient';
+import { TiendaClient } from '@/components/TiendaClient';
 
 // ★ /tienda-v2 — SSR 首屏直接渲染商品（无 loading skeleton）
 //    服务端 fetch products-paginated 初始数据
@@ -61,13 +60,11 @@ export default async function TiendaV2Page() {
   }
 
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2563eb]" /></div>}>
-      <TiendaClient
-        initialProducts={initialProducts}
-        initialTotal={initialTotal}
-        initialPage={1}
-        apiEndpoint="/api/products-v2"
-      />
-    </Suspense>
+    <TiendaClient
+      initialProducts={initialProducts}
+      initialTotal={initialTotal}
+      initialPage={1}
+      apiEndpoint="/api/products-v2"
+    />
   );
 }
