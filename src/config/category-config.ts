@@ -1,31 +1,35 @@
 /**
  * Category Display Configuration
  *
- * ★ FINAL MAPPING CONTRACT — SINGLE SOURCE
- *   brand = ONLY category WHERE slug IN BRAND_WHITELIST (5 brands)
- *   All other categories → display as "Categorías" (product types)
+ * ★ 对齐现站 gsmgc.es 侧边栏结构：
+ *   Marcas = 手机/设备品牌（17个）
+ *   Tipo de Producto = 产品类型（其余根分类）
  *
- *   Primary brand definition: src/lib/display-formatter.ts → BRAND_WHITELIST
- *   This file: display classifier for TiendaClient sidebar
+ *   数据源：product_cat taxonomy（只读）
  */
 
-/** Product category slugs that display as "Marcas" (brands) in sidebar */
+/** 现站 Marcas 中实际显示的品牌 slug */
 export const BRAND_CATEGORY_NAMES = new Set([
-  'samsung',
   'iphone',
+  'samsung',
   'xiaomi',
-  'huawei',
   'oppo',
+  'huawei',
+  'vivo',
+  'tcl',
+  'ipad',
+  'motorola',
+  'lenovo',
+  'zte',
+  'sony',
+  'alcatel',
+  'lg',
+  'one-plus',
+  'philipis',
+  'panasonic',
 ]);
 
-/** Product category slugs that display as "Categorías" (product types) */
-export const PRODUCT_TYPE_CATEGORY_NAMES = new Set([
-  'pantallas', 'fundas', 'baterias', 'cargadores',
-  'audio', 'herramientas', 'accesorios',
-  'cable-de-datos', 'protector-de-pantalla', 'bateria-externa',
-]);
-
-/** Product category slugs to exclude from display */
+/** 排除的 slug */
 export const EXCLUDED_CATEGORY_NAMES = new Set([
   'sin-categorizar', 'uncategorized',
 ]);

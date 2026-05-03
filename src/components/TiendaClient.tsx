@@ -5,7 +5,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product, ProductCategory } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
-import { PRODUCT_TYPE_CATEGORY_NAMES, EXCLUDED_CATEGORY_NAMES } from '@/config/category-config';
+import { BRAND_CATEGORY_NAMES, EXCLUDED_CATEGORY_NAMES } from '@/config/category-config';
 
 const PER_PAGE = 24;
 
@@ -127,28 +127,24 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
     (c.slug || '').toLowerCase() === categoryParam.toLowerCase()
   );
 
-  // 分离品牌 — ★ 旧站行为：所有根级 product_cat 都是品牌
+  // Marcas — ★ 对齐现站：仅白名单内的品牌
   const brandCategories = [...categories]
     .filter(c => {
-      if (c.parent !== 0 || (c.count ?? 0) <= 0) return false;
+      if ((c.count ?? 0) <= 0) return false;
       const slug = (c.slug || '').toLowerCase();
       if (EXCLUDED_CATEGORY_NAMES.has(slug)) return false;
-      return true;
+      return BRAND_CATEGORY_NAMES.has(slug);
     })
     .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
 
-  // 真实商品分类（Categorías） — 子分类 + 已知类型的根分类
+  // Tipo de Producto — ★ 其余所有根分类 + 子分类
   const realCategories = [...categories]
     .filter(c => {
       if ((c.count ?? 0) <= 0) return false;
       const slug = (c.slug || '').toLowerCase();
       if (EXCLUDED_CATEGORY_NAMES.has(slug)) return false;
-      // 子分类（parent !== 0）→ Categorías
-      if (c.parent !== 0) return true;
-      // 已知商品类型 → Categorías
-      if (PRODUCT_TYPE_CATEGORY_NAMES.has(slug)) return true;
-      // 其余根分类 → 品牌（不在 Categorías 出现）
-      return false;
+      if (BRAND_CATEGORY_NAMES.has(slug)) return false;
+      return true;
     })
     .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
 
