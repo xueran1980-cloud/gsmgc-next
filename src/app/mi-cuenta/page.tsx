@@ -138,6 +138,17 @@ function LoggedInView({ user, onLogout }: { user: any; onLogout: () => Promise<v
          : method;
   }
 
+  // ★ IGIC 7% 转换为 base 价格
+  const IGIC_RATE = 0.07;
+  function toBasePrice(total: string | number): string {
+    const t = typeof total === 'string' ? parseFloat(total) : total;
+    if (!t || isNaN(t)) return '0,00 €';
+    const base = (t / (1 + IGIC_RATE)).toFixed(2);
+    const intPart = Math.floor(parseFloat(base)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    const decPart = base.split('.')[1];
+    return `${intPart},${decPart} €`;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] text-white py-12">
@@ -237,7 +248,7 @@ function LoggedInView({ user, onLogout }: { user: any; onLogout: () => Promise<v
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <span className="text-right hidden sm:block">
-                        <p className="font-bold text-sm text-gray-900">{parseFloat(o.total || 0).toFixed(2)} €</p>
+                        <p className="font-bold text-sm text-gray-900">{toBasePrice(o.total || 0)}</p>
                       </span>
                       {statusBadge(o.status)}
                       <ChevronRight size={16} className={`text-gray-300 transition-transform ${expandedOrder === o.id ? 'rotate-90' : ''}`} />
@@ -254,7 +265,7 @@ function LoggedInView({ user, onLogout }: { user: any; onLogout: () => Promise<v
                             <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
                               <div className="flex justify-between col-span-2 sm:col-span-1"><span className="text-gray-500">Pedido</span><span className="font-medium">#{orderDetail.number || orderDetail.id}</span></div>
                               <div className="flex justify-between"><span className="text-gray-500">Estado</span>{statusBadge(orderDetail.status)}</div>
-                              <div className="flex justify-between"><span className="text-gray-500">Total</span><span className="font-bold">{parseFloat(orderDetail.total || 0).toFixed(2)} €</span></div>
+                              <div className="flex justify-between"><span className="text-gray-500">Total</span><span className="font-bold">{toBasePrice(orderDetail.total || 0)}</span></div>
                               <div className="flex justify-between"><span className="text-gray-500">Pago</span><span className="text-xs">{paymentLabel(orderDetail.payment_method)}</span></div>
                               {orderDetail.date_created ? (
                                 <div className="flex justify-between col-span-2 sm:col-span-1"><span className="text-gray-500">Fecha</span><span>{orderDetail.date_created}</span></div>
@@ -283,7 +294,7 @@ function LoggedInView({ user, onLogout }: { user: any; onLogout: () => Promise<v
                                         <p className="text-[11px] text-gray-400 mt-0.5">x{item.quantity}</p>
                                       </div>
                                       <div className="text-right shrink-0">
-                                        <span className="font-semibold text-sm text-gray-900">{parseFloat(item.total || 0).toFixed(2)} €</span>
+                                        <span className="font-semibold text-sm text-gray-900">{toBasePrice(item.total || 0)}</span>
                                       </div>
                                       {/* ★ v7.3: 删除按钮（仅 completed 状态显示，且订单多于1个产品） */}
                                       {orderDetail.status === 'completed' && orderDetail.line_items.length > 1 && (
