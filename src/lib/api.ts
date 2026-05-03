@@ -66,12 +66,14 @@ export async function fetchProducts(): Promise<Product[]> {
       return [];
     }
     const json = await res.json();
-    // 兼容两种响应格式：
-    // - /api/products → 直接返回 Product[]
+    // 兼容三种响应格式：
+    // - /api/products (new) → { products: Product[], totalCount, totalPages, page, perPage }
+    // - /api/products (old) → Product[]
     // - products-raw → { success: true, products: Product[] }
     if (Array.isArray(json)) return json;
+    if (Array.isArray(json.products)) return json.products;
     if (json.success && Array.isArray(json.products)) return json.products;
-    console.warn('[fetchProducts] invalid response format');
+    console.warn('[fetchProducts] invalid response format:', Object.keys(json));
     return [];
   } catch (err) {
     console.warn('[fetchProducts] fetch failed:', err);
