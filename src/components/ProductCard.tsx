@@ -91,7 +91,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
     return (
       <Link href={productUrl} className="flex-shrink-0 w-44 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all p-3 group relative">
         <DiscountBadge dp={dp} />
-        <div className="bg-gray-50 rounded-lg h-24 flex items-center justify-center mb-3 overflow-hidden">
+        <div className="rounded-lg h-24 flex items-center justify-center mb-3 overflow-hidden">
           {imgUrl && !imgError ? (
             <img src={imgUrl} alt={product.name}
             className={`max-h-full max-w-full object-contain group-hover:scale-105 transition-all duration-500 ${imgLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
@@ -130,7 +130,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
           <span className="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full animate-pulse">Agotado</span>
         </div>
       )}
-      <div className="bg-gray-50 rounded-xl h-40 flex items-center justify-center mb-4 overflow-hidden relative">
+      <div className="rounded-xl h-40 flex items-center justify-center mb-4 overflow-hidden relative">
         {imgUrl && !imgError ? (
           <img src={imgUrl} alt={product.name}
             className={`max-h-full max-w-full object-contain group-hover:scale-105 transition-all duration-500 ${imgLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
