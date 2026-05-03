@@ -32,7 +32,7 @@ const TEST_BRANDS = ['samsung', 'iphone', 'xiaomi', 'huawei', 'oppo'];
 const TEST_SEARCHES = ['pantalla iphone', 'cargador samsung', 'funda', 'bateria'];
 const TEST_PER_PAGE = 24;
 
-// ========== 工具函数 ==========
+// ========== FINAL MAPPING CONTRACT (standalone copy for comparison) ==========
 
 function formatPriceES(value) {
   const n = parseFloat(value);
@@ -42,34 +42,16 @@ function formatPriceES(value) {
   return `${intPart},${decPart} €`;
 }
 
-function calcIGIC(base) {
-  return Math.round(base * 1.07 * 100) / 100;
-}
-
-function formatTitle(name, maxChars = 60) {
-  if (!name) return { display: '', full: '', truncated: false };
-  const t = name.trim();
-  if (t.length <= maxChars) return { display: t, full: t, truncated: false };
-  let cut = t.substring(0, maxChars);
-  const lastSpace = cut.lastIndexOf(' ');
-  if (lastSpace > maxChars * 0.7) cut = cut.substring(0, lastSpace);
-  return { display: cut + '...', full: t, truncated: true };
-}
-
-// Legacy SPA 客户端逻辑模拟（对齐旧站 TiendaPage.jsx）
-// ★ slug only — brand = product_cat 视图，slug 是唯一标准
+// RULE 4: category filter — slug only
 function filterByCategory(products, category) {
   if (!category) return products;
   const catSlug = category.toLowerCase().trim();
-
-  return products.filter(p => {
-    if (!p.categories) return false;
-    return p.categories.some(c =>
-      c.slug && String(c.slug).toLowerCase() === catSlug
-    );
-  });
+  return products.filter(p =>
+    p.categories?.some(c => c.slug?.toLowerCase() === catSlug)
+  );
 }
 
+// RULE 6: search — match ONLY name + SKU
 function searchProducts(products, query) {
   if (!query) return products;
   const lower = query.toLowerCase().trim();
@@ -94,32 +76,13 @@ function searchProducts(products, query) {
     .map(({ product }) => product);
 }
 
-function sortProducts(products, orderby = 'popularity', order = 'desc') {
+// RULE 7: sort — total_sales DESC, id DESC
+function sortProducts(products) {
   return [...products].sort((a, b) => {
-    let va, vb;
-    if (orderby === 'price') {
-      va = parseFloat(a.price || '0');
-      vb = parseFloat(b.price || '0');
-    } else if (orderby === 'title') {
-      return order === 'asc'
-        ? (a.name || '').localeCompare(b.name || '', 'es')
-        : (b.name || '').localeCompare(a.name || '', 'es');
-    } else if (orderby === 'date') {
-      va = new Date(a.date_created || 0).getTime();
-      vb = new Date(b.date_created || 0).getTime();
-    } else if (orderby === 'popularity') {
-      va = parseInt(a.total_sales || '0');
-      vb = parseInt(b.total_sales || '0');
-    } else {
-      va = parseFloat(a.price || '0');
-      vb = parseFloat(b.price || '0');
-    }
-    const cmp = order === 'asc' ? va - vb : vb - va;
-    // 二级键：同值按 ID 排序（确定性 tie-break）
-    if (cmp === 0) {
-      return order === 'asc' ? (a.id - b.id) : (b.id - a.id);
-    }
-    return cmp;
+    const sa = a.total_sales ?? 0;
+    const sb = b.total_sales ?? 0;
+    if (sb !== sa) return sb - sa;
+    return (b.id ?? 0) - (a.id ?? 0);
   });
 }
 
@@ -192,12 +155,11 @@ function compareFirstN(legacy, newResult, n = 5) {
     const n = newResult.products[i];
     const legacyPrice = formatPriceES(l.price);
     const newPrice = formatPriceES(n.price);
-    const legacyTitle = formatTitle(l.name);
-    const newTitle = formatTitle(n.name);
 
     const issues = [];
     if (l.id !== n.id) issues.push(`ID mismatch: ${l.id} ≠ ${n.id}`);
-    if (legacyTitle.display !== newTitle.display) issues.push(`TITLE: "${legacyTitle.display}" ≠ "${newTitle.display}"`);
+    // ★ RULE 1: NO title truncation, compare raw names
+    if (l.name !== n.name) issues.push(`TITLE: "${l.name?.substring(0,60)}" ≠ "${n.name?.substring(0,60)}"`);
     if (legacyPrice !== newPrice) issues.push(`PRICE: ${legacyPrice} ≠ ${newPrice}`);
     if (l.sku !== n.sku) issues.push(`SKU: ${l.sku} ≠ ${n.sku}`);
 
@@ -360,10 +322,8 @@ function generateReport(diff) {
   lines.push(divider);
   if (diff.titleSamples && diff.titleSamples.length > 0) {
     for (const ts of diff.titleSamples.slice(0, 3)) {
-      const t = formatTitle(ts.name);
       lines.push(`  Raw:   ${ts.name}`);
-      lines.push(`  Display: ${t.display}`);
-      lines.push(`  Truncated: ${t.truncated ? 'Yes' : 'No'}`);
+      lines.push(`  Length: ${ts.name.length} chars (CSS line-clamp only, no JS truncation)`);
       lines.push('');
     }
   }
