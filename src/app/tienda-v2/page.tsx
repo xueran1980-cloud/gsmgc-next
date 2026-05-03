@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { Product } from '@/lib/api';
-import { TiendaClient } from '@/components/TiendaClient';
+import TiendaClient from '@/components/TiendaClient';
 
 // ★ /tienda-v2 — SSR 首屏直接渲染商品（无 loading skeleton）
 //    服务端 fetch products-paginated 初始数据
