@@ -302,7 +302,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                   <h3 className="font-bold text-sm text-gray-800 mb-2.5 tracking-tight">Categorías</h3>
                   <div className="space-y-0.5 max-h-64 overflow-y-auto pr-0.5 scrollbar-thin">
                     {realCategories.map(cat => {
-                      const catSlug = String(cat.id);
+                      const catSlug = (cat.slug || String(cat.id)).toLowerCase();
                       const isActive = catSlug === categoryParam || (cat.slug || '').toLowerCase() === (categoryParam || '').toLowerCase();
                       return (
                         <button
@@ -486,7 +486,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                   <h4 className="font-semibold text-xs text-gray-500 uppercase tracking-wider mb-2.5">Categorías</h4>
                   <div className="flex flex-wrap gap-1.5">
                     {realCategories.map(cat => {
-                      const catSlug = String(cat.id);
+                      const catSlug = (cat.slug || String(cat.id)).toLowerCase();
                       const isActive = catSlug === categoryParam || (cat.slug || '').toLowerCase() === (categoryParam || '').toLowerCase();
                       return (
                         <button
