@@ -68,12 +68,13 @@ export default function ProductCard({ product, compact = false }: { product: Pro
     if (!isLoggedIn) {
       if (c) return <div className="text-[10px] text-gray-400 italic"><Lock size={9} className="inline mr-0.5" />Ver precio</div>;
       return (
-        <div>
-          <div className="text-sm text-gray-500 mb-1">Precio exclusivo B2B</div>
-          <a href="/mi-cuenta" onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push('/mi-cuenta'); }} className="text-[#2563eb] font-semibold text-sm hover:underline cursor-pointer">
-            <Lock size={15} className="inline mr-1" />Registrate para ver precio
-          </a>
-        </div>
+        <Link
+          href="/mi-cuenta?register=1"
+          onClick={(e) => e.stopPropagation()}
+          className="text-sm font-bold text-[#ea580c] hover:text-orange-600 flex items-center gap-1 transition"
+        >
+          <Lock size={13} /> Ver precio
+        </Link>
       );
     }
     const sizeClass = c ? 'text-xs' : 'text-sm';
