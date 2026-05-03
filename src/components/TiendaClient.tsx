@@ -32,7 +32,13 @@ function HighlightText({ text, highlight }: { text: string; highlight: string })
   }
 }
 
-export default function TiendaClient({ categories: categoriesProp }: { categories?: ProductCategory[] }) {
+export default function TiendaClient({
+  categories: categoriesProp,
+  apiEndpoint = '/api/products', // ★ 可选 — 分页优化 /api/products-v2 使用
+}: {
+  categories?: ProductCategory[];
+  apiEndpoint?: string;
+}) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -89,7 +95,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
     } catch {}
 
     Promise.all([
-      fetch(`/api/products?${params.toString()}`, {
+      fetch(`${apiEndpoint}?${params.toString()}`, {
         headers: fetchHeaders,
         cache: 'no-store',
       }).then(r => r.json()),
