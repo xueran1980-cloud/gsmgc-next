@@ -103,9 +103,12 @@ export default function ProductCard({ product, compact = false }: { product: Pro
           )}
         </div>
         {/* ★ RULE 1: title raw, full display, no truncation */}
-        <h3 className="text-xs font-semibold text-gray-800 leading-tight mb-1.5 group-hover:text-[#2563eb] transition">
+        <h3 className="text-xs font-semibold text-gray-800 leading-tight mb-0.5 group-hover:text-[#2563eb] transition">
           {product.name}
         </h3>
+        {product.sku && (
+          <span className="text-[10px] text-gray-400 mb-1 block">SKU: {product.sku}</span>
+        )}
         <div className="flex items-center justify-between mt-auto">
           <PriceDisplay compact />
           {inStock && isLoggedIn ? (
@@ -143,9 +146,12 @@ export default function ProductCard({ product, compact = false }: { product: Pro
       </div>
       <div className="flex-1 flex flex-col">
         {/* ★ RULE 1: title raw, full display, no truncation */}
-        <h3 className="font-semibold text-gray-800 leading-tight mb-1 group-hover:text-[#2563eb] transition text-sm">
+        <h3 className="font-semibold text-gray-800 leading-tight mb-0.5 group-hover:text-[#2563eb] transition text-sm">
           {product.name}
         </h3>
+        {product.sku && (
+          <span className="text-[11px] text-gray-400 mb-1 block">SKU: {product.sku}</span>
+        )}
       </div>
       <div className="flex items-end gap-2 mt-3 pt-3 border-t border-gray-50">
         <div className="flex-1"><PriceDisplay /></div>
