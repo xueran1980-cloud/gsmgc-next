@@ -58,6 +58,8 @@ export default function RootLayout({
         <meta name="geo.placename" content="Canarias" />
         <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232563eb'/><text x='50%' y='50%' dominant-baseline='central' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='900' font-size='14'>GS</text></svg>" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+        <link rel="dns-prefetch" href="https://api.gsmgc.es" />
+        <link rel="preconnect" href="https://api.gsmgc.es" crossOrigin="anonymous" />
       </head>
       <body className={`${inter.className} font-sans antialiased`}>
         <AuthProvider>
