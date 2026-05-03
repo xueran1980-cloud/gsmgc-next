@@ -3,14 +3,14 @@
 > ⚡ 终局状态系统 — 唯一进度真相源  
 > Git + 本文件 + 本地运行 = 三大真相源  
 > Chat 不作为记忆 · 人工不记录进度  
-> 更新：2026-05-03 08:47
+> 更新：2026-05-03 08:56
 
 ---
 
-## MODE: 🟢 LIVE — GO-LIVE 验证通过
+## MODE: 🟢 LIVE — FINAL MAPPING CONTRACT 生效
 
-**主模式**：🔒 PRODUCTION FREEZE — 数据解释逻辑已锁定  
-**部署状态**：✅ 已部署到 Vercel，全量验证通过
+**主模式**：🔒 PRODUCTION FREEZE  
+**部署**：✅ FINAL MAPPING CONTRACT 已部署，6/6 ALL GREEN
 
 > 冻结生效：2026-05-02 17:16  
 > 新站与现站 6/6 维度 100% 对齐  
@@ -126,17 +126,16 @@ state alignment    → 6/6 维度 100% 对齐 (slug-only + tie-break)
 
 ---
 
-## LAST STEP (2026-05-03 08:47)
+## LAST STEP (2026-05-03 08:56)
 
 ```
-🟢 GO-LIVE VERIFIED — ALL SYSTEMS GO
-✅ 9/9 P0 页面 200
-✅ 5/5 品牌数量正确 (samsung 427, iphone 457, xiaomi 357, huawei 101, oppo 198)
-✅ 4/4 搜索匹配
-✅ 5/5 分页一致
-✅ 产品详情页 200
+🔒 FINAL MAPPING CONTRACT DEPLOYED
+✅ applyMapping() — 唯一数据解释入口
+✅ 10 rules enforced, no duplicated logic
 ✅ 6/6 Legacy vs New ALL GREEN
-✅ P0 fix: fetchProducts API 格式兼容
+✅ BRAND_WHITELIST: [samsung, iphone, xiaomi, huawei, oppo]
+✅ Title: raw, no JS truncation
+✅ 738 lines deleted (duplicated logic removed)
 ```
 
 ## GO-LIVE CHECKLIST
