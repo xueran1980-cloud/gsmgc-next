@@ -5,7 +5,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product, ProductCategory } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
-import { BRAND_CATEGORY_NAMES, PRODUCT_TYPE_CATEGORY_NAMES, EXCLUDED_CATEGORY_NAMES } from '@/config/category-config';
+import { BRAND_CATEGORY_NAMES, EXCLUDED_CATEGORY_NAMES } from '@/config/category-config';
 
 const PER_PAGE = 24;
 
@@ -55,7 +55,8 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
     const params = new URLSearchParams(searchParams.toString());
     if (val) params.set(key, val);
     else params.delete(key);
-    params.delete('page');
+    // 只有切换筛选条件时才重置到第1页（翻页时不重置）
+    if (key !== 'page') params.delete('page');
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     window.scrollTo(0, 0);
@@ -126,47 +127,24 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
     (c.slug || '').toLowerCase() === categoryParam.toLowerCase()
   );
 
-  // 分离品牌 — 只把真正的品牌放 Marcas，按数量降序排列（对齐旧站）
+  // Marcas — ★ 对齐现站：仅白名单内的品牌
   const brandCategories = [...categories]
     .filter(c => {
-      if (c.parent !== 0 || (c.count ?? 0) <= 0) return false;
-      const nameRaw = (c.name || '').trim();
-      const n = nameRaw.toUpperCase();
-
-      // ❌ 排除 "Sin categorizar" / "Uncategorized"
-      if (EXCLUDED_CATEGORY_NAMES.has(nameRaw) || EXCLUDED_CATEGORY_NAMES.has(n)) return false;
-
-      // ✅ 白名单：已知品牌直接通过（品牌 = product_cat，不是独立系统）
-      if (BRAND_CATEGORY_NAMES.has(n)) return true;
-
-      // ❌ 排除已知商品分类（不是品牌）
-      if (PRODUCT_TYPE_CATEGORY_NAMES.has(nameRaw.toLowerCase())) return false;
-
-      // 兜底：其他未知的顶级分类保留为品牌
-      return true;
+      if ((c.count ?? 0) <= 0) return false;
+      const slug = (c.slug || '').toLowerCase();
+      if (EXCLUDED_CATEGORY_NAMES.has(slug)) return false;
+      return BRAND_CATEGORY_NAMES.has(slug);
     })
     .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
 
-  // 真实商品分类（Categorías） — 排除品牌，按数量降序
+  // Tipo de Producto — ★ 其余所有根分类 + 子分类
   const realCategories = [...categories]
     .filter(c => {
       if ((c.count ?? 0) <= 0) return false;
-      const nameRaw = (c.name || '').trim();
-      const n = nameRaw.toUpperCase();
-
-      // ❌ 排除 "Sin categorizar"
-      if (EXCLUDED_CATEGORY_NAMES.has(nameRaw) || EXCLUDED_CATEGORY_NAMES.has(n)) return false;
-
-      // ❌ 排除已知品牌（品牌不算 categoría）
-      if (BRAND_CATEGORY_NAMES.has(n)) return false;
-
-      // ✅ 已知真实分类名
-      if (PRODUCT_TYPE_CATEGORY_NAMES.has(nameRaw.toLowerCase())) return true;
-
-      // ✅ 子分类（parent !== 0）也显示
-      if (c.parent !== 0) return true;
-
-      return false;
+      const slug = (c.slug || '').toLowerCase();
+      if (EXCLUDED_CATEGORY_NAMES.has(slug)) return false;
+      if (BRAND_CATEGORY_NAMES.has(slug)) return false;
+      return true;
     })
     .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
 
@@ -227,8 +205,14 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                 value={`${finalOrderby}-${finalOrder}`}
                 onChange={e => {
                   const [ob, or] = e.target.value.split('-');
-                  updateParam('orderby', ob);
-                  updateParam('order', or);
+                  // 一次导航同时设置orderby和order，重置到第1页
+                  const params = new URLSearchParams(searchParams.toString());
+                  if (categoryParam) params.set('category', categoryParam);
+                  if (searchParam) params.set('search', searchParam);
+                  params.set('orderby', ob);
+                  params.set('order', or);
+                  params.delete('page');
+                  router.push(`${pathname}?${params.toString()}`, { scroll: false });
                 }}
                 className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
               >
@@ -318,7 +302,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                   <h3 className="font-bold text-sm text-gray-800 mb-2.5 tracking-tight">Categorías</h3>
                   <div className="space-y-0.5 max-h-64 overflow-y-auto pr-0.5 scrollbar-thin">
                     {realCategories.map(cat => {
-                      const catSlug = String(cat.id);
+                      const catSlug = (cat.slug || String(cat.id)).toLowerCase();
                       const isActive = catSlug === categoryParam || (cat.slug || '').toLowerCase() === (categoryParam || '').toLowerCase();
                       return (
                         <button
@@ -502,7 +486,7 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                   <h4 className="font-semibold text-xs text-gray-500 uppercase tracking-wider mb-2.5">Categorías</h4>
                   <div className="flex flex-wrap gap-1.5">
                     {realCategories.map(cat => {
-                      const catSlug = String(cat.id);
+                      const catSlug = (cat.slug || String(cat.id)).toLowerCase();
                       const isActive = catSlug === categoryParam || (cat.slug || '').toLowerCase() === (categoryParam || '').toLowerCase();
                       return (
                         <button
