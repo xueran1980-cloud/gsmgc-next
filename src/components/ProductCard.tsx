@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ShoppingCart, Eye, Lock } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
@@ -39,6 +40,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const { isLoggedIn } = useAuth();
+  const router = useRouter();
 
   const dp = getDisplayPrice(product.price, product.regular_price);
   const inStock = product.stock_status === "instock";
@@ -68,9 +70,9 @@ export default function ProductCard({ product, compact = false }: { product: Pro
       return (
         <div>
           <div className="text-sm text-gray-500 mb-1">Precio exclusivo B2B</div>
-          <Link href="/mi-cuenta" className="text-[#2563eb] font-semibold text-sm hover:underline">
+          <a href="/mi-cuenta" onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push('/mi-cuenta'); }} className="text-[#2563eb] font-semibold text-sm hover:underline cursor-pointer">
             <Lock size={15} className="inline mr-1" />Registrate para ver precio
-          </Link>
+          </a>
         </div>
       );
     }
@@ -152,10 +154,19 @@ export default function ProductCard({ product, compact = false }: { product: Pro
               className={`rounded-xl p-2.5 transition font-bold text-sm ${added ? "bg-green-500 text-white shadow-md" : inStock ? "bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-md hover:shadow-lg" : "bg-red-100 text-red-400 cursor-not-allowed"}`}>
               {added ? <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> : <ShoppingCart size={16} />}
             </button>
-            <Link href={productUrl} onClick={e => e.stopPropagation()} className="rounded-xl p-2.5 border border-gray-200 text-gray-400 hover:border-[#2563eb] hover:text-[#2563eb] transition"><Eye size={16} /></Link>
+            <a
+              href={productUrl}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(productUrl); }}
+              className="rounded-xl p-2.5 border border-gray-200 text-gray-400 hover:border-[#2563eb] hover:text-[#2563eb] transition cursor-pointer"
+              title="Ver detalles"
+            ><Eye size={16} /></a>
           </div>
         ) : !inStock ? null : (
-          <Link href="/mi-cuenta" onClick={e => e.stopPropagation()} className="shrink-0 rounded-xl px-3 py-2 bg-[#ea580c] hover:bg-[#d97706] text-white text-xs font-bold transition flex items-center gap-1.5"><Lock size={13} />Registrarse</Link>
+          <a
+            href="/mi-cuenta"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push('/mi-cuenta'); }}
+            className="shrink-0 rounded-xl px-3 py-2 bg-[#ea580c] hover:bg-[#d97706] text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+          ><Lock size={13} />Registrarse</a>
         )}
       </div>
     </Link>
