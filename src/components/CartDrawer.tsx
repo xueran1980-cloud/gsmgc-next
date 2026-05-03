@@ -62,7 +62,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
           ) : (
             <div className="space-y-3">
               {items.map((item) => (
-                <div key={item.id} className="flex gap-3 p-3 bg-gray-50 rounded-xl">
+                <div key={item.id} className="flex gap-3 p-3 rounded-xl">
                   {/* Image */}
                   <div className="w-20 h-20 bg-white rounded-lg flex items-center justify-center shrink-0 border border-gray-100">
                     {item.image ? (
