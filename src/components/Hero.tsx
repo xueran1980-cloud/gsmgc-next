@@ -125,7 +125,7 @@ export default function Hero({ featuredProducts, productCount, categoryCount }: 
                       href={`/producto/${p.id}/${p.slug}`}
                       className="flex-1 bg-white rounded-2xl p-3 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all group"
                     >
-                      <div className="bg-gray-50 rounded-xl h-20 mb-2 flex items-center justify-center overflow-hidden">
+                      <div className="rounded-xl h-20 mb-2 flex items-center justify-center overflow-hidden">
                         <img
                           src={getProductImage(p)}
                           alt={`${p.name} | GSMGC Accesorios Móvil`}
