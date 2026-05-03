@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product, ProductCategory } from '@/lib/api';
@@ -35,17 +35,28 @@ function HighlightText({ text, highlight }: { text: string; highlight: string })
 export default function TiendaClient({
   categories: categoriesProp,
   apiEndpoint = '/api/products', // ★ 可选 — 分页优化 /api/products-v2 使用
+  initialProducts,
+  initialTotal,
+  initialPage,
 }: {
   categories?: ProductCategory[];
   apiEndpoint?: string;
+  /** SSR 首屏数据 — 存在时跳过首次 fetch */
+  initialProducts?: Product[];
+  initialTotal?: number;
+  initialPage?: number;
 }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const [filterOpen, setFilterOpen] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(initialProducts || []);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
-  const [loading, setLoading] = useState(true);
+  const hasHydratedFromSSR = useRef(!!(initialProducts && initialProducts.length > 0));
+  const ssrPage = initialPage || 1;
+  const [loading, setLoading] = useState(!hasHydratedFromSSR.current);
+  const [totalCount, setTotalCount] = useState(initialTotal || 0);
+  const [totalPages, setTotalPages] = useState(initialTotal ? Math.ceil(initialTotal / PER_PAGE) : 0);
 
   // Read params from URL — ★ 对齐旧站默认：Precio: mayor a menor (price-desc)
   const categoryParam = searchParams.get('category') || '';
@@ -74,8 +85,18 @@ export default function TiendaClient({
     window.scrollTo(0, 0);
   }, [router, pathname]);
 
-  // ★ useEffect：从 /api/products 获取产品（所有参数透传给后端）
+  // ★ useEffect：从 API 获取产品（所有参数透传给后端）
   useEffect(() => {
+    // ★ SSR 首屏跳过：有初始数据 + 无筛选/搜索 + 第1页 → 不 fetch
+    const noFilters = !categoryParam && !searchParam;
+    const isFirstPage = pageParam === ssrPage;
+    if (hasHydratedFromSSR.current && noFilters && isFirstPage) {
+      hasHydratedFromSSR.current = false;
+      setLoading(false);
+      return;
+    }
+    hasHydratedFromSSR.current = false;
+
     let cancelled = false;
     setLoading(true);
 
@@ -125,7 +146,7 @@ export default function TiendaClient({
       if (!cancelled) setLoading(false);
     });
     return () => { cancelled = true; };
-  }, [finalOrderby, finalOrder, categoryParam, searchParam, pageParam]);
+  }, [finalOrderby, finalOrder, categoryParam, searchParam, pageParam, apiEndpoint]);
 
   // ★ activeCategory — 同时匹配 id 和 slug（对齐旧站）
   const activeCategory = categories.find(c =>
@@ -153,10 +174,6 @@ export default function TiendaClient({
       return true;
     })
     .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
-
-  // ★ result 对象 — 使用 API 返回的分页元数据
-  const [totalCount, setTotalCount] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
 
   // Smart page numbers with ellipsis（对齐旧站）
   function renderPagination() {
@@ -357,7 +374,7 @@ export default function TiendaClient({
                   : 'Catálogo de Accesorios Móviles al Mayor'}
             </h1>
 
-            {loading ? (
+            {loading && (!initialProducts || initialProducts.length === 0) ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
                 {Array.from({ length: 24 }).map((_, i) => (
                   <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 animate-pulse">
