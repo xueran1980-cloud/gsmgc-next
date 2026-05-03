@@ -5,7 +5,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product, ProductCategory } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
-import { BRAND_CATEGORY_NAMES, PRODUCT_TYPE_CATEGORY_NAMES, EXCLUDED_CATEGORY_NAMES } from '@/config/category-config';
+import { PRODUCT_TYPE_CATEGORY_NAMES, EXCLUDED_CATEGORY_NAMES } from '@/config/category-config';
 
 const PER_PAGE = 24;
 
@@ -55,7 +55,8 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
     const params = new URLSearchParams(searchParams.toString());
     if (val) params.set(key, val);
     else params.delete(key);
-    params.delete('page');
+    // 只有切换筛选条件时才重置到第1页（翻页时不重置）
+    if (key !== 'page') params.delete('page');
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     window.scrollTo(0, 0);
@@ -126,30 +127,27 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
     (c.slug || '').toLowerCase() === categoryParam.toLowerCase()
   );
 
-  // 分离品牌 — ★ 严格白名单，只用 slug 匹配
+  // 分离品牌 — ★ 旧站行为：所有根级 product_cat 都是品牌
   const brandCategories = [...categories]
     .filter(c => {
       if (c.parent !== 0 || (c.count ?? 0) <= 0) return false;
       const slug = (c.slug || '').toLowerCase();
-      // ★ 排除 "Sin categorizar"
       if (EXCLUDED_CATEGORY_NAMES.has(slug)) return false;
-      // ★ 严格白名单：只有 5 个品牌
-      return BRAND_CATEGORY_NAMES.has(slug);
+      return true;
     })
     .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
 
-  // 真实商品分类（Categorías） — ★ 不包含品牌，count > 0
+  // 真实商品分类（Categorías） — 子分类 + 已知类型的根分类
   const realCategories = [...categories]
     .filter(c => {
       if ((c.count ?? 0) <= 0) return false;
       const slug = (c.slug || '').toLowerCase();
       if (EXCLUDED_CATEGORY_NAMES.has(slug)) return false;
-      // ★ 排除品牌
-      if (BRAND_CATEGORY_NAMES.has(slug)) return false;
-      // ★ 已知分类名
-      if (PRODUCT_TYPE_CATEGORY_NAMES.has(slug)) return true;
-      // ★ 子分类（parent !== 0）
+      // 子分类（parent !== 0）→ Categorías
       if (c.parent !== 0) return true;
+      // 已知商品类型 → Categorías
+      if (PRODUCT_TYPE_CATEGORY_NAMES.has(slug)) return true;
+      // 其余根分类 → 品牌（不在 Categorías 出现）
       return false;
     })
     .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
@@ -211,8 +209,14 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                 value={`${finalOrderby}-${finalOrder}`}
                 onChange={e => {
                   const [ob, or] = e.target.value.split('-');
-                  updateParam('orderby', ob);
-                  updateParam('order', or);
+                  // 一次导航同时设置orderby和order，重置到第1页
+                  const params = new URLSearchParams(searchParams.toString());
+                  if (categoryParam) params.set('category', categoryParam);
+                  if (searchParam) params.set('search', searchParam);
+                  params.set('orderby', ob);
+                  params.set('order', or);
+                  params.delete('page');
+                  router.push(`${pathname}?${params.toString()}`, { scroll: false });
                 }}
                 className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
               >
