@@ -126,46 +126,30 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
     (c.slug || '').toLowerCase() === categoryParam.toLowerCase()
   );
 
-  // 分离品牌 — 只把真正的品牌放 Marcas，按数量降序排列（对齐旧站）
+  // 分离品牌 — ★ 严格白名单，只用 slug 匹配
   const brandCategories = [...categories]
     .filter(c => {
       if (c.parent !== 0 || (c.count ?? 0) <= 0) return false;
-      const nameRaw = (c.name || '').trim();
-      const n = nameRaw.toUpperCase();
-
-      // ❌ 排除 "Sin categorizar" / "Uncategorized"
-      if (EXCLUDED_CATEGORY_NAMES.has(nameRaw) || EXCLUDED_CATEGORY_NAMES.has(n)) return false;
-
-      // ✅ 白名单：已知品牌直接通过（品牌 = product_cat，不是独立系统）
-      if (BRAND_CATEGORY_NAMES.has(n)) return true;
-
-      // ❌ 排除已知商品分类（不是品牌）
-      if (PRODUCT_TYPE_CATEGORY_NAMES.has(nameRaw.toLowerCase())) return false;
-
-      // 兜底：其他未知的顶级分类保留为品牌
-      return true;
+      const slug = (c.slug || '').toLowerCase();
+      // ★ 排除 "Sin categorizar"
+      if (EXCLUDED_CATEGORY_NAMES.has(slug)) return false;
+      // ★ 严格白名单：只有 5 个品牌
+      return BRAND_CATEGORY_NAMES.has(slug);
     })
     .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
 
-  // 真实商品分类（Categorías） — 排除品牌，按数量降序
+  // 真实商品分类（Categorías） — ★ 不包含品牌，count > 0
   const realCategories = [...categories]
     .filter(c => {
       if ((c.count ?? 0) <= 0) return false;
-      const nameRaw = (c.name || '').trim();
-      const n = nameRaw.toUpperCase();
-
-      // ❌ 排除 "Sin categorizar"
-      if (EXCLUDED_CATEGORY_NAMES.has(nameRaw) || EXCLUDED_CATEGORY_NAMES.has(n)) return false;
-
-      // ❌ 排除已知品牌（品牌不算 categoría）
-      if (BRAND_CATEGORY_NAMES.has(n)) return false;
-
-      // ✅ 已知真实分类名
-      if (PRODUCT_TYPE_CATEGORY_NAMES.has(nameRaw.toLowerCase())) return true;
-
-      // ✅ 子分类（parent !== 0）也显示
+      const slug = (c.slug || '').toLowerCase();
+      if (EXCLUDED_CATEGORY_NAMES.has(slug)) return false;
+      // ★ 排除品牌
+      if (BRAND_CATEGORY_NAMES.has(slug)) return false;
+      // ★ 已知分类名
+      if (PRODUCT_TYPE_CATEGORY_NAMES.has(slug)) return true;
+      // ★ 子分类（parent !== 0）
       if (c.parent !== 0) return true;
-
       return false;
     })
     .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
