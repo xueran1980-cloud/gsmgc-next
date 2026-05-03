@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ShieldCheck, Truck, MapPin, Clock, ArrowRight, Star, UserPlus } from "lucide-react";
+import { ShieldCheck, Truck, MapPin, Clock, ArrowRight, Star, UserPlus, Lock } from "lucide-react";
 import type { Product } from "@/lib/api";
 import { getProductImage } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 const TRUST_ITEMS = [
   { icon: Truck, text: "Envío en 24h a Canarias" },
@@ -15,6 +16,7 @@ const TRUST_ITEMS = [
 const HOT_CATS = ["iPhone", "Samsung", "Xiaomi", "Cables", "Baterías"];
 
 export default function Hero({ featuredProducts, productCount, categoryCount }: { featuredProducts: Product[]; productCount: number; categoryCount: number }) {
+  const { isLoggedIn } = useAuth();
   const HERO_STATS = [
     { value: productCount.toLocaleString('es-ES'), label: "Productos" },
     { value: String(categoryCount), label: "Categorías" },
@@ -136,14 +138,20 @@ export default function Hero({ featuredProducts, productCount, categoryCount }: 
                         />
                       </div>
                       <div className="text-[10px] font-bold text-gray-800 leading-tight line-clamp-2 mb-1">{p.name}</div>
-                      <div className="text-[10px] font-bold text-[#2563eb]">
-                        €{parseFloat(p.price || "0").toFixed(2)}
-                        {p.regular_price && parseFloat(p.regular_price) > parseFloat(p.price) && (
-                          <span className="text-[9px] text-gray-400 line-through ml-1">
-                            €{parseFloat(p.regular_price).toFixed(2)}
-                          </span>
-                        )}
-                      </div>
+                      {isLoggedIn ? (
+                        <div className="text-[10px] font-bold text-[#2563eb]">
+                          €{parseFloat(p.price || "0").toFixed(2)}
+                          {p.regular_price && parseFloat(p.regular_price) > parseFloat(p.price) && (
+                            <span className="text-[9px] text-gray-400 line-through ml-1">
+                              €{parseFloat(p.regular_price).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-[9px] text-gray-400 italic mt-0.5">
+                          <Lock size={9} className="inline mr-0.5" />Precio exclusivo
+                        </div>
+                      )}
                     </Link>
                   ))
                   : ["PANTALLA IPHONE 14", "BATERÍA SAM A55", "CABLE USB-C"].map((name, i) => (
