@@ -13,6 +13,16 @@ let cacheProducts: any[] | null = null;
 let cacheTime = 0;
 const CACHE_TTL = 60_000; // 60秒
 
+function getCachedProducts(): any[] | null {
+  if (cacheProducts && (Date.now() - cacheTime) < CACHE_TTL) return cacheProducts;
+  return null;
+}
+
+function setCachedProducts(p: any[]) {
+  cacheProducts = p;
+  cacheTime = Date.now();
+}
+
 // 开发模式：使用本地 fixture（绕过 SG CAPTCHA）
 function loadDevFixture(): any[] | null {
   if (process.env.NODE_ENV !== 'development') return null;
@@ -43,19 +53,19 @@ export async function GET(request: NextRequest) {
     if (devData) {
       products = devData;
     } else {
-      // ★ L1 Memory Cache: 60秒内直接返回，避免重复请求 origin
-      if (cacheProducts && (Date.now() - cacheTime) < CACHE_TTL) {
-        products = cacheProducts;
+      // ★ L1 Memory Cache: 60秒内直接返回
+      const cached = getCachedProducts();
+      if (cached) {
+        products = cached;
       } else {
-        // ★ L2: Next.js fetch cache + 直连 api.gsmgc.es（避免 proxy 额外跳转）
-        const apiUrl = 'https://api.gsmgc.es/wp-json/gsmgc/v1/products-raw';
-        const res = await fetch(apiUrl, {
-          headers: {
-            'User-Agent': 'GSMGC-Next-Server/1.0',
-            'Accept': 'application/json',
-          },
-          next: { revalidate: 60 }, // L2 Edge Cache: 60秒
-        });
+        // ★ L2: fetch cache + 直连 api.gsmgc.es
+        const res = await fetch(
+          'https://api.gsmgc.es/wp-json/gsmgc/v1/products-raw',
+          {
+            headers: { 'User-Agent': 'GSMGC-Next-Server/1.0', 'Accept': 'application/json' },
+            next: { revalidate: 60 },
+          }
+        );
 
         if (!res.ok) {
           return NextResponse.json(
@@ -72,9 +82,8 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        cacheProducts = json.products;
-        cacheTime = Date.now();
-        products = cacheProducts;
+        setCachedProducts(json.products);
+        products = json.products;
       }
     }
 
