@@ -1,39 +1,31 @@
 /**
- * Product Category Display Configuration
- * 
- * ★ SINGLE SOURCE PRINCIPLE:
- *   All brands/categories come from WooCommerce `product_cat` taxonomy.
- *   There is NO independent brand system. These lists are DISPLAY CLASSIFIERS
- *   that decide which product_cat entries render as "Marcas" vs "Categorías".
- *   
- *   To add/remove a brand: edit BRAND_CATEGORY_NAMES below.
- *   To add/remove a product type: edit PRODUCT_TYPE_CATEGORY_NAMES below.
- * 
- *   Backend data source: GET /api/categories → WooCommerce product_cat
- *   Filter query: GET /api/products?category={slug}
+ * Category Display Configuration
+ *
+ * ★ FINAL MAPPING CONTRACT — SINGLE SOURCE
+ *   brand = ONLY category WHERE slug IN BRAND_WHITELIST (5 brands)
+ *   All other categories → display as "Categorías" (product types)
+ *
+ *   Primary brand definition: src/lib/display-formatter.ts → BRAND_WHITELIST
+ *   This file: display classifier for TiendaClient sidebar
  */
 
-/** product_cat names that display as "Marcas" (brands) */
+/** Product category slugs that display as "Marcas" (brands) in sidebar */
 export const BRAND_CATEGORY_NAMES = new Set([
-  'APPLE', 'IPHONE', 'IPAD', 'SAMSUNG', 'XIAOMI', 'HUAWEI', 'OPPO',
-  'VIVO', 'ONEPLUS', 'MOTOROLA', 'TCL', 'ZTE', 'ALCATEL', 'NOKIA',
-  'HONOR', 'LENOVO', 'REALME', 'GOOGLE', 'SONY', 'LG', 'ASUS', 'BLACKBERRY',
+  'samsung',
+  'iphone',
+  'xiaomi',
+  'huawei',
+  'oppo',
 ]);
 
-/** product_cat names that display as "Categorías" (product types) */
+/** Product category slugs that display as "Categorías" (product types) */
 export const PRODUCT_TYPE_CATEGORY_NAMES = new Set([
-  'pantallas', 'fundas', 'baterias', 'baterías', 'cables', 'cargadores',
-  'audio', 'auriculares', 'herramientas', 'accesorios', 'cristales',
-  'cristales templados', 'teclados', 'repuestos', 'conectores',
-  'flex', 'altavoces', 'vibradores', 'cámaras', 'camaras',
-  'tactiles', 'táctiles', 'displays',
-  'cable de datos', 'protector de pantalla', 'protector',
+  'pantallas', 'fundas', 'baterias', 'cargadores',
+  'audio', 'herramientas', 'accesorios',
+  'cable-de-datos', 'protector-de-pantalla', 'bateria-externa',
 ]);
 
-/** product_cat names to exclude from display entirely */
+/** Product category slugs to exclude from display */
 export const EXCLUDED_CATEGORY_NAMES = new Set([
-  'sin categorizar', 'uncategorized', 'sin categoria',
-  'Sin categorizar', 'Uncategorized', 'Sin categoría',
-  'otros', 'op', 'otro', 'misc', 'varios',
-  'Otros', 'Misc', 'Varios', 'OP',
+  'sin-categorizar', 'uncategorized',
 ]);
