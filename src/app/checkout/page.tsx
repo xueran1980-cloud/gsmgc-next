@@ -999,7 +999,7 @@ export default function CheckoutPage() {
 
                   return (
                     <div key={item.id} className={`flex gap-3 items-start ${isOverStock ? 'bg-red-50 rounded-xl p-2 -m-2' : ''}`}>
-                      <div className="w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center shrink-0 border border-gray-100">
+                      <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 border border-gray-100">
                         {item.image ? (
                           <img src={item.image} alt={item.name} className="max-h-12 max-w-12 object-contain" />
                         ) : (

@@ -62,7 +62,7 @@ export default function ImageGallery({ images, productName, hasDiscount, discoun
   if (!images || images.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        <div className="aspect-square flex items-center justify-center bg-gray-50">
+        <div className="aspect-square flex items-center justify-center">
           <div className="text-center text-gray-300">
             <svg className="w-20 h-20 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />

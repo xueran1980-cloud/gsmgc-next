@@ -45,7 +45,7 @@ export default function CarritoClient() {
               {items.map((item) => (
                 <div key={item.id} className="flex gap-4 p-5 md:p-6">
                   {/* Image */}
-                  <div className="w-24 h-24 md:w-28 md:h-28 bg-gray-50 rounded-2xl flex items-center justify-center shrink-0 border border-gray-100">
+                  <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl flex items-center justify-center shrink-0 border border-gray-100">
                     {item.image ? (
                       <img
                         src={item.image}
