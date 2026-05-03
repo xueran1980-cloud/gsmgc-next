@@ -41,13 +41,13 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Read params from URL — 对齐旧站默认值：price-desc
+  // Read params from URL — ★ 对齐旧站默认：Precio: mayor a menor (price-desc)
   const categoryParam = searchParams.get('category') || '';
   const searchParam = searchParams.get('search') || '';
   const pageParam = Math.max(1, parseInt(searchParams.get('page') || '1'));
   const orderby = searchParams.get('orderby');
   const order = searchParams.get('order');
-  const finalOrderby = orderby || 'popularity'; // ★ WC 默认：popularity
+  const finalOrderby = orderby || 'price'; // ★ 旧站默认：price-desc
   const finalOrder = order || 'desc';
 
   // ★ 参数透传给 /api/products（后端处理排序/筛选）
@@ -200,12 +200,11 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Sort — WC theme 对齐：popularity first */}
+              {/* Sort — ★ 对齐旧站：price-desc 默认，顺序匹配 */}
               <select
                 value={`${finalOrderby}-${finalOrder}`}
                 onChange={e => {
                   const [ob, or] = e.target.value.split('-');
-                  // 一次导航同时设置orderby和order，重置到第1页
                   const params = new URLSearchParams(searchParams.toString());
                   if (categoryParam) params.set('category', categoryParam);
                   if (searchParam) params.set('search', searchParam);
@@ -216,10 +215,10 @@ export default function TiendaClient({ categories: categoriesProp }: { categorie
                 }}
                 className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
               >
-                <option value="popularity-desc">Más vendidos</option>
-                <option value="price-asc">Precio: menor a mayor</option>
                 <option value="price-desc">Precio: mayor a menor</option>
-                <option value="date-desc">Más recientes</option>
+                <option value="price-asc">Precio: menor a mayor</option>
+                <option value="date-desc">Más nuevos</option>
+                <option value="popularity-desc">Más vendidos</option>
                 <option value="title-asc">Nombre A-Z</option>
               </select>
 

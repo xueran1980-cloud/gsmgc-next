@@ -21,11 +21,17 @@ const nextConfig: NextConfig = {
   },
   // ISR 构建超时
   staticPageGenerationTimeout: 300,
-  // 旧英语路径 301 重定向
+  // 旧英语路径 + 旧站死链接 301 重定向
   async redirects() {
     return [
       { source: "/shop", destination: "/tienda", permanent: true },
       { source: "/product/:id*", destination: "/producto/:id*", permanent: true },
+      // 旧站遗留 URL → 301 到主页（旧站也是 SPA fallback 到 404）
+      { source: "/aviso-legal", destination: "/politica-de-privacidad", permanent: true },
+      { source: "/terminos", destination: "/condiciones-de-venta", permanent: true },
+      { source: "/terminos-de-uso", destination: "/condiciones-de-venta", permanent: true },
+      { source: "/aviso", destination: "/politica-de-privacidad", permanent: true },
+      { source: "/legal", destination: "/politica-de-privacidad", permanent: true },
     ];
   },
   // WP 后台代理（与现站一致）

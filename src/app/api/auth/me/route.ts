@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
 
     // 只有 401 才是真正未登录
     if (res.status === 401) {
-      console.log('[api/auth/me] 401 Unauthorized — token invalid');
+      console.debug('[api/auth/me] 401 Unauthorized — token invalid');
       return NextResponse.json({ logged_in: false, unauthorized: true });
     }
 

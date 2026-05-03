@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const perPage = parseInt(searchParams.get('per_page') || '24');
+    const orderby = searchParams.get('orderby') || 'price'; // ★ 默认：price-desc（对齐旧站）
+    const order = searchParams.get('order') || 'desc';
 
     // ★ 数据源
     let products: any[];
@@ -66,13 +68,14 @@ export async function GET(request: NextRequest) {
     }
 
     // ★ FINAL MAPPING CONTRACT — 唯一数据解释入口
-    const result = applyMapping({ products, category, search, page, perPage });
+    const result = applyMapping({ products, category, search, page, perPage, orderby, order });
 
     if (category) console.log(`[FILTER] "${category}" → ${result.totalCount} products`);
     if (search) console.log(`[SEARCH] "${search}" → ${result.totalCount} results`);
 
     return NextResponse.json(
       {
+        success: true,
         products: result.products,
         totalCount: result.totalCount,
         totalPages: result.totalPages,

@@ -166,8 +166,8 @@ function compareFirstN(legacy, newResult, n = 5) {
     if (issues.length > 0) {
       diffs.push({
         position: i + 1,
-        legacy: { id: l.id, name: legacyTitle.display, price: legacyPrice, sku: l.sku },
-        new: { id: n.id, name: newTitle.display, price: newPrice, sku: n.sku },
+        legacy: { id: l.id, name: l.name, price: legacyPrice, sku: l.sku },
+        new: { id: n.id, name: n.name, price: newPrice, sku: n.sku },
         issues,
       });
     }
