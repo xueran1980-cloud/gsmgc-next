@@ -62,18 +62,15 @@ function LoggedInView({ user, onLogout }: { user: any; onLogout: () => Promise<v
   const [removingItem, setRemovingItem] = useState(false);
   const [removeError, setRemoveError] = useState('');
 
-  // 加载订单列表 (等 auth ready 后再请求)
+  // 加载订单列表 — 等 user 可用再请求
   useEffect(() => {
+    if (!user?.id) return; // user 还没初始化，等 AuthContext
     let mounted = true;
-    // ★ 延迟加载：确保 AuthContext 已初始化，token 可用
-    const timer = setTimeout(() => {
-      if (!mounted) return;
-      getCustomerOrders()
-        .then(data => { if (mounted) setOrders(data.orders || []); })
-        .catch((e: Error) => { if (mounted) { setOrders([]); setOrdersError(e.message || 'Error al cargar pedidos'); } });
-    }, 800);
-    return () => { mounted = false; clearTimeout(timer); };
-  }, []);
+    getCustomerOrders()
+      .then(data => { if (mounted) setOrders(data.orders || []); })
+      .catch((e: Error) => { if (mounted) { setOrders([]); setOrdersError(e.message || 'Error al cargar pedidos'); } });
+    return () => { mounted = false; };
+  }, [user?.id]); // ★ 依赖 user.id，auth 初始化完成后才触发
 
   // 展开/加载订单详情
   async function handleToggleOrder(orderId: number) {
