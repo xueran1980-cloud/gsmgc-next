@@ -116,7 +116,7 @@ export async function smartFetch(path: string, options: RequestInit & { skip401?
 
   // ★ 唯一通道：/api/proxy/wp-json/gsmgc/v1/{path}
   const proxyUrl = `${API_BASE}${path}`;
-  console.log('[GSMGC] smartFetch:', method, path, '→ /api/proxy');
+  console.debug('[GSMGC] smartFetch:', method, path, '→ /api/proxy');
 
   try {
     const res = await fetch(proxyUrl, {
@@ -202,7 +202,7 @@ export async function login(email: string, password: string, remember = false): 
 
   if (data.auth_token) {
     setAuthToken(data.auth_token);
-    console.log('[GSMGC] Auth token saved to localStorage');
+    console.debug('[GSMGC] Auth token saved to localStorage');
   }
 
   // ★ 登录后验证 /me（用 getCurrentUserSafe 避免 401 熔断清掉刚保存的 token）
@@ -218,9 +218,9 @@ export async function login(email: string, password: string, remember = false): 
     if (meUser && meUser.id) {
       user = meUser;
       setCachedUser(meUser);
-      console.log('[GSMGC] Login: /me verification passed');
+      console.debug('[GSMGC] Login: /me verification passed');
     } else {
-      console.log('[GSMGC] Login: /me returned no user, using login response (cached)');
+      console.debug('[GSMGC] Login: /me returned no user, using login response (cached)');
     }
   } catch (meErr) {
     console.warn('[GSMGC] Login: /me verification failed:', (meErr as Error).message);

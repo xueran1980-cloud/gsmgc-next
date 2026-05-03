@@ -3,18 +3,18 @@
 > ⚡ 终局状态系统 — 唯一进度真相源  
 > Git + 本文件 + 本地运行 = 三大真相源  
 > Chat 不作为记忆 · 人工不记录进度  
-> 更新：2026-05-03 08:56
+> 更新：2026-05-03 11:11
 
 ---
 
-## MODE: 🟢 LIVE — FINAL MAPPING CONTRACT 生效
+## MODE: 🟢 LIVE — 6 P0 FIXES DEPLOYED
 
 **主模式**：🔒 PRODUCTION FREEZE  
-**部署**：✅ FINAL MAPPING CONTRACT 已部署，6/6 ALL GREEN
+**部署**：✅ 6 P0 修复已部署 + FINAL MAPPING CONTRACT，6/6 ALL GREEN
 
-> 冻结生效：2026-05-02 17:16  
+> 冻结生效：2026-05-02 17:16 | 最后部署：2026-05-03 11:08  
 > 新站与现站 6/6 维度 100% 对齐  
-> 部署前验证全部通过，等待 Vercel 恢复
+> dev → master (f9272a9) → Vercel Production Deploy
 
 ---
 
@@ -120,27 +120,27 @@ state alignment    → 6/6 维度 100% 对齐 (slug-only + tie-break)
 - [x] Vercel deploy ✅
 - [x] 线上验证品牌筛选 ✅
 - [x] 线上验证分页 ✅
+- [x] 6 P0 fixes deployed ✅ (hydration, sidebar slug, marcas, 4 issues, 3 UI mapping)
 - [ ] 线上验证 checkout 全链路
 - [ ] Cloudflare 校准
 - [ ] 实单测试
 
 ---
 
-## LAST STEP (2026-05-03 08:56)
+## LAST STEP (2026-05-03 11:08)
 
 ```
-🔒 FINAL MAPPING CONTRACT DEPLOYED
-✅ applyMapping() — 唯一数据解释入口
-✅ 10 rules enforced, no duplicated logic
-✅ 6/6 Legacy vs New ALL GREEN
-✅ BRAND_WHITELIST: [samsung, iphone, xiaomi, huawei, oppo]
-✅ Title: raw, no JS truncation
-✅ 738 lines deleted (duplicated logic removed)
+🚀 6 P0 FIXES DEPLOYED to Vercel Production
+✅ dev merged → master (f9272a9)
+✅ Vercel auto-deploy triggered
+✅ 5 key pages all 200
+✅ 6/6 comparison ALL GREEN
+✅ Fixes: hydration <a> nesting, sidebar cat.slug, Marcas alignment
 ```
 
 ## GO-LIVE CHECKLIST
 
-- [x] 部署 ✅
+- [x] 部署 ✅ (FINAL MAPPING CONTRACT + 6 P0 fixes)
 - [x] /tienda → 200 ✅
 - [x] /tienda?category=samsung → 427 ✅
 - [x] 分页可点击 ✅
@@ -149,13 +149,6 @@ state alignment    → 6/6 维度 100% 对齐 (slug-only + tie-break)
 - [x] 6/6 Legacy vs New ALL GREEN ✅
 - [ ] Cloudflare 校准
 - [ ] 实单测试
-node scripts/compare-legacy-vs-new.mjs
-```
-- [ ] 6/6 ALL GREEN
-
-### GO / NO-GO
-- [ ] GO: 全部 ✅ → 上线
-- [ ] NO-GO: 任一 ❌ → 回滚
 
 ---
 
@@ -174,6 +167,8 @@ node scripts/compare-legacy-vs-new.mjs
 > 只记录变化，不重复历史。每次状态切换/系统改动追加一条。
 
 ```
+2026-05-03 11:08 | 🚀 6 P0 FIXES DEPLOYED | dev→master( --no-ff f9272a9)→Vercel | 6/6 ALL GREEN
+2026-05-03 08:56 | 🔒 FINAL MAPPING CONTRACT DEPLOYED | applyMapping() 唯一入口 | 738 lines removed
 2026-05-02 17:20 | 🚀 READY_TO_DEPLOY | 部署前全量验证通过，GO-LIVE checklist 就绪
 2026-05-02 17:16 | 🔒 PRODUCTION FREEZE | 数据解释逻辑锁定，6/6 对齐
 2026-05-02 17:14 | STATE ALIGNMENT 完成 | slug-only + 确定性排序 + 100% 对齐

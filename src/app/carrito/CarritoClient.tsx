@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, Minus, Trash2, ShoppingBag, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { Plus, Minus, Trash2, ShoppingBag, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 
@@ -22,21 +22,6 @@ export default function CarritoClient() {
             )}
           </div>
         </div>
-
-        {/* MOQ Warning */}
-        {items.length > 0 && totalItems < 5 && (
-          <div className="mb-6 bg-orange-50 border border-orange-200 rounded-2xl p-4 flex items-start gap-3">
-            <ShieldCheck size={20} className="text-[#ea580c] shrink-0 mt-0.5" />
-            <div>
-              <p className="text-orange-800 font-bold text-sm">
-                Pedido mínimo recomendado: 5 unidades
-              </p>
-              <p className="text-orange-600 text-xs mt-0.5">
-                Añade {5 - totalItems} más para mejor precio de envío
-              </p>
-            </div>
-          </div>
-        )}
 
         {items.length === 0 ? (
           /* Empty State */

@@ -103,8 +103,13 @@ export function getDisplayTitle(product: Product): string {
 export function matchCategory(products: Product[], slug: string): Product[] {
   const target = slug.toLowerCase().trim();
   if (!target) return products;
+  // slug match（优先）；纯数字则同时尝试 ID match（无 slug 的分类 fallback）
+  const targetId = /^\d+$/.test(target) ? parseInt(target) : null;
   return products.filter(p =>
-    p.categories?.some(c => c.slug?.toLowerCase() === target)
+    p.categories?.some(c =>
+      c.slug?.toLowerCase() === target ||
+      (targetId !== null && c.id === targetId)
+    )
   );
 }
 
@@ -163,15 +168,52 @@ export function matchSearch(products: Product[], query: string): Product[] {
 }
 
 // ═══════════════════════════════════════════════════════════
-// 7. SORT — primary: total_sales DESC, secondary: id DESC
+// 7. SORT — supports: price, date, popularity, title
 // ═══════════════════════════════════════════════════════════
 
-export function applySort(products: Product[]): Product[] {
+export function applySort(products: Product[], orderby: string = 'price', order: string = 'desc'): Product[] {
+  const dir = order === 'asc' ? 1 : -1;
+
   return [...products].sort((a, b) => {
-    const salesA = a.total_sales ?? 0;
-    const salesB = b.total_sales ?? 0;
-    if (salesB !== salesA) return salesB - salesA;
-    return (b.id ?? 0) - (a.id ?? 0);
+    let cmp = 0;
+
+    switch (orderby) {
+      case 'price': {
+        const pa = parseFloat(a.price) || 0;
+        const pb = parseFloat(b.price) || 0;
+        cmp = pa - pb;
+        break;
+      }
+      case 'date': {
+        const da = a.date_created ? new Date(a.date_created).getTime() : 0;
+        const db = b.date_created ? new Date(b.date_created).getTime() : 0;
+        cmp = da - db;
+        break;
+      }
+      case 'popularity': {
+        const sa = a.total_sales ?? 0;
+        const sb = b.total_sales ?? 0;
+        cmp = sa - sb;
+        break;
+      }
+      case 'title': {
+        cmp = (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' });
+        break;
+      }
+      default: {
+        // fallback: price desc
+        const pa = parseFloat(a.price) || 0;
+        const pb = parseFloat(b.price) || 0;
+        cmp = pb - pa; // desc
+        return cmp;
+      }
+    }
+
+    // primary sort
+    if (cmp !== 0) return cmp * dir;
+
+    // ★ tie-break: id DESC (一致确定性排序)
+    return ((b.id ?? 0) - (a.id ?? 0));
   });
 }
 
@@ -211,6 +253,8 @@ export interface MappingParams {
   search?: string;     // search query
   page?: number;
   perPage?: number;
+  orderby?: string;    // price | date | popularity | title
+  order?: string;      // asc | desc (default: desc)
 }
 
 export interface MappedResult extends PageResult {
@@ -224,7 +268,7 @@ export interface MappedResult extends PageResult {
 
 /** THE ONLY function that all UI must call */
 export function applyMapping(params: MappingParams): MappedResult {
-  const { category, search, page = 1, perPage = 24 } = params;
+  const { category, search, page = 1, perPage = 24, orderby = 'price', order = 'desc' } = params;
   let products = [...params.products];
 
   // Step 1: category filter (slug-only)
@@ -235,8 +279,8 @@ export function applyMapping(params: MappingParams): MappedResult {
   const hadSearch = !!search;
   if (search) products = matchSearch(products, search);
 
-  // Step 3: sort (total_sales DESC, id DESC)
-  products = applySort(products);
+  // Step 3: sort (supports price/date/popularity/title)
+  products = applySort(products, orderby, order);
 
   // Step 4: paginate
   const result = paginate(products, page, perPage);

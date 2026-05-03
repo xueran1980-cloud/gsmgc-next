@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Plus, Minus, Trash2, ShoppingBag, ShieldCheck } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 
@@ -44,21 +44,6 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
             <X size={20} />
           </button>
         </div>
-
-        {/* MOQ Warning Banner */}
-        {items.length > 0 && totalItems < 5 && (
-          <div className="mx-4 mt-4 bg-orange-50 border border-orange-200 rounded-xl p-3 flex items-start gap-2.5">
-            <ShieldCheck size={18} className="text-[#ea580c] shrink-0 mt-0.5" />
-            <div>
-              <p className="text-orange-800 font-semibold text-sm">
-                Pedido mínimo recomendado: 5 unidades
-              </p>
-              <p className="text-orange-600 text-xs mt-0.5">
-                para mejor precio de envío
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto p-4">

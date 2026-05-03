@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   description: "Distribuidor mayorista de accesorios para móviles en Canarias desde 2014. +2.100 productos, envío 24h, solo profesionales B2B.",
-  alternates: { canonical: null },
+  alternates: { canonical: "https://gsmgc.es/sobre-nosotros" },
 };
 
 // Content synced from live site gsmgc.es (2026-04-29)

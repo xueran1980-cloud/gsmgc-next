@@ -94,15 +94,15 @@ export default function ProductCard({ product, compact = false }: { product: Pro
         <div className="bg-gray-50 rounded-lg h-24 flex items-center justify-center mb-3 overflow-hidden">
           {imgUrl && !imgError ? (
             <img src={imgUrl} alt={product.name}
-              className={`w-full aspect-square object-cover group-hover:scale-105 transition-transform ${imgLoaded ? "" : "opacity-0"}`}
-              loading="eager" width={300} height={300}
-              onLoad={() => setImgLoaded(true)} onError={() => setImgError(true)} />
-          ) : (
-            <img src="/product-thumb-placeholder.svg" alt="Sin imagen" className="h-16 w-auto object-contain opacity-70" />
+            className={`max-h-full max-w-full object-contain group-hover:scale-105 transition-all duration-500 ${imgLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
+            loading="eager" width="300" height="300" decoding="sync"
+            onLoad={() => setImgLoaded(true)} onError={() => setImgError(true)} />
+        ) : (
+          <img src="/product-thumb-placeholder.svg" alt="Sin imagen" className="h-16 w-auto object-contain opacity-70" />
           )}
         </div>
-        {/* ★ RULE 1: title raw, CSS line-clamp-2 only */}
-        <h3 className="text-xs font-semibold text-gray-800 leading-tight line-clamp-2 mb-1 group-hover:text-[#2563eb] transition" title={product.name}>
+        {/* ★ RULE 1: title raw, full display, no truncation */}
+        <h3 className="text-xs font-semibold text-gray-800 leading-tight mb-1.5 group-hover:text-[#2563eb] transition">
           {product.name}
         </h3>
         <div className="flex items-center justify-between mt-auto">
@@ -133,16 +133,16 @@ export default function ProductCard({ product, compact = false }: { product: Pro
       <div className="bg-gray-50 rounded-xl h-40 flex items-center justify-center mb-4 overflow-hidden relative">
         {imgUrl && !imgError ? (
           <img src={imgUrl} alt={product.name}
-            className={`w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-300 ${imgLoaded ? "" : "opacity-0"}`}
-            loading="lazy" width={300} height={300}
+            className={`max-h-full max-w-full object-contain group-hover:scale-105 transition-all duration-500 ${imgLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
+            loading="eager" width="300" height="300" decoding="sync"
             onLoad={() => setImgLoaded(true)} onError={() => setImgError(true)} />
         ) : (
           <img src="/product-placeholder.svg" alt="Sin imagen" className="max-h-full max-w-full object-contain opacity-60" />
         )}
       </div>
       <div className="flex-1 flex flex-col">
-        {/* ★ RULE 1: title raw, CSS line-clamp-2 only */}
-        <h3 className="font-semibold text-gray-800 leading-tight line-clamp-2 mb-1 group-hover:text-[#2563eb] transition text-sm" title={product.name}>
+        {/* ★ RULE 1: title raw, full display, no truncation */}
+        <h3 className="font-semibold text-gray-800 leading-tight mb-1 group-hover:text-[#2563eb] transition text-sm">
           {product.name}
         </h3>
       </div>
