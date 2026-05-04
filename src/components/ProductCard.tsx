@@ -37,8 +37,6 @@ function StockBadge({ product }: { product: Product }) {
 export default function ProductCard({ product, compact = false }: { product: Product; compact?: boolean }) {
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const [imgError, setImgError] = useState(false);
   const { isLoggedIn } = useAuth();
   const router = useRouter();
 
@@ -92,11 +90,10 @@ export default function ProductCard({ product, compact = false }: { product: Pro
       <Link href={productUrl} className="flex-shrink-0 w-44 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all p-3 group relative">
         <DiscountBadge dp={dp} />
         <div className="rounded-lg h-24 flex items-center justify-center mb-3 overflow-hidden">
-          {imgUrl && !imgError ? (
+          {imgUrl ? (
             <img src={imgUrl} alt={product.name}
-            className={`max-h-full max-w-full object-contain group-hover:scale-105 transition-all duration-500 ${imgLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
-            loading="eager" width="300" height="300" decoding="sync"
-            onLoad={() => setImgLoaded(true)} onError={() => setImgError(true)} />
+            className="max-h-full max-w-full object-contain group-hover:scale-105 transition-all duration-500"
+            loading="eager" width="300" height="300" decoding="sync" />
         ) : (
           <img src="/product-thumb-placeholder.svg" alt="Sin imagen" className="h-16 w-auto object-contain opacity-70" />
           )}
@@ -134,11 +131,10 @@ export default function ProductCard({ product, compact = false }: { product: Pro
         </div>
       )}
       <div className="rounded-xl h-40 flex items-center justify-center mb-4 overflow-hidden relative">
-        {imgUrl && !imgError ? (
+        {imgUrl ? (
           <img src={imgUrl} alt={product.name}
-            className={`max-h-full max-w-full object-contain group-hover:scale-105 transition-all duration-500 ${imgLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
-            loading="eager" width="300" height="300" decoding="sync"
-            onLoad={() => setImgLoaded(true)} onError={() => setImgError(true)} />
+            className="max-h-full max-w-full object-contain group-hover:scale-105 transition-all duration-500"
+            loading="eager" width="300" height="300" decoding="sync" />
         ) : (
           <img src="/product-placeholder.svg" alt="Sin imagen" className="max-h-full max-w-full object-contain opacity-60" />
         )}
