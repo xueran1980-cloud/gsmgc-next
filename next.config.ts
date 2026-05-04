@@ -28,6 +28,11 @@ const nextConfig: NextConfig = {
       { source: "/terminos-de-uso", destination: "/condiciones-de-venta", permanent: true },
       { source: "/aviso", destination: "/politica-de-privacidad", permanent: true },
       { source: "/legal", destination: "/politica-de-privacidad", permanent: true },
+      // ★ 2026-05-04: 修复旧站 URL 断裂（审计发现4个404）
+      { source: "/envio", destination: "/envios-y-entregas", permanent: true },
+      { source: "/quienes-somos", destination: "/sobre-nosotros", permanent: true },
+      { source: "/politica-privacidad", destination: "/politica-de-privacidad", permanent: true },
+      { source: "/politica-cookies", destination: "/politica-de-privacidad", permanent: true },
     ];
   },
 
