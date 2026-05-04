@@ -3,11 +3,11 @@
 > ⚡ 终局状态系统 — 唯一进度真相源  
 > Git + 本文件 + 本地运行 = 三大真相源  
 > Chat 不作为记忆 · 人工不记录进度  
-> 更新：2026-05-03 11:11
+> 更新：2026-05-04 13:50
 
 ---
 
-## MODE: 🟢 LIVE — 6 P0 FIXES DEPLOYED
+## MODE: 🟢 LIVE — 废弃路由已清理
 
 **主模式**：🔒 PRODUCTION FREEZE  
 **部署**：✅ 6 P0 修复已部署 + FINAL MAPPING CONTRACT，6/6 ALL GREEN
@@ -110,7 +110,8 @@ state alignment    → 6/6 维度 100% 对齐 (slug-only + tie-break)
 |------|--------|------|
 | Vercel deploy 额度耗尽 | BLOCKED | 等 UTC 00:00 恢复 |
 | SG CAPTCHA 拦截本地请求 | WORKAROUNDED | fixtures 模式绕过 |
-| 3 个静态页 404 | P3 | `/terminos`, `/envios`, `/aviso-legal` 未实现 |
+| /envios 静态页 404 | P3 | 配送信息页，现站亦404 |
+| /tienda-v2 /tienda-old 废弃路由 | ✅ DONE | 已删除 + 301 重定向 (2026-05-04) |
 | BRAND_CATEGORY_NAMES 含不存在分类 | P3 | APPLE/NOKIA 等不在 WP，不影响功能 |
 
 ---
@@ -121,21 +122,20 @@ state alignment    → 6/6 维度 100% 对齐 (slug-only + tie-break)
 - [x] 线上验证品牌筛选 ✅
 - [x] 线上验证分页 ✅
 - [x] 6 P0 fixes deployed ✅ (hydration, sidebar slug, marcas, 4 issues, 3 UI mapping)
-- [ ] 线上验证 checkout 全链路
-- [ ] Cloudflare 校准
-- [ ] 实单测试
+- [x] 线上验证 checkout 全链路 ✅ (2026-05-04)
+- [x] Cloudflare 校准 ✅ (2026-05-04)
+- [x] 实单测试 ✅ (2026-05-04, 订单 #10647)
 
 ---
 
-## LAST STEP (2026-05-03 11:08)
+## LAST STEP (2026-05-04 13:50)
 
 ```
-🚀 6 P0 FIXES DEPLOYED to Vercel Production
-✅ dev merged → master (f9272a9)
-✅ Vercel auto-deploy triggered
-✅ 5 key pages all 200
-✅ 6/6 comparison ALL GREEN
-✅ Fixes: hydration <a> nesting, sidebar cat.slug, Marcas alignment
+🧹 废弃路由清理完成
+🗑️ 删除 src/app/tienda-v2/page.tsx
+🗑️ 删除 src/app/tienda-old/page.tsx
+🔄 添加4条301重定向 → /tienda
+⏳ 待部署到 Vercel Production
 ```
 
 ## GO-LIVE CHECKLIST
@@ -147,17 +147,16 @@ state alignment    → 6/6 维度 100% 对齐 (slug-only + tie-break)
 - [x] 搜索 "pantalla iphone" → 3 ✅
 - [x] /producto/:id → 200 ✅
 - [x] 6/6 Legacy vs New ALL GREEN ✅
-- [ ] Cloudflare 校准
-- [ ] 实单测试
+- [x] Cloudflare 校准 ✅ (2026-05-04)
+- [x] 实单测试 ✅ (2026-05-04, 订单 #10647)
 
 ---
 
 ## NEXT ACTION
 
 ```
-1. Vercel 恢复 → git checkout master && git merge dev && git push origin master
-2. gsmgc-next.vercel.app/tienda?category=samsung → 验证 427 产品
-3. 验证通过 → 部署完成，保持 FREEZE
+⏳ 合并 dev→master 部署到 Vercel Production
+📊 持续监控 Token 过期问题（已延长到 30 天）
 ```
 
 ---
@@ -167,6 +166,8 @@ state alignment    → 6/6 维度 100% 对齐 (slug-only + tie-break)
 > 只记录变化，不重复历史。每次状态切换/系统改动追加一条。
 
 ```
+2026-05-04 13:50 | 🧹 清理废弃路由 | 删除tienda-v2+tienda-old + 4条301 | 零影响
+2026-05-04 13:28 | ✅ GO-LIVE CHECKLIST COMPLETE | Checkout全链路+CF校准+实单测试 #10647 | 全绿
 2026-05-03 11:08 | 🚀 6 P0 FIXES DEPLOYED | dev→master( --no-ff f9272a9)→Vercel | 6/6 ALL GREEN
 2026-05-03 08:56 | 🔒 FINAL MAPPING CONTRACT DEPLOYED | applyMapping() 唯一入口 | 738 lines removed
 2026-05-02 17:20 | 🚀 READY_TO_DEPLOY | 部署前全量验证通过，GO-LIVE checklist 就绪
