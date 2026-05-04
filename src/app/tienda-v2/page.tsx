@@ -1,10 +1,10 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import type { Product } from '@/lib/api';
 import TiendaClient from '@/components/TiendaClient';
 
 // ★ /tienda-v2 — SSR 首屏直接渲染商品（无 loading skeleton）
-//    服务端 fetch products-paginated 初始数据
-//    翻页/筛选/搜索走客户端 fetch /api/products-v2
+//    Suspense 包裹异步数据获取，消除 hydration mismatch (#418)
 //    与 /tienda 完全独立 → 不影响现站
 
 export const dynamic = 'force-dynamic';
@@ -30,12 +30,24 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function TiendaV2Page() {
+export default function TiendaV2Page() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#2563eb]" />
+      </div>
+    }>
+      <TiendaV2Async />
+    </Suspense>
+  );
+}
+
+/** ★ 异步数据获取在 Suspense 内部，服务端和客户端渲染一致 */
+async function TiendaV2Async() {
   let initialProducts: Product[] = [];
   let initialTotal = 0;
 
   try {
-    // ★ SSR: 服务端直连后端分页 API，首屏数据注入 HTML
     const res = await fetch(
       'https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?per_page=24&page=1&orderby=price&order=desc',
       {
@@ -56,7 +68,6 @@ export default async function TiendaV2Page() {
     }
   } catch (err) {
     console.error('[tienda-v2 SSR] fetch failed:', (err as Error).message);
-    // 优雅降级：客户端会自己 fetch
   }
 
   return (
