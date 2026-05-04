@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import type { Product } from '@/lib/api';
 import TiendaClient from '@/components/TiendaClient';
-import ProductCardSSR from '@/components/ProductCardSSR';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,33 +42,11 @@ export default async function TiendaV2Page() {
   }
 
   return (
-    <>
-      {/* ★ SSR 预渲染产品卡片 — HTML 直出，水合后由 TiendaClient 移除 */}
-      <div id="ssr-grid">
-        <div className="min-h-screen bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 py-6">
-            <div className="flex gap-6">
-              <div className="hidden lg:block w-60 shrink-0" />
-              <main className="flex-1">
-                <h1 className="text-2xl font-black text-gray-900 mb-5 px-1">Catálogo de Accesorios Móviles al Mayor</h1>
-                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
-                  {initialProducts.map((p) => (
-                    <ProductCardSSR key={p.id} product={p} />
-                  ))}
-                </div>
-              </main>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ★ 客户端交互组件 — 水合后接管 */}
-      <TiendaClient
-        initialProducts={initialProducts}
-        initialTotal={initialTotal}
-        initialPage={1}
-        apiEndpoint="/api/products-v2"
-      />
-    </>
+    <TiendaClient
+      initialProducts={initialProducts}
+      initialTotal={initialTotal}
+      initialPage={1}
+      apiEndpoint="/api/products-v2"
+    />
   );
 }

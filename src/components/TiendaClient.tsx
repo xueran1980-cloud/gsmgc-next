@@ -51,17 +51,20 @@ export default function TiendaClient({
   const [filterOpen, setFilterOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>(initialProducts || []);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
-
-  // ★ 水合完成后移除 SSR 预渲染的产品网格
-  useEffect(() => {
-    const el = document.getElementById('ssr-grid');
-    if (el) el.remove();
-  }, []);
-  const hasHydratedFromSSR = useRef(!!(initialProducts && initialProducts.length > 0));
-  const ssrPage = initialPage || 1;
-  const [loading, setLoading] = useState(!hasHydratedFromSSR.current);
+  const [loading, setLoading] = useState(true); // ★ 骨架屏开始，水合后切产品
   const [totalCount, setTotalCount] = useState(initialTotal || 0);
   const [totalPages, setTotalPages] = useState(initialTotal ? Math.ceil(initialTotal / PER_PAGE) : 0);
+
+  // ★ SSR 水合：有初始数据 + 无筛选 → 直接用，跳过 fetch
+  const ssrReady = useRef(!!(initialProducts && initialProducts.length > 0));
+  useEffect(() => {
+    if (ssrReady.current) {
+      ssrReady.current = false;
+      setLoading(false);
+      return;
+    }
+    // 无初始数据 → 走正常 fetch 流程（与旧版 /tienda 相同）
+  }, []);
 
   // Read params from URL — ★ 对齐旧站默认：Precio: mayor a menor (price-desc)
   const categoryParam = searchParams.get('category') || '';
@@ -90,18 +93,8 @@ export default function TiendaClient({
     window.scrollTo(0, 0);
   }, [router, pathname]);
 
-  // ★ useEffect：从 API 获取产品（所有参数透传给后端）
+  // ★ useEffect：filter/search/page 变化时 fetch
   useEffect(() => {
-    // ★ SSR 首屏跳过：有初始数据 + 无筛选/搜索 + 第1页 → 不 fetch
-    const noFilters = !categoryParam && !searchParam;
-    const isFirstPage = pageParam === ssrPage;
-    if (hasHydratedFromSSR.current && noFilters && isFirstPage) {
-      hasHydratedFromSSR.current = false;
-      setLoading(false);
-      return;
-    }
-    hasHydratedFromSSR.current = false;
-
     let cancelled = false;
     setLoading(true);
 
