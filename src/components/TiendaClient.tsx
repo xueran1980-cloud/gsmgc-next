@@ -34,14 +34,13 @@ function HighlightText({ text, highlight }: { text: string; highlight: string })
 
 export default function TiendaClient({
   categories: categoriesProp,
-  apiEndpoint = '/api/products', // ★ 可选 — 分页优化 /api/products-v2 使用
+  apiEndpoint = '/api/products',
   initialProducts,
   initialTotal,
   initialPage,
 }: {
   categories?: ProductCategory[];
   apiEndpoint?: string;
-  /** SSR 首屏数据 — 存在时跳过首次 fetch */
   initialProducts?: Product[];
   initialTotal?: number;
   initialPage?: number;
@@ -52,6 +51,12 @@ export default function TiendaClient({
   const [filterOpen, setFilterOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>(initialProducts || []);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
+
+  // ★ 水合完成后移除 SSR 预渲染的产品网格
+  useEffect(() => {
+    const el = document.getElementById('ssr-grid');
+    if (el) el.remove();
+  }, []);
   const hasHydratedFromSSR = useRef(!!(initialProducts && initialProducts.length > 0));
   const ssrPage = initialPage || 1;
   const [loading, setLoading] = useState(!hasHydratedFromSSR.current);
