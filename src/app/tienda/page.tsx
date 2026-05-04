@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import type { Product } from '@/lib/api';
 import TiendaClient from '@/components/TiendaClient';
 
-// Client-side SPA behavior (same as old site) — products fetched in browser via useEffect.
-// No SSR data fetching to avoid Vercel serverless timeout with 3.5MB products-raw payload.
+// ★ /tienda — SSR 首屏直接渲染商品（无 loading skeleton）
+//    服务端 fetch products-paginated 初始数据
+//    翻页/筛选/搜索走客户端 fetch /api/products-v2
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
@@ -26,6 +28,49 @@ export const metadata: Metadata = {
   },
 };
 
-export default function TiendaPage() {
-  return <TiendaClient categories={[]} />;
+export default async function TiendaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | undefined }>;
+}) {
+  const sp = await searchParams;
+  const category = sp.category || '';
+  const search = sp.search || '';
+  const page = sp.page || '1';
+
+  let initialProducts: Product[] = [];
+  let initialTotal = 0;
+
+  try {
+    const backendParams = new URLSearchParams();
+    backendParams.set('per_page', '24');
+    backendParams.set('page', page);
+    backendParams.set('orderby', sp.orderby || 'price');
+    backendParams.set('order', sp.order || 'desc');
+    if (category) backendParams.set('category', category);
+    if (search) backendParams.set('search', search);
+
+    const res = await fetch(
+      `https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?${backendParams.toString()}`,
+      { headers: { 'User-Agent': 'GSMGC-Next-Server/1.0', 'Accept': 'application/json' }, cache: 'no-store' }
+    );
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && Array.isArray(json.products)) {
+        initialProducts = json.products;
+        initialTotal = json.total || 0;
+      }
+    }
+  } catch (err) {
+    console.error('[tienda SSR] fetch failed:', (err as Error).message);
+  }
+
+  return (
+    <TiendaClient
+      initialProducts={initialProducts}
+      initialTotal={initialTotal}
+      initialPage={parseInt(page) || 1}
+      apiEndpoint="/api/products-v2"
+    />
+  );
 }

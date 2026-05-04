@@ -21,13 +21,30 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function TiendaV2Page() {
+export default async function TiendaV2Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | undefined }>;
+}) {
+  const sp = await searchParams;
+  const category = sp.category || '';
+  const search = sp.search || '';
+  const page = sp.page || '1';
+
   let initialProducts: Product[] = [];
   let initialTotal = 0;
 
   try {
+    const backendParams = new URLSearchParams();
+    backendParams.set('per_page', '24');
+    backendParams.set('page', page);
+    backendParams.set('orderby', sp.orderby || 'price');
+    backendParams.set('order', sp.order || 'desc');
+    if (category) backendParams.set('category', category);
+    if (search) backendParams.set('search', search);
+
     const res = await fetch(
-      'https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?per_page=24&page=1&orderby=price&order=desc',
+      `https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?${backendParams.toString()}`,
       { headers: { 'User-Agent': 'GSMGC-Next-Server/1.0', 'Accept': 'application/json' }, cache: 'no-store' }
     );
     if (res.ok) {
@@ -45,7 +62,7 @@ export default async function TiendaV2Page() {
     <TiendaClient
       initialProducts={initialProducts}
       initialTotal={initialTotal}
-      initialPage={1}
+      initialPage={parseInt(page) || 1}
       apiEndpoint="/api/products-v2"
     />
   );

@@ -51,7 +51,7 @@ export default function TiendaClient({
   const [filterOpen, setFilterOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>(initialProducts || []);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
-  const [loading, setLoading] = useState(true); // ★ 骨架屏开始，水合后切产品
+  const [loading, setLoading] = useState(!(initialProducts && initialProducts.length > 0));
   const [totalCount, setTotalCount] = useState(initialTotal || 0);
   const [totalPages, setTotalPages] = useState(initialTotal ? Math.ceil(initialTotal / PER_PAGE) : 0);
 
@@ -93,6 +93,14 @@ export default function TiendaClient({
     window.scrollTo(0, 0);
   }, [router, pathname]);
 
+  // ★ 独立获取分类（不受 SSR 跳过影响）
+  useEffect(() => {
+    fetch('/api/categories', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(cats => setCategories(cats || []))
+      .catch(() => {});
+  }, []);
+
   // ★ useEffect：filter/search/page 变化时 fetch
   useEffect(() => {
     let cancelled = false;
@@ -113,13 +121,10 @@ export default function TiendaClient({
       if (token) fetchHeaders['Authorization'] = `Bearer ${token}`;
     } catch {}
 
-    Promise.all([
-      fetch(`${apiEndpoint}?${params.toString()}`, {
-        headers: fetchHeaders,
-        cache: 'no-store',
-      }).then(r => r.json()),
-      fetch('/api/categories', { cache: 'no-store' }).then(r => r.json()),
-    ]).then(([prodData, cats]) => {
+    fetch(`${apiEndpoint}?${params.toString()}`, {
+      headers: fetchHeaders,
+      cache: 'no-store',
+    }).then(r => r.json()).then((prodData) => {
       if (!cancelled) {
         // ★ 新的API响应格式: { products, totalCount, totalPages, page, perPage }
         if (prodData && Array.isArray(prodData.products)) {
@@ -136,7 +141,6 @@ export default function TiendaClient({
           setTotalCount(0);
           setTotalPages(0);
         }
-        setCategories(cats || []);
         setLoading(false);
       }
     }).catch(err => {

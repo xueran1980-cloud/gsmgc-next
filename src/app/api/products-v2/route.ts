@@ -33,16 +33,29 @@ export async function GET(request: NextRequest) {
     // ── 开发模式 ──
     const devData = loadDevFixture();
     if (devData) {
-      // 开发模式：后端不支持分页，模拟分页行为
+      // 开发模式筛选
+      let filtered = devData;
+      if (category) {
+        const catLower = category.toLowerCase();
+        filtered = filtered.filter((p: any) =>
+          (p.categories || []).some((c: any) => (c.slug || '').toLowerCase() === catLower)
+        );
+      }
+      if (search) {
+        const s = search.toLowerCase();
+        filtered = filtered.filter((p: any) =>
+          (p.name || '').toLowerCase().includes(s) || (p.sku || '').toLowerCase().includes(s)
+        );
+      }
       const pageNum = parseInt(page);
       const perPageNum = parseInt(perPage);
       const start = (pageNum - 1) * perPageNum;
-      const paged = devData.slice(start, start + perPageNum);
+      const paged = filtered.slice(start, start + perPageNum);
       return NextResponse.json({
         success: true,
         products: paged,
-        totalCount: devData.length,
-        totalPages: Math.ceil(devData.length / perPageNum),
+        totalCount: filtered.length,
+        totalPages: Math.ceil(filtered.length / perPageNum),
         page: pageNum,
         perPage: perPageNum,
       });
