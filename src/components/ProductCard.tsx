@@ -68,13 +68,12 @@ export default function ProductCard({ product, compact = false }: { product: Pro
     if (!isLoggedIn) {
       if (c) return <div className="text-[10px] text-gray-400 italic"><Lock size={9} className="inline mr-0.5" />Ver precio</div>;
       return (
-        <Link
-          href="/mi-cuenta?register=1"
-          onClick={(e) => e.stopPropagation()}
-          className="text-sm font-bold text-[#ea580c] hover:text-orange-600 flex items-center gap-1 transition"
+        <span
+          onClick={(e) => { e.stopPropagation(); router.push('/mi-cuenta?register=1'); }}
+          className="text-sm font-bold text-[#ea580c] hover:text-orange-600 flex items-center gap-1 transition cursor-pointer"
         >
           <Lock size={13} /> Ver precio
-        </Link>
+        </span>
       );
     }
     const sizeClass = c ? 'text-xs' : 'text-sm';
@@ -161,19 +160,17 @@ export default function ProductCard({ product, compact = false }: { product: Pro
               className={`rounded-xl p-2.5 transition font-bold text-sm ${added ? "bg-green-500 text-white shadow-md" : inStock ? "bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-md hover:shadow-lg" : "bg-red-100 text-red-400 cursor-not-allowed"}`}>
               {added ? <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> : <ShoppingCart size={16} />}
             </button>
-            <a
-              href={productUrl}
+            <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(productUrl); }}
               className="rounded-xl p-2.5 border border-gray-200 text-gray-400 hover:border-[#2563eb] hover:text-[#2563eb] transition cursor-pointer"
               title="Ver detalles"
-            ><Eye size={16} /></a>
+            ><Eye size={16} /></button>
           </div>
         ) : !inStock ? null : (
-          <a
-            href="/mi-cuenta"
+          <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push('/mi-cuenta'); }}
             className="shrink-0 rounded-xl px-3 py-2 bg-[#ea580c] hover:bg-[#d97706] text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-          ><Lock size={13} />Registrarse</a>
+          ><Lock size={13} />Registrarse</button>
         )}
       </div>
     </Link>
