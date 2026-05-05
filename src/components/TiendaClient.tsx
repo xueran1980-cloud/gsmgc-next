@@ -75,6 +75,14 @@ export default function TiendaClient({
   const finalOrderby = orderby || 'price'; // ★ 旧站默认：price-desc
   const finalOrder = order || 'desc';
 
+  // ★ 搜索去抖：连续输入只触发一次请求（300ms），清除时立即生效
+  const [debouncedSearch, setDebouncedSearch] = useState(searchParam);
+  useEffect(() => {
+    if (!searchParam) { setDebouncedSearch(''); return; }
+    const timer = setTimeout(() => setDebouncedSearch(searchParam), 300);
+    return () => clearTimeout(timer);
+  }, [searchParam]);
+
   // ★ 参数透传给 /api/products（后端处理排序/筛选）
   const updateParam = useCallback((key: string, val: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -101,8 +109,11 @@ export default function TiendaClient({
       .catch(() => {});
   }, []);
 
-  // ★ useEffect：filter/search/page 变化时 fetch
+  // ★ useEffect：debouncedSearch / category / page 变化时 fetch
   useEffect(() => {
+    // ★ 最小 3 字符才触发搜索（空值=清空搜索，允许）
+    if (debouncedSearch && debouncedSearch.trim().length < 3) return;
+
     let cancelled = false;
     setLoading(true);
 
@@ -110,7 +121,7 @@ export default function TiendaClient({
     if (finalOrderby) params.set('orderby', finalOrderby);
     if (finalOrder) params.set('order', finalOrder);
     if (categoryParam) params.set('category', categoryParam);
-    if (searchParam) params.set('search', searchParam);
+    if (debouncedSearch) params.set('search', debouncedSearch);
     params.set('per_page', String(PER_PAGE));
     params.set('page', String(pageParam));
 
@@ -148,7 +159,7 @@ export default function TiendaClient({
       if (!cancelled) setLoading(false);
     });
     return () => { cancelled = true; };
-  }, [finalOrderby, finalOrder, categoryParam, searchParam, pageParam, apiEndpoint]);
+  }, [finalOrderby, finalOrder, categoryParam, debouncedSearch, pageParam, apiEndpoint]);
 
   // ★ activeCategory — 同时匹配 id 和 slug（对齐旧站）
   const activeCategory = categories.find(c =>

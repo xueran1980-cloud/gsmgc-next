@@ -55,7 +55,12 @@ function getProductsUrl(): string {
   return `${siteUrl}/api/products?per_page=5000`;
 }
 
-export async function fetchProducts(): Promise<Product[]> {
+// ★ 请求内去重：同一请求周期内只拉一次全量产品
+//    /producto/[id]/[slug] 页面 generateMetadata + 主组件 + 相关产品
+//    原本会调用 fetchProducts() 3 次，现在合并为 1 次
+let _fetchProductsPromise: Promise<Product[]> | null = null;
+
+async function _actualFetchProducts(): Promise<Product[]> {
   try {
     const res = await fetch(getProductsUrl(), {
       next: { revalidate: 60 },
@@ -81,6 +86,12 @@ export async function fetchProducts(): Promise<Product[]> {
     console.warn('[fetchProducts] fetch failed:', err);
     return [];
   }
+}
+
+export async function fetchProducts(): Promise<Product[]> {
+  if (_fetchProductsPromise) return _fetchProductsPromise;
+  _fetchProductsPromise = _actualFetchProducts();
+  return _fetchProductsPromise;
 }
 
 // ---------- 服务端获取单个产品 ----------
