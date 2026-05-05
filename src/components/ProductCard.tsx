@@ -21,8 +21,11 @@ function DiscountBadge({ dp }: { dp: ReturnType<typeof getDisplayPrice> }) {
 }
 
 function StockBadge({ product }: { product: Product }) {
+  // ★ 双重检查：stock_status + stock_quantity（与 ProductDetailActions 一致）
   if (product.stock_status !== "instock") return null;
-  if ((product.stock_quantity ?? 99) <= 1) {
+  const qty = product.stock_quantity != null ? parseInt(String(product.stock_quantity)) : 99;
+  if (qty <= 0) return null;  // quantity=0 不是真正的有货
+  if (qty <= 1) {
     return (
       <span className="absolute top-2 right-2 z-10 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm">
         ¡Última!
@@ -41,7 +44,13 @@ export default function ProductCard({ product, compact = false }: { product: Pro
   const router = useRouter();
 
   const dp = getDisplayPrice(product.price, product.regular_price);
-  const inStock = product.stock_status === "instock";
+  // ★ 双重检查：stock_status + stock_quantity（与 ProductDetailActions 一致）
+  const statusInstock = product.stock_status === "instock";
+  const isActuallyOutOfStock = statusInstock
+    && product.stock_quantity !== null
+    && product.stock_quantity !== undefined
+    && parseInt(String(product.stock_quantity)) <= 0;
+  const inStock = statusInstock && !isActuallyOutOfStock;
   const imgUrl = product.images?.[0]?.src || "";
   const productUrl = getProductUrl(product);
 
