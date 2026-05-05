@@ -189,16 +189,16 @@ export default async function ProductPage({ params }: PageProps) {
           <nav className="flex items-center gap-1 text-sm text-gray-500 flex-wrap">
             <Link href="/" className="hover:text-[#2563eb] transition">Inicio</Link>
             <ChevronRight size={13} className="text-gray-300" />
-            <Link href="/tienda" className="hover:text-[#2563eb] transition">Catálogo</Link>
+            <a href="/tienda" className="hover:text-[#2563eb] transition">Catálogo</a>
             {product.categories?.[0] && (
               <>
                 <ChevronRight size={13} className="text-gray-300" />
-                <Link
+                <a
                   href={`/tienda?category=${product.categories[0].id}`}
                   className="hover:text-[#2563eb] transition"
                 >
                   {product.categories[0].name}
-                </Link>
+                </a>
               </>
             )}
             <ChevronRight size={13} className="text-gray-300" />
@@ -226,13 +226,13 @@ export default async function ProductPage({ params }: PageProps) {
             {product.categories?.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {product.categories.map((c) => (
-                  <Link
+                  <a
                     key={c.id}
                     href={`/tienda?category=${c.id}`}
                     className="text-xs bg-blue-50 text-blue-700 font-medium px-2.5 py-1 rounded-full hover:bg-blue-100 transition"
                   >
                     {c.name}
-                  </Link>
+                  </a>
                 ))}
               </div>
             )}
@@ -297,12 +297,12 @@ export default async function ProductPage({ params }: PageProps) {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-black text-gray-900">Productos relacionados</h2>
               {product.categories?.[0] && (
-                <Link
+                <a
                   href={`/tienda?category=${product.categories[0].id}`}
                   className="text-sm text-[#2563eb] font-semibold hover:underline flex items-center gap-1"
                 >
                   Ver todos <ChevronRight size={15} />
-                </Link>
+                </a>
               )}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
