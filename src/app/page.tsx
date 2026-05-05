@@ -48,8 +48,14 @@ export default async function HomePage() {
   const categoriesWithCounts = Array.from(categoryMap.values())
     .sort((a, b) => b.count - a.count);
 
-  // Select products for sections
-  const inStockProducts = products.filter(p => p.stock_status === "instock" && p.images?.length > 0);
+  // Select products for sections（双重检查：stock_status + stock_quantity > 0）
+  const inStockProducts = products.filter(p => {
+    if (p.stock_status !== "instock") return false;
+    if (!p.images || p.images.length === 0) return false;
+    // 双检：status=instock 但 quantity=0 可能已被售罄
+    if (p.stock_quantity !== null && p.stock_quantity !== undefined && parseInt(String(p.stock_quantity)) <= 0) return false;
+    return true;
+  });
   
   // Latest products (by date_created, newest first) — 1:1 现站 30个
   const latest = [...inStockProducts]
