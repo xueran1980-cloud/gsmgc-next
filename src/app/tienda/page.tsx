@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import type { Product } from '@/lib/api';
 import TiendaClient from '@/components/TiendaClient';
 
@@ -66,11 +67,33 @@ export default async function TiendaPage({
   }
 
   return (
+    <Suspense fallback={<TiendaSkeleton />}>
     <TiendaClient
       initialProducts={initialProducts}
       initialTotal={initialTotal}
       initialPage={parseInt(page) || 1}
       apiEndpoint="/api/products-v2"
     />
+    </Suspense>
+  );
+}
+
+// ★ RSC Suspense fallback — 匹配 TiendaClient loading skeleton
+function TiendaSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
+          {Array.from({ length: 24 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 animate-pulse">
+              <div className="bg-gray-100 rounded-xl h-40 mb-4" />
+              <div className="h-4 bg-gray-100 rounded w-3/4 mb-2" />
+              <div className="h-3 bg-gray-100 rounded w-1/2 mb-3" />
+              <div className="h-5 bg-gray-100 rounded w-1/3" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
