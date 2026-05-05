@@ -103,7 +103,13 @@ export default async function ProductPage({ params }: PageProps) {
 
   // Derive data
   const images = product.images || [];
-  const inStock = product.stock_status === 'instock';
+  // ★ 双重检查：stock_status + stock_quantity（与 ProductDetailActions 一致）
+  const statusInstock = product.stock_status === 'instock';
+  const isActuallyOutOfStock = statusInstock
+    && product.stock_quantity !== null
+    && product.stock_quantity !== undefined
+    && parseInt(String(product.stock_quantity)) <= 0;
+  const inStock = statusInstock && !isActuallyOutOfStock;
   const hasDiscount = parseFloat(product.regular_price) > parseFloat(product.price);
   const discountPct = hasDiscount
     ? Math.round((1 - parseFloat(product.price) / parseFloat(product.regular_price)) * 100)
