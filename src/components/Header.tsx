@@ -37,7 +37,7 @@ function NavDropdown({ items, onClose }: { items: NonNullable<typeof NAV_LINKS[n
   return (
     <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 py-2 animate-[fadeInDown_0.15s_ease]">
       {items.map(({ label, href, icon: Icon, desc }) => (
-        <Link
+        <a
           key={href}
           href={href}
           onClick={onClose}
@@ -50,7 +50,7 @@ function NavDropdown({ items, onClose }: { items: NonNullable<typeof NAV_LINKS[n
             <div className="text-sm font-semibold text-gray-900 group-hover:text-[#2563eb] transition">{label}</div>
             <div className="text-xs text-gray-400">{desc}</div>
           </div>
-        </Link>
+        </a>
       ))}
     </div>
   );
@@ -161,6 +161,24 @@ export default function Header() {
                 onMouseEnter={() => link.dropdown ? handleMouseEnter(link.label) : null}
                 onMouseLeave={link.dropdown ? handleMouseLeave : undefined}
               >
+                {link.href.startsWith('/tienda') ? (
+                <a
+                  href={link.href}
+                  className={`flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition ${
+                    pathname === link.href
+                      ? 'text-[#2563eb] bg-blue-50'
+                      : 'text-gray-700 hover:text-[#2563eb] hover:bg-blue-50'
+                  }`}
+                >
+                  {link.label}
+                  {link.dropdown && (
+                    <ChevronDown
+                      size={14}
+                      className={`transition-transform ${activeDropdown === link.label ? 'rotate-180' : ''}`}
+                    />
+                  )}
+                </a>
+                ) : (
                 <Link
                   href={link.href}
                   className={`flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition ${
@@ -177,6 +195,7 @@ export default function Header() {
                     />
                   )}
                 </Link>
+                )}
 
                 {link.dropdown && activeDropdown === link.label && (
                   <div onMouseEnter={handleDropdownMouseEnter} onMouseLeave={handleMouseLeave}>
@@ -268,6 +287,15 @@ export default function Header() {
           <nav className="lg:hidden border-t border-gray-100 bg-white pb-2">
             {NAV_LINKS.map((link) => (
               <div key={link.label}>
+                {link.href.startsWith('/tienda') ? (
+                <a
+                  href={link.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 hover:text-[#2563eb] hover:bg-blue-50 transition"
+                >
+                  {link.label}
+                </a>
+                ) : (
                 <Link
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
@@ -275,11 +303,12 @@ export default function Header() {
                 >
                   {link.label}
                 </Link>
+                )}
                 {/* Mobile dropdown items */}
                 {link.dropdown && (
                   <div className="bg-gray-50 border-t border-b border-gray-100">
                     {link.dropdown.slice(1).map((item) => (
-                      <Link
+                      <a
                         key={item.href}
                         href={item.href}
                         onClick={() => setMenuOpen(false)}
@@ -287,7 +316,7 @@ export default function Header() {
                       >
                         <item.icon size={14} className="text-gray-400" />
                         {item.label}
-                      </Link>
+                      </a>
                     ))}
                   </div>
                 )}
