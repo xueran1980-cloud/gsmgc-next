@@ -194,7 +194,7 @@ export default async function ProductPage({ params }: PageProps) {
               <>
                 <ChevronRight size={13} className="text-gray-300" />
                 <a
-                  href={`/tienda?category=${product.categories[0].id}`}
+                  href={`/tienda?category=${product.categories[0].slug}`}
                   className="hover:text-[#2563eb] transition"
                 >
                   {product.categories[0].name}
@@ -228,7 +228,7 @@ export default async function ProductPage({ params }: PageProps) {
                 {product.categories.map((c) => (
                   <a
                     key={c.id}
-                    href={`/tienda?category=${c.id}`}
+                    href={`/tienda?category=${c.slug}`}
                     className="text-xs bg-blue-50 text-blue-700 font-medium px-2.5 py-1 rounded-full hover:bg-blue-100 transition"
                   >
                     {c.name}
@@ -298,7 +298,7 @@ export default async function ProductPage({ params }: PageProps) {
               <h2 className="text-2xl font-black text-gray-900">Productos relacionados</h2>
               {product.categories?.[0] && (
                 <a
-                  href={`/tienda?category=${product.categories[0].id}`}
+                  href={`/tienda?category=${product.categories[0].slug}`}
                   className="text-sm text-[#2563eb] font-semibold hover:underline flex items-center gap-1"
                 >
                   Ver todos <ChevronRight size={15} />
