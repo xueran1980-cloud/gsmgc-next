@@ -89,7 +89,20 @@ async function _actualFetchProducts(): Promise<Product[]> {
 }
 
 export async function fetchProducts(): Promise<Product[]> {
-  if (_fetchProductsPromise) return _fetchProductsPromise;
+  if (_fetchProductsPromise) {
+    // ★ 如果缓存的 Promise 已 resolve 且为空，说明第一次 fetch 失败了
+    //    清除缓存 → 允许重试（防止 generateMetadata 阶段失败锁死整个请求）
+    try {
+      const cached = await _fetchProductsPromise;
+      if (cached.length === 0) {
+        _fetchProductsPromise = null;
+      } else {
+        return cached;
+      }
+    } catch {
+      _fetchProductsPromise = null;
+    }
+  }
   _fetchProductsPromise = _actualFetchProducts();
   return _fetchProductsPromise;
 }
