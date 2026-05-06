@@ -132,16 +132,18 @@ export default function TiendaClient({
       if (token) fetchHeaders['Authorization'] = `Bearer ${token}`;
     } catch {}
 
-    fetch(`${apiEndpoint}?${params.toString()}`, {
+    // ★ 客户端直连后端（绕过 Vercel 代理避免 CF Bot Fight Mode 拦截）
+    const directUrl = `https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?${params.toString()}`;
+    fetch(directUrl, {
       headers: fetchHeaders,
       cache: 'no-store',
     }).then(r => r.json()).then((prodData) => {
       if (!cancelled) {
-        // ★ 新的API响应格式: { products, totalCount, totalPages, page, perPage }
+        // ★ 兼容两种响应格式: Vercel代理(camelCase) + 后端直连(snake_case)
         if (prodData && Array.isArray(prodData.products)) {
           setProducts(prodData.products);
-          setTotalCount(prodData.totalCount || prodData.products.length);
-          setTotalPages(prodData.totalPages || 1);
+          setTotalCount(prodData.totalCount || prodData.total || prodData.products.length);
+          setTotalPages(prodData.totalPages || prodData.total_pages || 1);
         } else if (Array.isArray(prodData)) {
           // 兼容旧格式（纯数组）
           setProducts(prodData);
