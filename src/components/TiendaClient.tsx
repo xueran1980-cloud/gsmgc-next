@@ -76,9 +76,16 @@ export default function TiendaClient({
   const finalOrder = order || 'desc';
 
   // ★ 搜索去抖：连续输入只触发一次请求（300ms），清除时立即生效
+  //    SSR 失败兜底时不等待去抖，直接发起请求
   const [debouncedSearch, setDebouncedSearch] = useState(searchParam);
+  const skipDebounce = useRef(true); // 首次加载时跳过去抖
   useEffect(() => {
     if (!searchParam) { setDebouncedSearch(''); return; }
+    if (skipDebounce.current) {
+      skipDebounce.current = false;
+      setDebouncedSearch(searchParam); // 立即生效
+      return;
+    }
     const timer = setTimeout(() => setDebouncedSearch(searchParam), 300);
     return () => clearTimeout(timer);
   }, [searchParam]);

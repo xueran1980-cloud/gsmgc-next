@@ -42,28 +42,47 @@ export default async function TiendaPage({
   let initialProducts: Product[] = [];
   let initialTotal = 0;
 
-  try {
-    const backendParams = new URLSearchParams();
-    backendParams.set('per_page', '24');
-    backendParams.set('page', page);
-    backendParams.set('orderby', sp.orderby || 'price');
-    backendParams.set('order', sp.order || 'desc');
-    if (category) backendParams.set('category', category);
-    if (search) backendParams.set('search', search);
+  // ★ SSR fetch + 1次重试（CF Bot Fight Mode 随机拦截 Vercel IP）
+  const backendParams = new URLSearchParams();
+  backendParams.set('per_page', '24');
+  backendParams.set('page', page);
+  backendParams.set('orderby', sp.orderby || 'price');
+  backendParams.set('order', sp.order || 'desc');
+  if (category) backendParams.set('category', category);
+  if (search) backendParams.set('search', search);
+  const backendUrl = `https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?${backendParams.toString()}`;
+  const fetchOpts = { headers: { 'User-Agent': 'GSMGC-Next-Server/1.0', 'Accept': 'application/json' }, cache: 'no-store' } as const;
 
-    const res = await fetch(
-      `https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?${backendParams.toString()}`,
-      { headers: { 'User-Agent': 'GSMGC-Next-Server/1.0', 'Accept': 'application/json' }, cache: 'no-store' }
-    );
-    if (res.ok) {
-      const json = await res.json();
-      if (json.success && Array.isArray(json.products)) {
-        initialProducts = json.products;
-        initialTotal = json.total || 0;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(backendUrl, fetchOpts);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.products) && json.products.length > 0) {
+          initialProducts = json.products;
+          initialTotal = json.total || 0;
+          break;
+        }
+        // 空结果也视为成功（后端正常但无匹配）
+        if (json.success && Array.isArray(json.products)) {
+          initialProducts = [];
+          initialTotal = 0;
+          break;
+        }
+      }
+      // ★ 被 CF 拦截或其他错误 → 重试
+      if (attempt === 0) {
+        console.warn('[tienda SSR] fetch failed, retrying...');
+        await new Promise(r => setTimeout(r, 200)); // 200ms 间隔
+      }
+    } catch (err) {
+      if (attempt === 0) {
+        console.warn('[tienda SSR] fetch exception, retrying:', (err as Error).message);
+        await new Promise(r => setTimeout(r, 200));
+      } else {
+        console.error('[tienda SSR] fetch failed after retry:', (err as Error).message);
       }
     }
-  } catch (err) {
-    console.error('[tienda SSR] fetch failed:', (err as Error).message);
   }
 
   return (
