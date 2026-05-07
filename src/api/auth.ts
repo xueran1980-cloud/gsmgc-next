@@ -285,25 +285,19 @@ export async function resetPassword(loginVal: string, key: string, password: str
 }
 
 /**
- * getCurrentUser — 走 /api/auth/me（Next.js API route → proxy）
- * ★ v5.0: /me 返回 false 不清 token（可能只是 CF 拦截/网络抖动）
+ * getCurrentUser — ★ v5.1: smartFetch 直连后端（绕过 CF 拦截）
+ * ★ /me 返回 false 不清 token（可能只是网络抖动）
  */
 export async function getCurrentUser(): Promise<GsmgcUser | null> {
   try {
-    const token = getAuthToken();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const res = await fetch('/api/auth/me', {
-      method: 'GET',
-      headers,
-      cache: 'no-store',
-    });
+    const res = await smartFetch('/me');
     if (!res.ok) return null;
     const data = await res.json();
-    if (data.logged_in && data.user && (data.user as Record<string, unknown>).id) {
+    // ★ 兼容两种格式: { success, user } 和 { logged_in, user }
+    if ((data.success || data.logged_in) && data.user && (data.user as Record<string, unknown>).id) {
       return data.user as GsmgcUser;
     }
+    if (data.id) return data as GsmgcUser;
     return null;
   } catch {
     return null;
@@ -319,17 +313,10 @@ export async function getCurrentUserSafe(): Promise<GsmgcUser | null> {
 
 export async function checkAuth(): Promise<{ authenticated: boolean; user?: GsmgcUser; [key: string]: unknown }> {
   try {
-    const token = getAuthToken();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const res = await fetch('/api/auth/me', {
-      method: 'GET',
-      headers,
-      cache: 'no-store',
-    });
+    const res = await smartFetch('/me');
     const data = await res.json();
-    if (data.logged_in && data.user && data.user.id) {
+    // ★ 兼容格式: { success, user } | { logged_in, user }
+    if ((data.success || data.logged_in) && data.user && data.user.id) {
       setCachedUser(data.user);
       return { authenticated: true, user: data.user };
     }
@@ -342,17 +329,10 @@ export async function checkAuth(): Promise<{ authenticated: boolean; user?: Gsmg
 
 export async function deepCheckAuth(): Promise<{ authenticated: boolean; user?: GsmgcUser }> {
   try {
-    const token = getAuthToken();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const res = await fetch('/api/auth/me', {
-      method: 'GET',
-      headers,
-      cache: 'no-store',
-    });
+    const res = await smartFetch('/me');
     const data = await res.json();
-    if (data.logged_in && data.user && data.user.id) {
+    // ★ 兼容格式: { success, user } | { logged_in, user }
+    if ((data.success || data.logged_in) && data.user && data.user.id) {
       setCachedUser(data.user);
       return { authenticated: true, user: data.user };
     }
