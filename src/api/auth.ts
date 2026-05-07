@@ -1,12 +1,10 @@
 // GSMGC Authentication API
 //
-// ★ v5.0: 单通道架构 — 所有请求只走 /api/proxy/wp-json/gsmgc/v1/
-//   禁止直连 api.gsmgc.es（CF Bot Fight Mode 拦截）
-//   禁止 CORS 直连 fallback
-//   禁止 Vercel rewrite 307 fallback
+// ★ v5.1: smartFetch — 客户端直连 api.gsmgc.es（绕过 Vercel 代理避免 CF Bot Fight Mode 拦截）
+//   服务端仍走 /api/proxy/
 //
 //   铁律：
-//   1. 只有一个数据入口：/api/proxy/*
+//   1. 客户端直连 https://api.gsmgc.es/wp-json/gsmgc/v1/{path}
 //   2. /me 失败 ≠ 未登录，只有 401 才清 token
 //   3. cookie 必须透传
 
@@ -93,11 +91,11 @@ export function setCachedUser(user: GsmgcUser | null): void {
 }
 
 /**
- * ★ v5.0: smartFetch — 单通道，只走 /api/proxy/
- *   砍掉所有 fallback（直连 CORS、Vercel rewrite 307、Edge Proxy 直连）
+ * ★ v5.1: smartFetch — 客户端直连后端，绕过 Vercel 代理避免 CF Bot Fight Mode 拦截
+ *   服务端（如有）仍走 /api/proxy/
  *
  * 铁律：
- *   - 只有一条路径：/api/proxy/wp-json/gsmgc/v1/{path}
+ *   - 客户端：直连 https://api.gsmgc.es/wp-json/gsmgc/v1/{path}（CORS 已就绪）
  *   - 401 → clearAllAuth + throw AUTH_EXPIRED
  *   - 其他错误（网络/5xx/CF拦截）→ 不清 token，返回原始 response
  */
@@ -114,16 +112,19 @@ export async function smartFetch(path: string, options: RequestInit & { skip401?
   headers['User-Agent'] = headers['User-Agent'] || 'GSMGC-Next.js/1.0';
   headers['Accept'] = headers['Accept'] || 'application/json';
 
-  // ★ 唯一通道：/api/proxy/wp-json/gsmgc/v1/{path}
-  const proxyUrl = `${API_BASE}${path}`;
-  console.debug('[GSMGC] smartFetch:', method, path, '→ /api/proxy');
+  // ★ 客户端直连后端（绕过 Vercel rewrite 避免 CF Bot Fight Mode 拦截）
+  const isClient = typeof window !== 'undefined';
+  const url = isClient
+    ? `https://api.gsmgc.es/wp-json/gsmgc/v1${path}`
+    : `${API_BASE}${path}`;
+  console.debug('[GSMGC] smartFetch:', method, path, isClient ? '→ direct' : '→ proxy');
 
   try {
-    const res = await fetch(proxyUrl, {
+    const res = await fetch(url, {
       ...fetchOptions,
       method,
       headers,
-      credentials: 'same-origin',
+      ...(isClient ? {} : { credentials: 'same-origin' }),
     });
 
     // ★ 401 熔断 — 只有 401 才清 token
