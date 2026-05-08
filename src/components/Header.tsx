@@ -240,7 +240,8 @@ export default function Header() {
               <User size={20} />
             </Link>
 
-            {/* Cart */}
+            {/* Cart — solo visible para usuarios autenticados */}
+            {isLoggedIn && (
             <button
               onClick={() => setCartOpen(true)}
               className="relative p-2 text-gray-600 hover:text-[#2563eb] hover:bg-blue-50 rounded-lg transition"
@@ -253,6 +254,7 @@ export default function Header() {
                 </span>
               )}
             </button>
+            )}
 
             {/* Mobile menu toggle */}
             <button
@@ -343,8 +345,8 @@ export default function Header() {
         )}
       </header>
 
-      {/* CartDrawer */}
-      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+      {/* CartDrawer — solo visible para usuarios autenticados */}
+      {isLoggedIn && <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />}
     </>
   );
 }
