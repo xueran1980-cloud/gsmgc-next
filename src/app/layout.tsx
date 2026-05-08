@@ -56,8 +56,15 @@ export default function RootLayout({
       <head>
         <meta name="geo.region" content="ES-CN" />
         <meta name="geo.placename" content="Canarias" />
+        {/* ── PWA ── */}
+        <meta name="theme-color" content="#2563eb" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="GSMGC" />
+        <link rel="manifest" href="/manifest.json" />
         <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232563eb'/><text x='50%' y='50%' dominant-baseline='central' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='900' font-size='14'>GS</text></svg>" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+        <link rel="apple-touch-icon" href="/icon-192.png" sizes="192x192" />
         <link rel="dns-prefetch" href="https://api.gsmgc.es" />
         <link rel="preconnect" href="https://api.gsmgc.es" crossOrigin="anonymous" />
       </head>
@@ -70,6 +77,16 @@ export default function RootLayout({
             <WhatsAppFloat />
           </CartProvider>
         </AuthProvider>
+        {/* PWA Service Worker */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').catch(function() {});
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );
