@@ -312,25 +312,34 @@ export async function getCurrentUser(): Promise<GsmgcUser | null> {
   }
 }
 
-/** GET /me with auth_token in URL — 无 CORS preflight，移动端最稳定 */
+/** 
+ * ★ v5.3: 双通道 /me — 直连优先 + 代理兜底
+ *   直连：GET + URL auth_token（无CORS预检，移动端友好）
+ *   代理：/api/auth/me（Vercel→WP，CF拦了不清token）
+ */
 async function _smartFetchMe(): Promise<Response> {
   const token = getAuthToken();
   const path = token ? `/me?auth_token=${encodeURIComponent(token)}` : '/me';
 
-  // 客户端：纯 GET（不触发 CORS 预检），auth_token 在 URL 中
-  // 不发 Authorization header 避免 CF Bot Fight Mode 介入
+  // ★ 通道1：客户端直连（最快，移动端GET无CORS预检）
   if (typeof window !== 'undefined') {
-    const url = `https://api.gsmgc.es/wp-json/gsmgc/v1${path}`;
-    const res = await fetch(url, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' },
-    });
-    if (res.status === 401) {
-      console.warn('[GSMGC] _smartFetchMe: 401, clearing auth');
-      clearAllAuth();
-      throw new Error('AUTH_EXPIRED');
+    try {
+      const url = `https://api.gsmgc.es/wp-json/gsmgc/v1${path}`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+      });
+      // 成功或401（真正过期）→ 直接返回
+      if (res.ok || res.status === 401) return res;
+      // 非401错误（CF拦截/网络问题）→ 不返回，走代理兜底
+      console.warn('[GSMGC] _smartFetchMe: direct failed with', res.status, '→ fallback to proxy');
+    } catch (err) {
+      console.warn('[GSMGC] _smartFetchMe: direct network error → fallback to proxy:', (err as Error).message);
     }
-    return res;
+    // ★ 通道2：代理兜底（/api/auth/me → Vercel→WP，CF拦了只返回false不清token）
+    return fetch('/api/auth/me', {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+    });
   }
   // 服务端：走 smartFetch（/api/proxy/ 代理）
   return smartFetch(path, { method: 'GET' });
