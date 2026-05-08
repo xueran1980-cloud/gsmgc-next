@@ -1,6 +1,6 @@
 // WooCommerce REST API — 订单创建 + 库存校验 + 订单查询
-// ★ v5.0: 单通道 — createOrder 走 smartFetch（/api/proxy），createOrderWC 也走 proxy
-//   禁止直连 api.gsmgc.es
+// ★ v5.1: 客户端直连 createOrder（smartFetch 绕过 CF Bot Fight Mode）
+//   SSR 兜底走 /api/orders/create（route.ts → api.gsmgc.es）
 
 import { smartFetch, getAuthToken } from '@/api/auth';
 
@@ -57,10 +57,23 @@ interface CreateOrderResponse {
   message?: string;
 }
 
-// ★ createOrder 走 Next.js API Route（绕过 CF Bot Fight Mode）
+// ★ v5.1: 客户端 smartFetch 直连（绕过 Vercel 代理避免 CF Bot Fight Mode 拦截）
+//   SSR 降级走 /api/orders/create（route.ts → api.gsmgc.es）
 export async function createOrder(orderData: Record<string, unknown>): Promise<CreateOrderResponse> {
-  const token = getAuthToken();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+  // 客户端直连后端，服务端走代理
+  if (typeof window !== 'undefined') {
+    const res = await smartFetch('/create-order', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(orderData),
+    });
+    return handleCreateOrderResponse(res);
+  }
+
+  // SSR 降级：走 Vercel API Route
+  const token = getAuthToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch('/api/orders/create', {
@@ -69,10 +82,14 @@ export async function createOrder(orderData: Record<string, unknown>): Promise<C
     body: JSON.stringify(orderData),
     credentials: 'same-origin',
   });
+  return handleCreateOrderResponse(res);
+}
 
+// 统一处理 createOrder 响应（客户端直连 + SSR 兜底共用）
+async function handleCreateOrderResponse(res: Response): Promise<CreateOrderResponse> {
   const ct = (res.headers.get('Content-Type') || '').toLowerCase();
   if (ct.includes('text/html')) {
-    console.error('[GSMGC] create-order received HTML response (Fatal Error leak)');
+    console.error('[GSMGC] create-order received HTML response');
     throw new Error('El servidor encontro un error interno. Por favor, contacta con nosotros por WhatsApp.');
   }
 
