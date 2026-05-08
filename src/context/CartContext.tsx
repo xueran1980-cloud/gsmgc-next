@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useReducer, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useReducer, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { getAuthToken } from '@/api/auth';
 
 // ---------- 类型 ----------
 
@@ -18,6 +19,13 @@ export interface CartItem {
 interface CartState {
   items: CartItem[];
   _stockErrors?: Record<number, string>;
+}
+
+// ★ v9.2: 跨设备购物车快照
+interface RemoteSnap {
+  device: string;
+  time: number;
+  items: CartItem[];
 }
 
 type CartAction =
@@ -164,6 +172,11 @@ interface CartContextType {
   clearStockError: (id: number) => void;
   totalItems: number;
   totalPrice: number;
+  // ★ v9.2: 跨设备购物车合并
+  remoteSnap: RemoteSnap | null;
+  mergeRemoteCart: () => void;
+  dismissRemoteCart: () => void;
+  saveCartSnap: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -231,6 +244,59 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = state.items.reduce((sum, i) => sum + i.qty, 0);
   const totalPrice = state.items.reduce((sum, i) => sum + (parseFloat(i.price) || 0) * i.qty, 0);
 
+  // ── ★ v9.2: 跨设备购物车快照合并 ──
+  const [remoteSnap, setRemoteSnap] = useState<RemoteSnap | null>(null);
+  const [snapChecked, setSnapChecked] = useState(false);
+
+  // 登录后静默检测远程快照
+  useEffect(() => {
+    const token = getAuthToken();
+    if (!token || snapChecked) return;
+    setSnapChecked(true);
+    
+    fetch('https://api.gsmgc.es/wp-json/gsmgc/v1/cart-snap', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.snap && Array.isArray(data.snap.items) && data.snap.items.length > 0) {
+        setRemoteSnap(data.snap);
+      }
+    })
+    .catch(() => {});
+  }, [snapChecked]);
+
+  function mergeRemoteCart() {
+    if (!remoteSnap) return;
+    const merged = [...state.items];
+    remoteSnap.items.forEach((si: CartItem) => {
+      const exist = merged.find(m => m.id === si.id);
+      if (exist) {
+        exist.qty = Math.max(exist.qty, si.qty);
+      } else {
+        merged.push({ ...si });
+      }
+    });
+    dispatch({ type: 'SET_ITEMS', items: merged });
+    setRemoteSnap(null);
+  }
+
+  function dismissRemoteCart() {
+    setRemoteSnap(null);
+  }
+
+  async function saveCartSnap() {
+    const token = getAuthToken();
+    if (!token || state.items.length === 0) return;
+    try {
+      await fetch('https://api.gsmgc.es/wp-json/gsmgc/v1/cart-snap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ items: state.items })
+      });
+    } catch {}
+  }
+
   return (
     <CartContext.Provider value={{
       items: state.items,
@@ -242,6 +308,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       clearStockError,
       totalItems,
       totalPrice,
+      remoteSnap,
+      mergeRemoteCart,
+      dismissRemoteCart,
+      saveCartSnap,
     }}>
       {children}
     </CartContext.Provider>

@@ -10,7 +10,7 @@ interface CartDrawerProps {
 }
 
 export default function CartDrawer({ open, onClose }: CartDrawerProps) {
-  const { items, totalItems, totalPrice, removeItem, updateQty, clearCart } = useCart();
+  const { items, totalItems, totalPrice, removeItem, updateQty, clearCart, remoteSnap, mergeRemoteCart, dismissRemoteCart } = useCart();
 
   return (
     <>
@@ -44,6 +44,35 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
             <X size={20} />
           </button>
         </div>
+
+        {/* ★ v9.2: 其他设备购物车快照提示 */}
+        {remoteSnap && (
+          <div className="bg-blue-50 border-b border-blue-100 p-3">
+            <div className="flex items-start gap-2">
+              <span className="text-lg">📋</span>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-blue-900">Productos de otro dispositivo</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {remoteSnap.device} · {remoteSnap.items.length} producto(s)
+                </p>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={mergeRemoteCart}
+                    className="bg-[#2563eb] text-white px-3 py-1 rounded text-xs font-bold hover:bg-[#1d4ed8] transition"
+                  >
+                    Combinar ({remoteSnap.items.length})
+                  </button>
+                  <button
+                    onClick={dismissRemoteCart}
+                    className="text-gray-500 text-xs hover:text-gray-700"
+                  >
+                    Ignorar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto p-4">
