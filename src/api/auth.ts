@@ -293,22 +293,35 @@ export async function resetPassword(loginVal: string, key: string, password: str
 }
 
 /**
- * getCurrentUser — ★ v5.2: POST /me with auth_token in body（CF 安全剥离 header）
- * ★ /me 返回 false 不清 token（可能只是网络抖动）
+ * getCurrentUser — ★ v5.4: /me 失败时用缓存兜底（CF 拦了不中断 checkout）
+ * ★ 只有真正 401 才返回 null（token 过期）
  */
 export async function getCurrentUser(): Promise<GsmgcUser | null> {
   try {
     const res = await _smartFetchMe();
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // 401 = token 真正过期，不兜底
+      if (res.status === 401) return null;
+      // 非401（CF拦截/网络问题）→ 用缓存兜底
+      return getCachedUser();
+    }
     const data = await res.json();
+    // ★ /api/auth/me 代理返回 blocked=true → CF拦截 → 用缓存
+    if (data.blocked) return getCachedUser();
     // ★ 兼容两种格式: { success, user } 和 { logged_in, user }
     if ((data.success || data.logged_in) && data.user && (data.user as Record<string, unknown>).id) {
+      setCachedUser(data.user);
       return data.user as GsmgcUser;
     }
-    if (data.id) return data as GsmgcUser;
-    return null;
+    if (data.id) {
+      setCachedUser(data);
+      return data as GsmgcUser;
+    }
+    // /me 返回了但无用户 → 用缓存兜底
+    return getCachedUser();
   } catch {
-    return null;
+    // 网络异常 → 用缓存兜底
+    return getCachedUser();
   }
 }
 
