@@ -58,7 +58,7 @@ const PAYMENT_METHODS = [
 ];
 
 export default function CheckoutPage() {
-  const { items, totalPrice, clearCart, saveCartSnap } = useCart();
+  const { items, totalPrice, clearCart } = useCart();
   const { user, isLoggedIn, refreshUser, setUser, loading } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState<'form' | 'loading' | 'success' | 'error'>('form');
@@ -231,7 +231,6 @@ export default function CheckoutPage() {
         return;
       }
       latestUserRef.current = latestUser; // ★ v6.1: 更新 ref
-      saveCartSnap().catch(() => {}); // ★ v9.2: 上传快照供其他设备合并
       console.log('[GSMGC] Checkout: refreshed user before order', latestUser.id, latestUser.email);
     } catch (refreshErr) {
       // ★ v6.1: AUTH_EXPIRED 单独提示，不 reload（保留表单数据让用户手动重试）

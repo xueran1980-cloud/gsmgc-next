@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useReducer, useEffect, useState, useCallback, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useReducer, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { getAuthToken } from '@/api/auth';
 
 // ---------- 类型 ----------
@@ -217,21 +217,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [state.items]);
 
-  // ★ v9.2 fix: 购物车变动时自动保存快照（防抖2秒），不是只在下单时保存
-  useEffect(() => {
-    if (snapTimerRef.current) clearTimeout(snapTimerRef.current);
-    snapTimerRef.current = setTimeout(() => {
-      const token = getAuthToken();
-      if (!token || state.items.length === 0) return;
-      fetch('https://api.gsmgc.es/wp-json/gsmgc/v1/cart-snap', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ items: state.items })
-      }).catch(() => {});
-    }, 2000);
-    return () => { if (snapTimerRef.current) clearTimeout(snapTimerRef.current); };
-  }, [state.items]);
-
   const addItem = useCallback((item: Omit<CartItem, 'qty'> & { qty?: number }) => {
     dispatch({ type: 'ADD_ITEM', item });
   }, []);
@@ -262,7 +247,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // ── ★ v9.2: 跨设备购物车快照合并 ──
   const [remoteSnap, setRemoteSnap] = useState<RemoteSnap | null>(null);
   const [snapChecked, setSnapChecked] = useState(false);
-  const snapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 登录后静默检测远程快照
   useEffect(() => {
