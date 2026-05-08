@@ -57,19 +57,37 @@ interface CreateOrderResponse {
   message?: string;
 }
 
-// ★ v5.1: 客户端 smartFetch 直连（绕过 Vercel 代理避免 CF Bot Fight Mode 拦截）
-//   SSR 降级走 /api/orders/create（route.ts → api.gsmgc.es）
+// ★ v5.2: 客户端双通道 — 直连优先 + Vercel 代理兜底
+//   移动端 POST 大负载容易被 CF/网络中断（Load failed），代理绕过
+//   SSR 始终走 /api/orders/create（route.ts → api.gsmgc.es）
 export async function createOrder(orderData: Record<string, unknown>): Promise<CreateOrderResponse> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 
-  // 客户端直连后端，服务端走代理
   if (typeof window !== 'undefined') {
-    const res = await smartFetch('/create-order', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(orderData),
-    });
-    return handleCreateOrderResponse(res);
+    // ★ 通道1：直连后端（最快，无中间层）
+    try {
+      const res = await smartFetch('/create-order', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(orderData),
+      });
+      return handleCreateOrderResponse(res);
+    } catch (directErr) {
+      // ★ 通道2：直连失败 → 降级走 Vercel 代理
+      //   移动端常见：Load failed (CF拦截POST) / Network error (移动网络不稳定)
+      console.warn('[GSMGC] createOrder direct failed, falling back to proxy:', (directErr as Error).message);
+
+      const token = getAuthToken();
+      const proxyHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) proxyHeaders['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: proxyHeaders,
+        body: JSON.stringify(orderData),
+      });
+      return handleCreateOrderResponse(res);
+    }
   }
 
   // SSR 降级：走 Vercel API Route
