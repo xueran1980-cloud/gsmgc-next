@@ -447,7 +447,7 @@ export default function CheckoutPage() {
         WC_ERROR: 'Error interno del servidor de pedidos. Estamos trabajando en ello.',
         VALIDATION_ERROR: 'Uno o más productos ya no tienen stock suficiente. Revisa tu carrito.',
         AUTH_ERROR: 'Tu sesión ha expirado. Por favor, recarga la página e inicia sesión de nuevo.',
-        UNKNOWN_ERROR: 'Error inesperado al procesar el pedido. Contacta con soporte.',
+        UNKNOWN_ERROR: `Error inesperado: ${err instanceof Error ? err.message : 'Error desconocido'}`,
       };
       let errorMessage = categoryMessages[errorCategory] || categoryMessages.UNKNOWN_ERROR;
 
