@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check, Lock, CreditCard, Truck, AlertCircle, User, MapPin, RefreshCw, ShoppingCart, Clock } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { createOrder, stockCheck } from '@/lib/woocommerce';
-import { deepCheckAuth, buildBilling } from '@/api/auth';
+import { deepCheckAuth, buildBilling, clearAllAuth } from '@/api/auth';
 import PriceWithIGIC, { priceWithIgic } from '@/components/PriceWithIGIC';
 import { COMPANY } from '@/config/constants';
 import Footer from '@/components/Footer';
@@ -59,8 +60,10 @@ const PAYMENT_METHODS = [
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
   const { user, isLoggedIn, refreshUser, setUser, loading } = useAuth();
+  const router = useRouter();
   const [step, setStep] = useState<'form' | 'loading' | 'success' | 'error'>('form');
   const [errorMsg, setErrorMsg] = useState('');
+  const [isAuthError, setIsAuthError] = useState(false); // ★ v9.1: auth 错误时显示登录按钮
   const [paymentMethod, setPaymentMethod] = useState('bacs');
   const [orderComments, setOrderComments] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -222,7 +225,8 @@ export default function CheckoutPage() {
       latestUser = await refreshUser();
       if (!latestUser || !latestUser.id) {
         console.error('[GSMGC] Checkout: refreshUser returned null/empty, blocking order');
-        setErrorMsg('Sesión expirada o inválida. Por favor, recarga la página e inicia sesión de nuevo.');
+        setErrorMsg('Sesión expirada o inválida. Por favor, inicia sesión de nuevo.');
+        setIsAuthError(true);
         setStep('error');
         return;
       }
@@ -232,7 +236,8 @@ export default function CheckoutPage() {
       // ★ v6.1: AUTH_EXPIRED 单独提示，不 reload（保留表单数据让用户手动重试）
       if ((refreshErr as Error).message === 'AUTH_EXPIRED') {
         console.error('[GSMGC] Checkout: AUTH_EXPIRED during refreshUser');
-        setErrorMsg('Tu sesión ha expirado. Por favor, cierra sesión y vuelve a iniciar.');
+        setErrorMsg('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
+        setIsAuthError(true);
       } else {
         console.error('[GSMGC] Checkout: refreshUser threw error, blocking order:', refreshErr);
         setErrorMsg('Error de conexión al verificar tu sesión. Recarga la página e inténtalo de nuevo.');
@@ -244,7 +249,8 @@ export default function CheckoutPage() {
     // ★ v6.0: 安全校验 — 确保 refreshUser 返回的用户就是当前登录的用户
     if (user && user.id && latestUser.id !== user.id) {
       console.error('[GSMGC] Checkout: user ID mismatch!', { cached: user.id, fresh: latestUser.id });
-      setErrorMsg('Error de sesión. Se han detectado datos de otra cuenta. Por favor, cierra sesión y vuelve a entrar.');
+      setErrorMsg('Error de sesión. Se han detectado datos de otra cuenta. Por favor, inicia sesión de nuevo.');
+      setIsAuthError(true);
       setStep('error');
       return;
     }
@@ -298,7 +304,8 @@ export default function CheckoutPage() {
     } catch (stockErr) {
       // ★ v6.1: AUTH_EXPIRED 阻止下单
       if ((stockErr as Error).message === 'AUTH_EXPIRED') {
-        setErrorMsg('Tu sesión ha expirado. Por favor, cierra sesión y vuelve a iniciar.');
+        setErrorMsg('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
+        setIsAuthError(true);
         setStep('error');
         return;
       }
@@ -930,22 +937,37 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* ★ RUNTIME OBSERVABILITY: 重试按钮 — 网络/超时错误可立即重试 */}
+                {/* ★ v9.1: Auth 错误 → 显示登录按钮，不显示重试（重试也是同一个无效 token） */}
                 <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStep('form');
-                      setErrorMsg('');
-                      setErrors({});
-                      setIsSubmitting(false);
-                      // 保留同一 idempotencyKey — 后端幂等缓存防重复
-                    }}
-                    className="flex-1 bg-[#2563eb] text-white font-bold py-2.5 rounded-xl text-sm hover:bg-[#1d4ed8] transition flex items-center justify-center gap-1.5"
-                  >
-                    <RefreshCw size={14} />
-                    Reintentar con el mismo pedido
-                  </button>
+                  {isAuthError ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        clearAllAuth();
+                        router.push('/login?redirect=/checkout');
+                      }}
+                      className="flex-1 bg-[#2563eb] text-white font-bold py-2.5 rounded-xl text-sm hover:bg-[#1d4ed8] transition flex items-center justify-center gap-1.5"
+                    >
+                      <User size={14} />
+                      Iniciar sesión de nuevo
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStep('form');
+                        setErrorMsg('');
+                        setIsAuthError(false);
+                        setErrors({});
+                        setIsSubmitting(false);
+                        // 保留同一 idempotencyKey — 后端幂等缓存防重复
+                      }}
+                      className="flex-1 bg-[#2563eb] text-white font-bold py-2.5 rounded-xl text-sm hover:bg-[#1d4ed8] transition flex items-center justify-center gap-1.5"
+                    >
+                      <RefreshCw size={14} />
+                      Reintentar con el mismo pedido
+                    </button>
+                  )}
                   <a
                     href={`https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent('Hola! Tuve un problema al intentar realizar un pedido en GSMGC. Error: ' + errorMsg.substring(0, 100))}`}
                     target="_blank"
