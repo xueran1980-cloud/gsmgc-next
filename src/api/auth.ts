@@ -117,10 +117,18 @@ export async function smartFetch(path: string, options: RequestInit & { skip401?
   const url = isClient
     ? `https://api.gsmgc.es/wp-json/gsmgc/v1${path}`
     : `${API_BASE}${path}`;
+  // ★ v5.2: URL auth_token 兜底（CF Bot Fight Mode 可能剥离 Authorization header）
+  //   后端 _gsmgc_get_bearer_token() 支持 ?auth_token=xxx 作为第4层 fallback
+  let finalUrl = url;
+  if (isClient && token && !url.includes('auth_token=')) {
+    const sep = url.includes('?') ? '&' : '?';
+    finalUrl = `${url}${sep}auth_token=${encodeURIComponent(token)}`;
+  }
+
   console.debug('[GSMGC] smartFetch:', method, path, isClient ? '→ direct' : '→ proxy');
 
   try {
-    const res = await fetch(url, {
+    const res = await fetch(finalUrl, {
       ...fetchOptions,
       method,
       headers,
