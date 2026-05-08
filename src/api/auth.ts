@@ -293,12 +293,12 @@ export async function resetPassword(loginVal: string, key: string, password: str
 }
 
 /**
- * getCurrentUser — ★ v5.1: smartFetch 直连后端（绕过 CF 拦截）
+ * getCurrentUser — ★ v5.2: POST /me with auth_token in body（CF 安全剥离 header）
  * ★ /me 返回 false 不清 token（可能只是网络抖动）
  */
 export async function getCurrentUser(): Promise<GsmgcUser | null> {
   try {
-    const res = await smartFetch('/me');
+    const res = await _smartFetchMe();
     if (!res.ok) return null;
     const data = await res.json();
     // ★ 兼容两种格式: { success, user } 和 { logged_in, user }
@@ -312,6 +312,17 @@ export async function getCurrentUser(): Promise<GsmgcUser | null> {
   }
 }
 
+/** POST /me with auth_token in body（绕过 CF header 剥离）*/
+async function _smartFetchMe(): Promise<Response> {
+  const token = getAuthToken();
+  const body = token ? JSON.stringify({ auth_token: token }) : '{}';
+  return smartFetch('/me', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+  });
+}
+
 /**
  * getCurrentUserSafe — 同 getCurrentUser，但不触发 401 熔断
  */
@@ -321,7 +332,7 @@ export async function getCurrentUserSafe(): Promise<GsmgcUser | null> {
 
 export async function checkAuth(): Promise<{ authenticated: boolean; user?: GsmgcUser; [key: string]: unknown }> {
   try {
-    const res = await smartFetch('/me');
+    const res = await _smartFetchMe();
     const data = await res.json();
     // ★ 兼容格式: { success, user } | { logged_in, user }
     if ((data.success || data.logged_in) && data.user && data.user.id) {
@@ -337,7 +348,7 @@ export async function checkAuth(): Promise<{ authenticated: boolean; user?: Gsmg
 
 export async function deepCheckAuth(): Promise<{ authenticated: boolean; user?: GsmgcUser }> {
   try {
-    const res = await smartFetch('/me');
+    const res = await _smartFetchMe();
     const data = await res.json();
     // ★ 兼容格式: { success, user } | { logged_in, user }
     if ((data.success || data.logged_in) && data.user && data.user.id) {
