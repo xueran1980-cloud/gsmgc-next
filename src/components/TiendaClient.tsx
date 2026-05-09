@@ -113,7 +113,9 @@ export default function TiendaClient({
     fetch('/api/categories', { cache: 'no-store' })
       .then(r => r.json())
       .then(cats => setCategories(cats || []))
-      .catch(() => {});
+      .catch((err: unknown) => {
+        console.error('[TiendaClient] categories fetch failed:', err);
+      });
   }, []);
 
   // ★ useEffect：debouncedSearch / category / page 变化时 fetch
@@ -165,7 +167,10 @@ export default function TiendaClient({
       }
     }).catch(err => {
       console.error('[TiendaClient] fetch error:', err);
-      if (!cancelled) setLoading(false);
+      if (!cancelled) {
+        setLoading(false);
+        setTotalPages(0);
+      }
     });
     return () => { cancelled = true; };
   }, [finalOrderby, finalOrder, categoryParam, debouncedSearch, pageParam, apiEndpoint]);
