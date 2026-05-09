@@ -1,14 +1,18 @@
 // GSMGC Authentication API
 //
-// ★ v5.1: smartFetch — 客户端直连 api.gsmgc.es（绕过 Vercel 代理避免 CF Bot Fight Mode 拦截）
-//   服务端仍走 /api/proxy/
+// ★ v6.1: 接入三层模型
+//   Layer 1: fetchWithFallbackClient（纯执行器）
+//   Layer 2: parseApiResponse / fetchAndParse（解析+分类）
+//   Layer 3: auth.ts（纯业务映射）
 //
-//   铁律：
-//   1. 客户端直连 https://api.gsmgc.es/wp-json/gsmgc/v1/{path}
-//   2. /me 失败 ≠ 未登录，只有 401 才清 token
-//   3. cookie 必须透传
+// 铁律：
+//   1. /me 失败 ≠ 未登录，只有 reason=unauthorized 才算未登录
+//   2. 401 熔断在 Layer 3 处理（clearAllAuth）
+//   3. login/register/requestPasswordReset/resetPassword 保留直接 fetch
+//      但用 parseApiResponse 统一解析
 
-import { API_BASE } from '../config/api';
+import { fetchWithFallbackClient } from '@/lib/fetchWithFallback';
+import { parseApiResponse, fetchAndParse, type FetchResult } from '@/lib/apiParser';
 
 /**
  * ★ v6.0: 全局唯一清除函数
@@ -90,83 +94,6 @@ export function setCachedUser(user: GsmgcUser | null): void {
   } catch {}
 }
 
-/**
- * ★ v5.1: smartFetch — 客户端直连后端，绕过 Vercel 代理避免 CF Bot Fight Mode 拦截
- *   服务端（如有）仍走 /api/proxy/
- *
- * 铁律：
- *   - 客户端：直连 https://api.gsmgc.es/wp-json/gsmgc/v1/{path}（CORS 已就绪）
- *   - 401 → clearAllAuth + throw AUTH_EXPIRED
- *   - 其他错误（网络/5xx/CF拦截）→ 不清 token，返回原始 response
- */
-export async function smartFetch(path: string, options: RequestInit & { skip401?: boolean } = {}): Promise<Response> {
-  const { skip401 = false, ...fetchOptions } = options;
-  const method = (options.method || 'GET').toUpperCase();
-
-  // 自动附加 Bearer token
-  const token = getAuthToken();
-  const headers: Record<string, string> = { ...(fetchOptions.headers as Record<string, string> || {}) };
-  if (token && !headers['Authorization']) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  headers['User-Agent'] = headers['User-Agent'] || 'GSMGC-Next.js/1.0';
-  headers['Accept'] = headers['Accept'] || 'application/json';
-
-  // ★ 客户端直连后端（绕过 Vercel rewrite 避免 CF Bot Fight Mode 拦截）
-  const isClient = typeof window !== 'undefined';
-  const url = isClient
-    ? `https://api.gsmgc.es/wp-json/gsmgc/v1${path}`
-    : `${API_BASE}${path}`;
-  // ★ v5.2: URL auth_token 兜底（CF Bot Fight Mode 可能剥离 Authorization header）
-  //   后端 _gsmgc_get_bearer_token() 支持 ?auth_token=xxx 作为第4层 fallback
-  let finalUrl = url;
-  if (isClient && token && !url.includes('auth_token=')) {
-    const sep = url.includes('?') ? '&' : '?';
-    finalUrl = `${url}${sep}auth_token=${encodeURIComponent(token)}`;
-  }
-
-  console.debug('[GSMGC] smartFetch:', method, path, isClient ? '→ direct' : '→ proxy');
-
-  try {
-    const res = await fetch(finalUrl, {
-      ...fetchOptions,
-      method,
-      headers,
-      ...(isClient ? {} : { credentials: 'same-origin' }),
-    });
-
-    // ★ 401 熔断 — 只有 401 才清 token
-    if (res.status === 401 && !skip401) {
-      console.warn('[GSMGC] smartFetch: 401 Unauthorized, clearing auth');
-      clearAllAuth();
-      throw new Error('AUTH_EXPIRED');
-    }
-
-    // ★ 非 401 错误（5xx、网络等）— 不清 token，返回原始 response 让调用者处理
-    return res;
-  } catch (err) {
-    // 如果是 AUTH_EXPIRED（我们刚 throw 的），直接抛
-    if ((err as Error).message === 'AUTH_EXPIRED') throw err;
-
-    // 网络错误 → 不清 token，throw 让调用者知道
-    console.warn('[GSMGC] smartFetch: network error for', path, ':', (err as Error).message);
-    throw err;
-  }
-}
-
-/**
- * 安全解析 JSON 响应
- */
-async function parseJSON(res: Response): Promise<any> {
-  const text = await res.text();
-  try {
-    return JSON.parse(text);
-  } catch {
-    console.warn('[GSMGC] Non-JSON response:', text.substring(0, 200));
-    throw new Error('Respuesta del servidor no valida');
-  }
-}
-
 // ─── Public API ──────────────────────────────────────────────────
 
 export interface BillingAddress {
@@ -193,8 +120,18 @@ export function buildBilling(user: GsmgcUser | null, addrFields: BillingAddress 
   };
 }
 
+/**
+ * 从多种 WP 响应格式中提取用户
+ */
+function extractUser(data: Record<string, unknown>): GsmgcUser | null {
+  if (data.success && data.user && (data.user as Record<string, unknown>).id) return data.user as GsmgcUser;
+  if (data.logged_in && data.user && (data.user as Record<string, unknown>).id) return data.user as GsmgcUser;
+  if (data.id) return data as GsmgcUser;
+  return null;
+}
+
 export async function login(email: string, password: string, remember = false): Promise<GsmgcUser> {
-  // 走 Next.js API 代理（内部走 proxy）
+  // 走 Next.js API 路由（内部走 proxy 到 WP）
   const res = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -202,22 +139,22 @@ export async function login(email: string, password: string, remember = false): 
     cache: 'no-store',
   });
 
-  if (!res.ok) {
-    const error = await parseJSON(res).catch(() => ({ message: 'Error de conexion' }));
-    throw new Error(error.message || 'Email o contrasena incorrectos');
+  const result = await parseApiResponse<any>(res);
+
+  if (!result.ok) {
+    throw new Error(result.data?.message || 'Email o contrasena incorrectos');
   }
 
-  const data = await parseJSON(res);
-
+  const data = result.data;
   if (data.auth_token) {
     setAuthToken(data.auth_token);
     console.debug('[GSMGC] Auth token saved to localStorage');
   }
 
-  // ★ 登录后验证 /me（用 getCurrentUserSafe 避免 401 熔断清掉刚保存的 token）
+  // 登录后验证 /me（使用 getCurrentUserSafe 避免 401 熔断清掉刚保存的 token）
   let user: GsmgcUser = data.user || data;
 
-  // ★ Bug fix: 无论 /me 返回什么，先缓存登录响应的用户（避免跨页面丢失）
+  // Bug fix: 无论 /me 返回什么，先缓存登录响应的用户（避免跨页面丢失）
   if (user && user.id) {
     setCachedUser(user);
   }
@@ -240,7 +177,14 @@ export async function login(email: string, password: string, remember = false): 
 
 export async function logout(): Promise<{ success: boolean }> {
   try {
-    await smartFetch('/logout', { method: 'POST', skip401: true });
+    // logout 不关心 401（本来就要清 token）
+    const token = getAuthToken();
+    if (token) {
+      await fetchWithFallbackClient('/wp-json/gsmgc/v1/logout', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+      }, token).catch(() => {});  // 忽略错误，反正要清 token
+    }
   } catch (err) {
     console.warn('Logout API error:', err);
   }
@@ -256,144 +200,171 @@ export async function register(userData: Record<string, string>): Promise<any> {
     cache: 'no-store',
   });
 
-  if (!res.ok) {
-    const error = await parseJSON(res).catch(() => ({ message: 'Error al registrar' }));
-    throw new Error(error.message);
+  const result = await parseApiResponse<any>(res);
+
+  if (!result.ok) {
+    throw new Error(result.data?.message || 'Error al registrar');
   }
 
-  return parseJSON(res);
+  return result.data;
 }
 
 export async function requestPasswordReset(email: string): Promise<any> {
-  const res = await smartFetch('/lost-password', {
+  const res = await fetch('/api/auth/lost-password', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
+    cache: 'no-store',
   });
 
-  if (!res.ok) {
-    const error = await parseJSON(res).catch(() => ({ message: 'Error' }));
-    throw new Error(error.message);
+  const result = await parseApiResponse<any>(res);
+
+  if (!result.ok) {
+    throw new Error(result.data?.message || 'Error');
   }
-  return parseJSON(res);
+
+  return result.data;
 }
 
 export async function resetPassword(loginVal: string, key: string, password: string): Promise<any> {
-  const res = await smartFetch('/reset-password', {
+  const res = await fetch('/api/auth/reset-password', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ login: loginVal, key, password }),
+    cache: 'no-store',
   });
 
-  if (!res.ok) {
-    const error = await parseJSON(res).catch(() => ({ message: 'Error' }));
-    throw new Error(error.message);
+  const result = await parseApiResponse<any>(res);
+
+  if (!result.ok) {
+    throw new Error(result.data?.message || 'Error');
   }
-  return parseJSON(res);
+
+  return result.data;
 }
 
 /**
- * getCurrentUser — ★ v5.4: /me 失败时用缓存兜底（CF 拦了不中断 checkout）
- * ★ 只有真正 401 才返回 null（token 过期）
+ * getCurrentUser — Layer 3 业务映射
+ *
+ * 铁律：
+ *   - 只有 reason=unauthorized 才清 token
+ *   - 其他错误（cf_blocked / server_error / network）→ 用缓存兜底，不清 token
  */
 export async function getCurrentUser(): Promise<GsmgcUser | null> {
-  try {
-    const res = await _smartFetchMe();
-    if (!res.ok) {
-      // 401 = token 真正过期，不兜底
-      if (res.status === 401) return null;
-      // 非401（CF拦截/网络问题）→ 用缓存兜底
-      return getCachedUser();
-    }
-    const data = await res.json();
-    // ★ /api/auth/me 代理返回 blocked=true → CF拦截 → 用缓存
-    if (data.blocked) return getCachedUser();
-    // ★ 兼容两种格式: { success, user } 和 { logged_in, user }
-    if ((data.success || data.logged_in) && data.user && (data.user as Record<string, unknown>).id) {
-      setCachedUser(data.user);
-      return data.user as GsmgcUser;
-    }
-    if (data.id) {
-      setCachedUser(data);
-      return data as GsmgcUser;
-    }
-    // /me 返回了但无用户 → 用缓存兜底
-    return getCachedUser();
-  } catch {
-    // 网络异常 → 用缓存兜底
-    return getCachedUser();
-  }
-}
-
-/** 
- * ★ v5.3: 双通道 /me — 直连优先 + 代理兜底
- *   直连：GET + URL auth_token（无CORS预检，移动端友好）
- *   代理：/api/auth/me（Vercel→WP，CF拦了不清token）
- */
-async function _smartFetchMe(): Promise<Response> {
   const token = getAuthToken();
-  const path = token ? `/me?auth_token=${encodeURIComponent(token)}` : '/me';
+  if (!token) return getCachedUser();
 
-  // ★ 通道1：客户端直连（最快，移动端GET无CORS预检）
-  if (typeof window !== 'undefined') {
-    try {
-      const url = `https://api.gsmgc.es/wp-json/gsmgc/v1${path}`;
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-      });
-      // 成功或401（真正过期）→ 直接返回
-      if (res.ok || res.status === 401) return res;
-      // 非401错误（CF拦截/网络问题）→ 不返回，走代理兜底
-      console.warn('[GSMGC] _smartFetchMe: direct failed with', res.status, '→ fallback to proxy');
-    } catch (err) {
-      console.warn('[GSMGC] _smartFetchMe: direct network error → fallback to proxy:', (err as Error).message);
+  // Layer 1+2: fetchWithFallbackClient + fetchAndParse
+  const result: FetchResult<Record<string, unknown>> = await fetchAndParse<Record<string, unknown>>(
+    fetchWithFallbackClient('/wp-json/gsmgc/v1/me', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    }, token)
+  );
+
+  // Layer 3: 业务映射
+  if (result.ok && result.data) {
+    const user = extractUser(result.data);
+    if (user) {
+      setCachedUser(user);
+      return user;
     }
-    // ★ 通道2：代理兜底（/api/auth/me → Vercel→WP，CF拦了只返回false不清token）
-    return fetch('/api/auth/me', {
-      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-    });
+    // API 返回了但无有效用户 → 用缓存兜底
+    return getCachedUser();
   }
-  // 服务端：走 smartFetch（/api/proxy/ 代理）
-  return smartFetch(path, { method: 'GET' });
+
+  // Layer 3: 错误分类处理
+  switch (result.reason) {
+    case 'unauthorized':
+      // 真正 401 → 清 token
+      console.warn('[GSMGC] getCurrentUser: 401 Unauthorized, clearing auth');
+      clearAllAuth();
+      return null;
+
+    case 'cf_blocked':
+    case 'server_error':
+    case 'network':
+    case 'parse_error':
+    case 'http_error':
+      // 非 401 错误 → 用缓存兜底，不清 token
+      console.warn(`[GSMGC] getCurrentUser: ${result.reason}, using cached user`);
+      return getCachedUser();
+
+    default:
+      return getCachedUser();
+  }
 }
 
 /**
  * getCurrentUserSafe — 同 getCurrentUser，但不触发 401 熔断
+ * 用于登录后验证等场景
  */
 export async function getCurrentUserSafe(): Promise<GsmgcUser | null> {
-  return getCurrentUser();
+  const token = getAuthToken();
+  if (!token) return getCachedUser();
+
+  const result = await fetchAndParse<Record<string, unknown>>(
+    fetchWithFallbackClient('/wp-json/gsmgc/v1/me', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    }, token)
+  );
+
+  if (result.ok && result.data) {
+    const user = extractUser(result.data);
+    if (user) {
+      setCachedUser(user);
+      return user;
+    }
+    return getCachedUser();
+  }
+
+  // 即使是 unauthorized，也不清 token（Safe 版本）
+  return getCachedUser();
 }
 
 export async function checkAuth(): Promise<{ authenticated: boolean; user?: GsmgcUser; [key: string]: unknown }> {
-  try {
-    const res = await _smartFetchMe();
-    const data = await res.json();
-    // ★ 兼容格式: { success, user } | { logged_in, user }
-    if ((data.success || data.logged_in) && data.user && data.user.id) {
-      setCachedUser(data.user);
-      return { authenticated: true, user: data.user };
+  const token = getAuthToken();
+  if (!token) return { authenticated: false };
+
+  const result = await fetchAndParse<Record<string, unknown>>(
+    fetchWithFallbackClient('/wp-json/gsmgc/v1/me', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    }, token)
+  );
+
+  if (result.ok && result.data) {
+    const user = extractUser(result.data);
+    if (user) {
+      setCachedUser(user);
+      return { authenticated: true, user };
     }
-    return { authenticated: false };
-  } catch (err) {
-    console.warn('[GSMGC] checkAuth error:', err);
-    return { authenticated: false };
   }
+
+  return { authenticated: false };
 }
 
 export async function deepCheckAuth(): Promise<{ authenticated: boolean; user?: GsmgcUser }> {
-  try {
-    const res = await _smartFetchMe();
-    const data = await res.json();
-    // ★ 兼容格式: { success, user } | { logged_in, user }
-    if ((data.success || data.logged_in) && data.user && data.user.id) {
-      setCachedUser(data.user);
-      return { authenticated: true, user: data.user };
+  const result = await fetchAndParse<Record<string, unknown>>(
+    fetchWithFallbackClient('/wp-json/gsmgc/v1/me', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    }, getAuthToken() || undefined)
+  );
+
+  if (result.ok && result.data) {
+    const user = extractUser(result.data);
+    if (user) {
+      setCachedUser(user);
+      return { authenticated: true, user };
     }
-    return { authenticated: false };
-  } catch (err) {
-    console.warn('[GSMGC] deepCheckAuth error:', err);
-    if ((err as Error).message === 'AUTH_EXPIRED') throw err;
-    return { authenticated: false };
   }
+
+  // deepCheckAuth: 如果是 unauthorized，抛异常（调用者可能需要处理）
+  if (result.reason === 'unauthorized') {
+    throw new Error('AUTH_EXPIRED');
+  }
+
+  return { authenticated: false };
 }
