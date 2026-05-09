@@ -112,7 +112,7 @@ export default function TiendaClient({
   useEffect(() => {
     fetch('/api/categories', { cache: 'no-store' })
       .then(r => r.json())
-      .then(cats => setCategories(cats || []))
+      .then(cats => setCategories(Array.isArray(cats) ? cats : []))
       .catch((err: unknown) => {
         console.error('[TiendaClient] categories fetch failed:', err);
       });
@@ -176,13 +176,14 @@ export default function TiendaClient({
   }, [finalOrderby, finalOrder, categoryParam, debouncedSearch, pageParam, apiEndpoint]);
 
   // ★ activeCategory — 同时匹配 id 和 slug（对齐旧站）
-  const activeCategory = categories.find(c =>
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const activeCategory = safeCategories.find(c =>
     String(c.id) === categoryParam ||
     (c.slug || '').toLowerCase() === categoryParam.toLowerCase()
   );
 
   // Marcas — ★ 对齐现站：仅白名单内的品牌
-  const brandCategories = [...categories]
+  const brandCategories = [...safeCategories]
     .filter(c => {
       if ((c.count ?? 0) <= 0) return false;
       const slug = (c.slug || '').toLowerCase();
