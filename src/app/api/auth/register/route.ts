@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    const data = parseApiResponse(res);
+    const data = await parseApiResponse(res);
 
     return NextResponse.json(data, {
       status: 200,
