@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithFallbackClient } from '@/lib/fetchWithFallback';
-import { parseApiResponse } from '@/lib/apiParser';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // ★ 三层模型：直连 → 自动降级
+    // ★ 直连 → 自动降级，透传后端原始响应
     const res = await fetchWithFallbackClient(
       'https://api.gsmgc.es/wp-json/gsmgc/v1/login',
       {
@@ -19,11 +18,12 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    const data = await parseApiResponse(res);
-
-    return NextResponse.json(data, {
-      status: 200,
+    // 透传后端响应体和状态码，不包装
+    const backendData = await res.text();
+    return new NextResponse(backendData, {
+      status: res.status,
       headers: {
+        'Content-Type': 'application/json',
         'Cache-Control': 'no-store',
       },
     });
