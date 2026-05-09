@@ -75,8 +75,12 @@ export async function fetchWithFallbackClient(
   options: RequestInit,
   token?: string
 ): Promise<Response> {
-  let directUrl = `${API_BASE}${apiPath}`;
-  const proxyUrl = `/api/proxy${apiPath}`;
+  // ★ apiPath 可能是完整 URL（直连模式）或路径（proxy 模式）
+  const isFulUrl = apiPath.startsWith('http');
+  let directUrl = apiPath;
+  const proxyUrl = isFulUrl 
+    ? `/api/proxy/${apiPath.replace('https://api.gsmgc.es', '')}`
+    : `/api/proxy${apiPath}`;
 
   // auth_token URL 兜底（Layer 1 职责：确保请求能可靠到达后端）
   if (token && typeof window !== 'undefined' && !directUrl.includes('auth_token=')) {
