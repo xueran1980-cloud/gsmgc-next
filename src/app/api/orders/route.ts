@@ -1,8 +1,9 @@
 /**
  * GET /api/orders
- * Proxy to WooCommerce my-orders endpoint (BYPASS CF Bot Fight Mode)
+ * 获取客户历史订单（直连 → 自动降级，透传后端响应）
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchWithFallbackClient } from '@/lib/fetchWithFallback';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,31 +12,26 @@ export async function GET(request: NextRequest) {
       'Accept': 'application/json',
     };
 
-    // ★ 透传 token + cookie
+    // ★ 透传 token
     const authHeader = request.headers.get('Authorization');
     if (authHeader) headers['Authorization'] = authHeader;
-    const cookieHeader = request.headers.get('Cookie');
-    if (cookieHeader) headers['Cookie'] = cookieHeader;
 
-    const proxyUrl = `${request.nextUrl.origin}/api/proxy/wp-json/gsmgc/v1/my-orders`;
-    const res = await fetch(proxyUrl, {
-      method: 'GET',
-      headers,
-      cache: 'no-store',
-    });
+    const res = await fetchWithFallbackClient(
+      'https://api.gsmgc.es/wp-json/gsmgc/v1/my-orders',
+      {
+        method: 'GET',
+        headers,
+      }
+    );
 
-    const ct = (res.headers.get('Content-Type') || '').toLowerCase();
-    if (ct.includes('text/html')) {
-      return NextResponse.json(
-        { success: false, error: 'CF blocked' },
-        { status: 502 }
-      );
-    }
-
-    const data = await res.json();
-    return NextResponse.json(data, {
+    // 透传后端响应体和状态码
+    const backendData = await res.text();
+    return new NextResponse(backendData, {
       status: res.status,
-      headers: { 'Cache-Control': 'no-store' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+      },
     });
   } catch (err: any) {
     console.error('[API /orders] Error:', err);
