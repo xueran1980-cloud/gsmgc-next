@@ -193,7 +193,7 @@ export default function TiendaClient({
     .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
 
   // Tipo de Producto — ★ 其余所有根分类 + 子分类
-  const realCategories = [...categories]
+  const realCategories = [...safeCategories]
     .filter(c => {
       if ((c.count ?? 0) <= 0) return false;
       const slug = (c.slug || '').toLowerCase();

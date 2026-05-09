@@ -1,9 +1,11 @@
 // Next.js API Route — 代理到 WordPress 自定义端点 /categories-raw
-// ★ 生产：走 /api/proxy/ | 开发：本地 fixture（绕过 SG CAPTCHA）
+// ★ 生产：直连 api.gsmgc.es（CF Bot Fight Mode 拦截 Vercel proxy IP）| 开发：本地 fixture
 
 import { NextRequest, NextResponse } from 'next/server';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.gsmgc.es';
 
 // 开发模式：使用本地 fixture
 function loadDevFixture(): any[] | null {
@@ -43,7 +45,8 @@ export async function GET(request: NextRequest) {
     const cookieHeader = request.headers.get('Cookie');
     if (cookieHeader) proxyHeaders['Cookie'] = cookieHeader;
 
-    const proxyUrl = `${request.nextUrl.origin}/api/proxy/wp-json/gsmgc/v1/categories-raw`;
+    // ★ 直连后端，不走 /api/proxy/（CF Bot Fight Mode 拦截 Vercel IP）
+    const proxyUrl = `${BACKEND_URL}/wp-json/gsmgc/v1/categories-raw`;
 
     const res = await fetch(proxyUrl, {
       headers: proxyHeaders,
