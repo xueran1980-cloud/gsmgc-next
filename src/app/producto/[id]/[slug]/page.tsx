@@ -67,7 +67,7 @@ async function getProductById(id: string): Promise<{ product: Product | null; re
   const product = await fetchProductById(id);
   if (!product) return { product: null, related: [] };
 
-  // Related Products：从 fetchProducts() 获取（服务端走 /api/proxy/）
+  // Related Products：从 fetchProducts() 获取（直连 api.gsmgc.es）
   let related: Product[] = [];
   const categoryId = product.categories?.[0]?.id;
   if (categoryId) {

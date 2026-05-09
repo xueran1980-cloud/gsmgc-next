@@ -1,51 +1,10 @@
 // WooCommerce REST API — 订单创建 + 库存校验 + 订单查询
-// ★ v6.1: 接入三层模型（fetchWithFallbackClient + parseApiResponse + 业务层）
-//   createOrder 不再手工做双通道（fetchWithFallbackClient 已经做了）
+// ★ v6.2: 统一走 fetchWithFallbackClient（直连→proxy 自动 fallback）
+//   清除废弃代码：WC_PROXY, createOrderWC, getBasicAuthHeader (2026-05-09)
 
 import { fetchWithFallbackClient } from '@/lib/fetchWithFallback';
 import { parseApiResponse, fetchAndParse, type FetchResult } from '@/lib/apiParser';
 import { getAuthToken } from '@/api/auth';
-
-// ★ v5.0: WC Basic Auth 也走 proxy，禁止直连
-const WC_PROXY = '/api/proxy/wp-json/wc/v3';
-
-function getBasicAuthHeader(): string {
-  const user = process.env.NEXT_PUBLIC_WP_USER;
-  const pass = process.env.NEXT_PUBLIC_WP_APP_PASSWORD;
-  if (!user || !pass) {
-    throw new Error('Sistema de pedidos no configurado. Contacta con nosotros por WhatsApp.');
-  }
-  return `Basic ${btoa(`${user}:${pass}`)}`;
-}
-
-interface ShippingAddress {
-  first_name: string;
-  last_name: string;
-  company: string;
-  address_1: string;
-  address_2: string;
-  city: string;
-  postcode: string;
-  country: string;
-  state: string;
-}
-
-interface BillingAddress extends ShippingAddress {
-  email: string;
-  phone: string;
-}
-
-interface CreateOrderRequest {
-  payment_method: string;
-  payment_method_title: string;
-  billing: BillingAddress;
-  shipping: ShippingAddress;
-  line_items: Array<{ product_id: number; quantity: number }>;
-  status: string;
-  customer_note: string;
-  meta_data: Array<{ key: string; value: string }>;
-  idempotency_key?: string;
-}
 
 interface CreateOrderResponse {
   id: number;
@@ -59,8 +18,7 @@ interface CreateOrderResponse {
   message?: string;
 }
 
-// ★ v6.1: createOrder 统一走 fetchWithFallbackClient（直连→proxy 自动 fallback）
-//   SSr 也走 fetchWithFallbackClient（传入 token=undefined，走 /api/proxy/）
+// ★ createOrder 统一走 fetchWithFallbackClient（直连→proxy 自动 fallback）
 export async function createOrder(orderData: Record<string, unknown>): Promise<CreateOrderResponse> {
   const token = getAuthToken() ?? undefined;
   const result: FetchResult<CreateOrderResponse> = await fetchAndParse<CreateOrderResponse>(
@@ -80,29 +38,7 @@ export async function createOrder(orderData: Record<string, unknown>): Promise<C
   return result.data;
 }
 
-// ★ v5.0: WC Basic Auth 备用下单也走 proxy（不直连 api.gsmgc.es）
-export async function createOrderWC(orderData: CreateOrderRequest): Promise<CreateOrderResponse> {
-  const auth = getBasicAuthHeader();
-
-  const res = await fetch(`${WC_PROXY}/orders`, {
-    method: 'POST',
-    headers: {
-      Authorization: auth,
-      'Content-Type': 'application/json',
-      'User-Agent': 'GSMGC-Next.js/1.0',
-    },
-    body: JSON.stringify(orderData),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Error al crear el pedido (${res.status})`);
-  }
-
-  return res.json();
-}
-
-// 获取客户订单列表（走 Next.js API Route，不走直连）
+// 获取客户订单列表（走 Next.js API Route，透传后端响应）
 export async function getCustomerOrders(): Promise<any> {
   const token = getAuthToken();
   if (!token) return { orders: [] };
