@@ -1,76 +1,109 @@
 /**
  * GET /api/auth/me
  *
+ * Layer 3：纯业务映射
+ *
+ * 三层分离：
+ *   fetchWithFallbackServer → Response（纯执行器）
+ *   parseApiResponse       → FetchResult（解析层）
+ *   route.ts               → 业务映射（这里）
+ *
  * 铁律：
- *   - /me 失败 ≠ 未登录（可能是网络抖动、CF 拦截等）
+ *   - /me 失败 ≠ 未登录
  *   - 只有 401 才算未登录
  *   - 其他错误返回 { logged_in: false } 但不清 token
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchWithFallbackServer } from '@/lib/fetchWithFallback';
+import { parseApiResponse, type FetchResult } from '@/lib/apiParser';
+
+interface MeUser {
+  id: number;
+  display_name?: string;
+  user_email?: string;
+  [key: string]: unknown;
+}
+
+interface MeResponse {
+  success?: boolean;
+  logged_in?: boolean;
+  user?: MeUser;
+  id?: number;
+  [key: string]: unknown;
+}
 
 export async function GET(req: NextRequest) {
-  // 透传 Authorization header
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) {
     return NextResponse.json({ logged_in: false });
   }
 
-  try {
-    // ★ 走 /api/proxy/，不直连 api.gsmgc.es
-    const proxyHeaders: Record<string, string> = {
-      'Authorization': authHeader,
-      'Content-Type': 'application/json',
-      'User-Agent': 'GSMGC-Next.js/1.0',
-    };
+  // 构造请求头
+  const headers: Record<string, string> = {
+    'Authorization': authHeader,
+    'Content-Type': 'application/json',
+    'User-Agent': 'GSMGC-Next.js/1.0',
+  };
+  const cookieHeader = req.headers.get('Cookie');
+  if (cookieHeader) headers['Cookie'] = cookieHeader;
 
-    // ★ 透传 Cookie（WC 需要 cookie 来验证登录态）
-    const cookieHeader = req.headers.get('Cookie');
-    if (cookieHeader) proxyHeaders['Cookie'] = cookieHeader;
+  // Layer 1: 纯执行器 → Response
+  const res = await fetchWithFallbackServer(
+    '/wp-json/gsmgc/v1/me',
+    { method: 'GET', headers, cache: 'no-store' },
+    req.nextUrl.origin
+  );
 
-    const proxyUrl = `${req.nextUrl.origin}/api/proxy/wp-json/gsmgc/v1/me`;
+  // Layer 2: 解析层 → FetchResult
+  const result: FetchResult<MeResponse> = await parseApiResponse<MeResponse>(res);
 
-    const res = await fetch(proxyUrl, {
-      method: 'GET',
-      headers: proxyHeaders,
-      cache: 'no-store',
-    });
+  // Layer 3: 纯业务映射
+  return mapMeResult(result);
+}
 
-    // 被CF拦截 → 返回 HTML → 不清 token，返回 false
-    const ct = res.headers.get('Content-Type') || '';
-    if (ct.includes('text/html')) {
-      console.warn('[api/auth/me] Got HTML response (CF blocked), returning false WITHOUT clearing token');
-      return NextResponse.json({ logged_in: false, blocked: true });
+/**
+ * 业务映射：FetchResult → NextResponse
+ * 只关心业务语义，不接触 HTTP
+ */
+function mapMeResult(result: FetchResult<MeResponse>): NextResponse {
+  if (result.ok && result.data) {
+    const user = extractUser(result.data);
+    if (user) {
+      return NextResponse.json({ logged_in: true, user });
     }
-
-    // 只有 401 才是真正未登录
-    if (res.status === 401) {
-      console.debug('[api/auth/me] 401 Unauthorized — token invalid');
-      return NextResponse.json({ logged_in: false, unauthorized: true });
-    }
-
-    if (!res.ok) {
-      console.warn('[api/auth/me] Non-OK response:', res.status, '— returning false WITHOUT clearing token');
-      return NextResponse.json({ logged_in: false });
-    }
-
-    const data = await res.json();
-
-    // 支持多种响应格式
-    if (data.success && data.user && (data.user as Record<string, unknown>).id) {
-      return NextResponse.json({ logged_in: true, user: data.user });
-    }
-    if (data.logged_in && data.user && (data.user as Record<string, unknown>).id) {
-      return NextResponse.json({ logged_in: true, user: data.user });
-    }
-    if (data.id) {
-      return NextResponse.json({ logged_in: true, user: data });
-    }
-
-    console.warn('[api/auth/me] No valid user in response:', JSON.stringify(data).substring(0, 200));
-    return NextResponse.json({ logged_in: false });
-  } catch (err) {
-    // 网络错误 → 不清 token，返回 false
-    console.warn('[api/auth/me] Network error:', (err as Error).message, '— returning false WITHOUT clearing token');
+    console.warn('[api/auth/me] No valid user in response');
     return NextResponse.json({ logged_in: false });
   }
+
+  switch (result.reason) {
+    case 'unauthorized':
+      console.debug('[api/auth/me] 401 — token invalid');
+      return NextResponse.json({ logged_in: false, unauthorized: true });
+
+    case 'cf_blocked':
+      console.warn('[api/auth/me] CF blocked (both paths), returning false WITHOUT clearing token');
+      return NextResponse.json({ logged_in: false, blocked: true });
+
+    case 'server_error':
+      console.warn('[api/auth/me] WP server error (both paths), returning false WITHOUT clearing token');
+      return NextResponse.json({ logged_in: false });
+
+    case 'network':
+      console.warn('[api/auth/me] Network unreachable (both paths), returning false WITHOUT clearing token');
+      return NextResponse.json({ logged_in: false });
+
+    default:
+      console.warn('[api/auth/me] Error:', result.reason, result.status);
+      return NextResponse.json({ logged_in: false });
+  }
+}
+
+/**
+ * 从多种 WP 响应格式中提取用户
+ */
+function extractUser(data: MeResponse): MeUser | null {
+  if (data.success && data.user && data.user.id) return data.user;
+  if (data.logged_in && data.user && data.user.id) return data.user;
+  if (data.id) return data as unknown as MeUser;
+  return null;
 }

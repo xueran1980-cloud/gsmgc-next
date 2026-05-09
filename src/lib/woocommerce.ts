@@ -1,8 +1,10 @@
 // WooCommerce REST API — 订单创建 + 库存校验 + 订单查询
-// ★ v5.1: 客户端直连 createOrder（smartFetch 绕过 CF Bot Fight Mode）
-//   SSR 兜底走 /api/orders/create（route.ts → api.gsmgc.es）
+// ★ v6.1: 接入三层模型（fetchWithFallbackClient + parseApiResponse + 业务层）
+//   createOrder 不再手工做双通道（fetchWithFallbackClient 已经做了）
 
-import { smartFetch, getAuthToken } from '@/api/auth';
+import { fetchWithFallbackClient } from '@/lib/fetchWithFallback';
+import { parseApiResponse, fetchAndParse, type FetchResult } from '@/lib/apiParser';
+import { getAuthToken } from '@/api/auth';
 
 // ★ v5.0: WC Basic Auth 也走 proxy，禁止直连
 const WC_PROXY = '/api/proxy/wp-json/wc/v3';
@@ -42,7 +44,7 @@ interface CreateOrderRequest {
   status: string;
   customer_note: string;
   meta_data: Array<{ key: string; value: string }>;
-  idempotency_key?: string; // ★ ORDER-SAFETY: 幂等key
+  idempotency_key?: string;
 }
 
 interface CreateOrderResponse {
@@ -53,81 +55,29 @@ interface CreateOrderResponse {
   total: string;
   line_items?: Array<{ product_id: number; quantity: number; total: string }>;
   customer_id?: number;
-  degraded?: boolean; // ★ AUTO-RECOVERY: 降级标记
+  degraded?: boolean;
   message?: string;
 }
 
-// ★ v5.2: 客户端双通道 — 直连优先 + Vercel 代理兜底
-//   移动端 POST 大负载容易被 CF/网络中断（Load failed），代理绕过
-//   SSR 始终走 /api/orders/create（route.ts → api.gsmgc.es）
+// ★ v6.1: createOrder 统一走 fetchWithFallbackClient（直连→proxy 自动 fallback）
+//   SSr 也走 fetchWithFallbackClient（传入 token=undefined，走 /api/proxy/）
 export async function createOrder(orderData: Record<string, unknown>): Promise<CreateOrderResponse> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const token = getAuthToken() ?? undefined;
+  const result: FetchResult<CreateOrderResponse> = await fetchAndParse<CreateOrderResponse>(
+    fetchWithFallbackClient('/wp-json/gsmgc/v1/create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderData),
+    }, token)
+  );
 
-  if (typeof window !== 'undefined') {
-    // ★ 通道1：直连后端（最快，无中间层）
-    try {
-      const res = await smartFetch('/create-order', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(orderData),
-      });
-      return handleCreateOrderResponse(res);
-    } catch (directErr) {
-      // ★ 通道2：直连失败 → 降级走 Vercel 代理
-      //   移动端常见：Load failed (CF拦截POST) / Network error (移动网络不稳定)
-      console.warn('[GSMGC] createOrder direct failed, falling back to proxy:', (directErr as Error).message);
-
-      const token = getAuthToken();
-      const proxyHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) proxyHeaders['Authorization'] = `Bearer ${token}`;
-
-      const res = await fetch('/api/orders/create', {
-        method: 'POST',
-        headers: proxyHeaders,
-        body: JSON.stringify(orderData),
-      });
-      return handleCreateOrderResponse(res);
-    }
+  if (!result.ok || !result.data) {
+    // 业务错误（如库存不足）— WP 可能返回 200 + { success: false }
+    const msg = (result.data as any)?.message || `Error (${result.status})`;
+    throw new Error(msg);
   }
 
-  // SSR 降级：走 Vercel API Route
-  const token = getAuthToken();
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
-  const res = await fetch('/api/orders/create', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(orderData),
-    credentials: 'same-origin',
-  });
-  return handleCreateOrderResponse(res);
-}
-
-// 统一处理 createOrder 响应（客户端直连 + SSR 兜底共用）
-async function handleCreateOrderResponse(res: Response): Promise<CreateOrderResponse> {
-  const ct = (res.headers.get('Content-Type') || '').toLowerCase();
-  if (ct.includes('text/html')) {
-    console.error('[GSMGC] create-order received HTML response');
-    throw new Error('El servidor encontro un error interno. Por favor, contacta con nosotros por WhatsApp.');
-  }
-
-  if (!res.ok) {
-    let errMsg: string;
-    try {
-      const err = await res.json();
-      if (typeof err.message === 'string' && (err.message.includes('<p>') || err.message.includes('<html') || err.message.includes('wordpress.org'))) {
-        errMsg = 'Error al procesar el pedido. Por favor, contacta con nosotros.';
-      } else if (err.code === 'FATAL_ERROR' || err.code === 'ORDER_CREATION_FAILED') {
-        errMsg = `[${err.code}] ${err.message}`;
-      } else {
-        errMsg = err.message || `Error (${res.status})`;
-      }
-    } catch {
-      errMsg = `Error del servidor (${res.status})`;
-    }
-    throw new Error(errMsg);
-  }
-  return res.json();
+  return result.data;
 }
 
 // ★ v5.0: WC Basic Auth 备用下单也走 proxy（不直连 api.gsmgc.es）
@@ -152,55 +102,66 @@ export async function createOrderWC(orderData: CreateOrderRequest): Promise<Crea
   return res.json();
 }
 
-// 获取客户订单列表
+// 获取客户订单列表（走 Next.js API Route，不走直连）
 export async function getCustomerOrders(): Promise<any> {
   const token = getAuthToken();
-  if (!token) return { orders: [] }; // 未登录返回空
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  headers['Authorization'] = `Bearer ${token}`;
+  if (!token) return { orders: [] };
 
   const res = await fetch('/api/orders', {
     method: 'GET',
-    headers,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
     credentials: 'same-origin',
     cache: 'no-store',
   });
-  if (!res.ok) {
-    // 401 = token无效，返回空不抛异常
-    if (res.status === 401) return { orders: [] };
+
+  const result = await parseApiResponse<any>(res);
+
+  if (!result.ok) {
+    // 401 = token 无效，返回空不抛异常
+    if (result.reason === 'unauthorized') return { orders: [] };
     throw new Error('Error al obtener pedidos');
   }
-  return res.json();
+
+  return result.data;
 }
 
-// 获取单个订单详情
+// 获取单个订单详情（走 fetchWithFallbackClient）
 export async function getOrder(orderId: number | string): Promise<any> {
-  const res = await smartFetch(`/orders/${orderId}`);
-  if (!res.ok) throw new Error('Error al obtener el pedido');
-  return res.json();
+  const result = await fetchAndParse<any>(
+    fetchWithFallbackClient(`/wp-json/gsmgc/v1/orders/${orderId}`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    }, getAuthToken() ?? undefined)
+  );
+
+  if (!result.ok) {
+    throw new Error('Error al obtener el pedido');
+  }
+
+  return result.data;
 }
 
-// 删除订单内单个产品
+// 删除订单内单个产品（走 fetchWithFallbackClient）
 export async function removeOrderItem(orderId: number | string, itemId: number | string): Promise<any> {
-  const res = await smartFetch(`/orders/${orderId}/remove-item`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ item_id: itemId }),
-  });
-  if (!res.ok) {
-    let errMsg: string;
-    try {
-      const err = await res.json();
-      errMsg = err.message || `Error (${res.status})`;
-    } catch {
-      errMsg = `Error del servidor (${res.status})`;
-    }
+  const result = await fetchAndParse<any>(
+    fetchWithFallbackClient(`/wp-json/gsmgc/v1/orders/${orderId}/remove-item`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item_id: itemId }),
+    }, getAuthToken() || undefined)
+  );
+
+  if (!result.ok) {
+    const errMsg = (result.data as any)?.message || `Error (${result.status})`;
     throw new Error(errMsg);
   }
-  return res.json();
+
+  return result.data;
 }
 
-// 结账前库存实时校验
 export interface StockCheckItem {
   product_id: number;
   quantity: number;
@@ -218,15 +179,20 @@ export interface StockCheckResult {
   }>;
 }
 
+// 结账前库存实时校验（走 fetchWithFallbackClient）
 export async function stockCheck(items: Array<{ id: number; qty: number }>): Promise<StockCheckResult> {
-  const res = await smartFetch('/stock-check', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ items: items.map(item => ({ product_id: item.id, quantity: item.qty })) }),
-  });
-  if (!res.ok) {
-    const err = (await res.json().catch(() => ({})));
-    throw new Error(err.message || `Error de verificacion de stock (${res.status})`);
+  const result = await fetchAndParse<any>(
+    fetchWithFallbackClient('/wp-json/gsmgc/v1/stock-check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: items.map(item => ({ product_id: item.id, quantity: item.qty })) }),
+    }, getAuthToken() ?? undefined)
+  );
+
+  if (!result.ok) {
+    const errMsg = (result.data as any)?.message || `Error de verificación de stock (${result.status})`;
+    throw new Error(errMsg);
   }
-  return res.json();
+
+  return result.data;
 }
