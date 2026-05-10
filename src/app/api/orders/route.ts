@@ -1,8 +1,10 @@
 /**
  * GET /api/orders
- * Proxy to WooCommerce my-orders endpoint (BYPASS CF Bot Fight Mode)
+ * 直连 WooCommerce my-orders 端点（不走 Vercel proxy，避免 CF challenge）
  */
 import { NextRequest, NextResponse } from 'next/server';
+
+const MY_ORDERS_API = 'https://api.gsmgc.es/wp-json/gsmgc/v1/my-orders';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,23 +13,25 @@ export async function GET(request: NextRequest) {
       'Accept': 'application/json',
     };
 
-    // ★ 透传 token + cookie
+    // ★ 透传 token
     const authHeader = request.headers.get('Authorization');
     if (authHeader) headers['Authorization'] = authHeader;
     const cookieHeader = request.headers.get('Cookie');
     if (cookieHeader) headers['Cookie'] = cookieHeader;
 
-    const proxyUrl = `${request.nextUrl.origin}/api/proxy/wp-json/gsmgc/v1/my-orders`;
-    const res = await fetch(proxyUrl, {
+    const res = await fetch(MY_ORDERS_API, {
       method: 'GET',
       headers,
       cache: 'no-store',
     });
 
+    // ★ Content-Type guard — 防 CF challenge HTML
     const ct = (res.headers.get('Content-Type') || '').toLowerCase();
-    if (ct.includes('text/html')) {
+    if (!ct.includes('application/json')) {
+      const text = await res.text().catch(() => '');
+      console.error('[API /orders] Non-JSON response:', res.status, ct, text.slice(0, 200));
       return NextResponse.json(
-        { success: false, error: 'CF blocked' },
+        { success: false, error: 'CF blocked or upstream invalid', preview: text.slice(0, 200) },
         { status: 502 }
       );
     }
