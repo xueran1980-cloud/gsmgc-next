@@ -43,7 +43,7 @@ export interface Product {
 // ---------- 产品数据 ----------
 
 const API_PATH = '/wp-json/gsmgc/v1/products-raw';
-const API_ORIGIN = 'https://api.gsmgc.es';
+const API_ORIGIN = 'https://api.gsmgc.invalid';
 
 function getProductsUrl(): string {
   // 客户端：走 /api/proxy/ rewrite（浏览器请求自动带 cookie）
@@ -68,23 +68,17 @@ async function _actualFetchProducts(): Promise<Product[]> {
     });
     if (!res.ok) {
       console.warn(`[fetchProducts] returned ${res.status}`);
-      return [];
+      throw new Error(`API returned ${res.status}`);
     }
     const json = await res.json();
-    // 兼容多种响应格式：
-    // - /api/products (旧) → { products: Product[], totalCount, totalPages, ... }
-    // - /api/products (新) → { success: true, products: Product[], ... }
-    // - products-raw → { success: true, products: Product[] }
-    // - 旧版 → Product[]
     if (Array.isArray(json)) return json;
-    // 先检查 products 数组（不要求 success 字段）
     if (json.products && Array.isArray(json.products)) return json.products;
     if (json.success && Array.isArray(json.products)) return json.products;
     console.warn('[fetchProducts] invalid response format:', Object.keys(json));
-    return [];
+    throw new Error('Invalid response format from API: ' + JSON.stringify(Object.keys(json)));
   } catch (err) {
     console.warn('[fetchProducts] fetch failed:', err);
-    return [];
+    throw new Error('fetchProducts failed: ' + String(err));
   }
 }
 
