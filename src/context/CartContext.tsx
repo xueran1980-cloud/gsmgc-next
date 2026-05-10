@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useContext, useReducer, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useReducer, useEffect, useState, useCallback, useRef, type ReactNode } from 'react';
 import { getAuthToken } from '@/api/auth';
+import { useAuth } from './AuthContext';
 
 // ---------- 类型 ----------
 
@@ -244,16 +245,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = state.items.reduce((sum, i) => sum + i.qty, 0);
   const totalPrice = state.items.reduce((sum, i) => sum + (parseFloat(i.price) || 0) * i.qty, 0);
 
-  // ── ★ v9.2: 跨设备购物车快照合并 ──
+  // ── ★ v9.3: 跨设备购物车快照合并（修复 v9.2 登录后不触发问题）──
+  const { user } = useAuth();
   const [remoteSnap, setRemoteSnap] = useState<RemoteSnap | null>(null);
-  const [snapChecked, setSnapChecked] = useState(false);
+  const checkedUserIdRef = useRef<number | null>(null);
 
-  // 登录后静默检测远程快照
+  // 登录后静默检测远程快照（user.id 变化时触发）
   useEffect(() => {
+    const userId = user?.id ?? null;
+    if (!userId || checkedUserIdRef.current === userId) return;
+    checkedUserIdRef.current = userId;
+
     const token = getAuthToken();
-    if (!token || snapChecked) return;
-    setSnapChecked(true);
-    
+    if (!token) return;
+
     fetch('https://api.gsmgc.es/wp-json/gsmgc/v1/cart-snap', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
@@ -264,7 +269,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     })
     .catch(() => {});
-  }, [snapChecked]);
+  }, [user?.id]);
+
+  // ★ v9.3: 购物车变化时自动保存快照（防抖 3 秒）
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!user?.id || state.items.length === 0) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      const token = getAuthToken();
+      if (!token) return;
+      fetch('https://api.gsmgc.es/wp-json/gsmgc/v1/cart-snap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ items: state.items })
+      }).catch(() => {});
+    }, 3000);
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [state.items, user?.id]);
 
   function mergeRemoteCart() {
     if (!remoteSnap) return;

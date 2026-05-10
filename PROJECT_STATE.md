@@ -73,7 +73,7 @@
 | category system | ✅ unified | product_cat | 30 分类，BRAND_CATEGORY_NAMES 控制显示分组 |
 | pagination | ✅ API-driven | products/route.ts | totalCount/totalPages/page 元数据 |
 | checkout | ✅ stable | smartFetch → proxy | 幂等+重试+降级+三态状态机 |
-| cart | ✅ stable | localStorage | 无限制，与现站一致 |
+| cart | ✅ v9.3 | localStorage + cart-snap API | 自动保存快照+登录检测远程购物车 |
 | auth flow | ✅ stable | /api/auth/* → proxy | AuthContext + localStorage token |
 | product listing | ✅ real-time | products/route.ts | SSR force-dynamic，禁止 SSG |
 | product detail | ✅ SSR | producto/[id]/[slug] | force-dynamic + related products |
@@ -118,6 +118,8 @@ state alignment    → 6/6 维度 100% 对齐 (slug-only + tie-break)
 
 ## PENDING
 
+- [ ] 部署购物车同步 v9.3 → Vercel Production（CartContext.tsx）
+- [ ] 上传 gsmgc-auth.php v9.3 → SiteGround _mu-plugins（快照7天有效期）
 - [x] Vercel deploy ✅
 - [x] 线上验证品牌筛选 ✅
 - [x] 线上验证分页 ✅
@@ -166,6 +168,7 @@ state alignment    → 6/6 维度 100% 对齐 (slug-only + tie-break)
 > 只记录变化，不重复历史。每次状态切换/系统改动追加一条。
 
 ```
+2026-05-10 10:00 | 🐛 CART v9.3 购物车同步修复 | 自动保存快照+登录检测远程购物车+有效期7天 | 待部署
 2026-05-04 13:50 | 🧹 清理废弃路由 | 删除tienda-v2+tienda-old + 4条301 | 零影响
 2026-05-04 13:28 | ✅ GO-LIVE CHECKLIST COMPLETE | Checkout全链路+CF校准+实单测试 #10647 | 全绿
 2026-05-03 11:08 | 🚀 6 P0 FIXES DEPLOYED | dev→master( --no-ff f9272a9)→Vercel | 6/6 ALL GREEN
