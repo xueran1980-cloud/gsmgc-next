@@ -2,7 +2,7 @@
 // ★ 数据源：全部 → api.gsmgc.es (WooCommerce)
 // ★ 禁止本地缓存、禁止 fs、禁止 SSG
 // ★ 服务端：绝对 URL（Node.js fetch 要求）
-// ★ 客户端：/api/proxy/ rewrite（浏览器自动带 cookie）
+// ★ 统一直连 api.gsmgc.es（避免 Vercel server-side → CF 被拦截）
 
 // ---------- 类型定义 ----------
 
@@ -46,13 +46,8 @@ const API_PATH = '/wp-json/gsmgc/v1/products-raw';
 const API_ORIGIN = 'https://api.gsmgc.es';
 
 function getProductsUrl(): string {
-  // 客户端：走 /api/proxy/ rewrite（浏览器请求自动带 cookie）
-  if (typeof window !== 'undefined') {
-    return `/api/proxy${API_PATH}`;
-  }
-  // 服务端：走 Next.js API Route（已验证可用，CF 不拦截）
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gsmgc-next.vercel.app';
-  return `${siteUrl}/api/products?per_page=5000`;
+  // ★ 统一直连 api.gsmgc.es（避免 Vercel server-side → CF 被拦截）
+  return 'https://api.gsmgc.es/wp-json/gsmgc/v1/products-raw';
 }
 
 // ★ 请求内去重：同一请求周期内只拉一次全量产品

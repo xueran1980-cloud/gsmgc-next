@@ -6,8 +6,8 @@ import { fetchWithFallbackClient } from '@/lib/fetchWithFallback';
 import { parseApiResponse, fetchAndParse, type FetchResult } from '@/lib/apiParser';
 import { getAuthToken } from '@/api/auth';
 
-// ★ v5.0: WC Basic Auth 也走 proxy，禁止直连
-const WC_PROXY = '/api/proxy/wp-json/wc/v3';
+// ★ v6.2: WC Basic Auth 也走直连（不再走 /api/proxy/）
+const WC_API_BASE = 'https://api.gsmgc.es/wp-json/wc/v3';
 
 function getBasicAuthHeader(): string {
   const user = process.env.NEXT_PUBLIC_WP_USER;
@@ -59,8 +59,7 @@ interface CreateOrderResponse {
   message?: string;
 }
 
-// ★ v6.1: createOrder 统一走 fetchWithFallbackClient（直连→proxy 自动 fallback）
-//   SSr 也走 fetchWithFallbackClient（传入 token=undefined，走 /api/proxy/）
+// ★ v6.2: createOrder 统一走 fetchWithFallbackClient（直连，不再 fallback /api/proxy/）
 export async function createOrder(orderData: Record<string, unknown>): Promise<CreateOrderResponse> {
   const token = getAuthToken() ?? undefined;
   const result: FetchResult<CreateOrderResponse> = await fetchAndParse<CreateOrderResponse>(
@@ -84,7 +83,7 @@ export async function createOrder(orderData: Record<string, unknown>): Promise<C
 export async function createOrderWC(orderData: CreateOrderRequest): Promise<CreateOrderResponse> {
   const auth = getBasicAuthHeader();
 
-  const res = await fetch(`${WC_PROXY}/orders`, {
+  const res = await fetch(`${WC_API_BASE}/orders`, {
     method: 'POST',
     headers: {
       Authorization: auth,

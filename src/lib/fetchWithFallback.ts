@@ -1,16 +1,16 @@
 /**
  * fetchWithFallback.ts
  *
- * 纯执行器：保证拿到一个 Response（不管好坏）
+ * 纯直连执行器：统一走 https://api.gsmgc.es
+ * ★ 不再 fallback 到 /api/proxy/（CF 拦截 Vercel IP，proxy 不可靠）
  *
- * 职责（唯一）：
- *   - 先直连 api.gsmgc.es
- *   - 响应不可信（HTML/500/网络错误）→ fallback /api/proxy/
- *   - 返回最终 Response
+ * 职责：
+ *   - 直连 api.gsmgc.es
+ *   - 统一错误处理（HTML 检测、超时、日志）
+ *   - 返回 Response
  *
  * 不做什么：
  *   - 不 JSON.parse
- *   - 不错误分类
  *   - 不业务判断
  *   - 不返回 FetchResult
  */
@@ -33,34 +33,32 @@ function isResponseUnreliable(res: Response): boolean {
  *
  * @param apiPath - WP JSON API 路径，如 `/wp-json/gsmgc/v1/me`
  * @param options - fetch 选项
- * @param origin - Vercel deployment origin
- * @returns Response — 可能是直连的，也可能是 proxy 的
+ * @returns Response
  */
 export async function fetchWithFallbackServer(
   apiPath: string,
   options: RequestInit,
-  origin: string
+  _origin?: string  // 保留参数兼容性（不再使用，统一直连）
 ): Promise<Response> {
-  const directUrl = `${API_BASE}${apiPath}`;
-  const proxyUrl = `${origin}/api/proxy${apiPath}`;
-
-  let res: Response;
-  let usedProxy = false;
+  const url = `${API_BASE}${apiPath}`;
 
   try {
-    res = await fetch(directUrl, { ...options, cache: 'no-store' });
+    const res = await fetch(url, { ...options, cache: 'no-store' });
+    if (isResponseUnreliable(res)) {
+      console.error(`[fetch] Unreliable response: ${res.status} ${res.headers.get('Content-Type')}`);
+      return new Response(
+        JSON.stringify({ success: false, message: `Backend error: ${res.status}` }),
+        { status: res.status, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    return res;
   } catch (err) {
-    console.warn('[fetch] Direct network error, fallback:', (err as Error).message);
-    res = await fetch(proxyUrl, options);
-    usedProxy = true;
+    console.error('[fetch] Network error:', (err as Error).message);
+    return new Response(
+      JSON.stringify({ success: false, message: 'Network error, please try again.' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } }
+    );
   }
-
-  if (!usedProxy && isResponseUnreliable(res)) {
-    console.warn(`[fetch] Direct unreliable (status=${res.status}), fallback`);
-    res = await fetch(proxyUrl, options);
-  }
-
-  return res;
 }
 
 /**
@@ -68,6 +66,7 @@ export async function fetchWithFallbackServer(
  *
  * @param apiPath - WP JSON API 路径
  * @param options - fetch 选项
+ * @param token - 可选 auth token（添加到 URL 参数）
  * @returns Response
  */
 export async function fetchWithFallbackClient(
@@ -75,30 +74,29 @@ export async function fetchWithFallbackClient(
   options: RequestInit,
   token?: string
 ): Promise<Response> {
-  let directUrl = `${API_BASE}${apiPath}`;
-  const proxyUrl = `/api/proxy${apiPath}`;
+  let url = `${API_BASE}${apiPath}`;
 
-  // auth_token URL 兜底（Layer 1 职责：确保请求能可靠到达后端）
-  if (token && typeof window !== 'undefined' && !directUrl.includes('auth_token=')) {
-    const sep = directUrl.includes('?') ? '&' : '?';
-    directUrl = `${directUrl}${sep}auth_token=${encodeURIComponent(token)}`;
+  // auth_token URL 兜底
+  if (token && typeof window !== 'undefined' && !url.includes('auth_token=')) {
+    const sep = url.includes('?') ? '&' : '?';
+    url = `${url}${sep}auth_token=${encodeURIComponent(token)}`;
   }
-
-  let res: Response;
-  let usedProxy = false;
 
   try {
-    res = await fetch(directUrl, { ...options, cache: 'no-store' });
+    const res = await fetch(url, { ...options, cache: 'no-store' });
+    if (isResponseUnreliable(res)) {
+      console.error(`[fetch] Unreliable response: ${res.status} ${res.headers.get('Content-Type')}`);
+      return new Response(
+        JSON.stringify({ success: false, message: `Backend error: ${res.status}` }),
+        { status: res.status, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    return res;
   } catch (err) {
-    console.warn('[fetch] Direct network error, fallback:', (err as Error).message);
-    res = await fetch(proxyUrl, options);
-    usedProxy = true;
+    console.error('[fetch] Network error:', (err as Error).message);
+    return new Response(
+      JSON.stringify({ success: false, message: 'Network error, please try again.' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } }
+    );
   }
-
-  if (!usedProxy && isResponseUnreliable(res)) {
-    console.warn(`[fetch] Direct unreliable (status=${res.status}), fallback`);
-    res = await fetch(proxyUrl, options);
-  }
-
-  return res;
 }

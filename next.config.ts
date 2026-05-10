@@ -47,7 +47,6 @@ const nextConfig: NextConfig = {
       { source: "/wp-admin/:path*", destination: "https://api.gsmgc.es/wp-admin/:path*" },
       { source: "/wp-login.php", destination: "https://api.gsmgc.es/wp-login.php" },
       { source: "/wp-content/:path*", destination: "https://api.gsmgc.es/wp-content/:path*" },
-      { source: "/api/proxy/:path*", destination: "https://api.gsmgc.es/:path*" },
       { source: "/wp-json/:path*", destination: "https://api.gsmgc.es/wp-json/:path*" },
     ];
   },
@@ -69,12 +68,6 @@ const nextConfig: NextConfig = {
         source: "/_next/static/(.*)",
         headers: [
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
-        ],
-      },
-      {
-        source: "/api/proxy/:path*",
-        headers: [
-          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate, max-age=0" },
         ],
       },
       {
