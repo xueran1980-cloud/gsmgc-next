@@ -53,7 +53,10 @@ function getProductsUrl(): string {
 // ★ 请求内去重：同一请求周期内只拉一次全量产品
 //    /producto/[id]/[slug] 页面 generateMetadata + 主组件 + 相关产品
 //    原本会调用 fetchProducts() 3 次，现在合并为 1 次
+// ★ TTL：60 秒后自动过期，确保产品变更及时反映
 let _fetchProductsPromise: Promise<Product[]> | null = null;
+let _fetchProductsTimestamp = 0;
+const PRODUCTS_CACHE_TTL = 60_000; // 60s
 
 async function _actualFetchProducts(): Promise<Product[]> {
   try {
@@ -95,7 +98,7 @@ async function _actualFetchProducts(): Promise<Product[]> {
 }
 
 export async function fetchProducts(): Promise<Product[]> {
-  if (_fetchProductsPromise) {
+  if (_fetchProductsPromise && (Date.now() - _fetchProductsTimestamp) < PRODUCTS_CACHE_TTL) {
     // ★ 检查缓存是否为空（可能是 generateMetadata 阶段 fetch 失败）
     //    如果是，清除缓存允许重试
     try {
@@ -106,6 +109,7 @@ export async function fetchProducts(): Promise<Product[]> {
       _fetchProductsPromise = null; // Promise 异常 → 清除
     }
   }
+  _fetchProductsTimestamp = Date.now();
   _fetchProductsPromise = _actualFetchProducts();
   return _fetchProductsPromise;
 }
