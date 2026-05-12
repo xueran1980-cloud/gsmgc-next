@@ -63,7 +63,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="GSMGC" />
         <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/logo.png" type="image/png" />
+        <link rel="icon" href="/icon-192.png" sizes="192x192" type="image/png" />
         <link rel="apple-touch-icon" href="/icon-192.png" sizes="192x192" />
         <link rel="dns-prefetch" href="https://api.gsmgc.es" />
         <link rel="preconnect" href="https://api.gsmgc.es" crossOrigin="anonymous" />
