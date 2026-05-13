@@ -61,7 +61,6 @@ const PRODUCTS_CACHE_TTL = 60_000; // 60s
 async function _actualFetchProducts(): Promise<Product[]> {
   try {
     const res = await fetch(getProductsUrl(), {
-      next: { revalidate: 60 },
       headers: {
         'Accept': 'application/json',
         'User-Agent': 'Mozilla/5.0 (compatible; GSMGC/1.0)',
