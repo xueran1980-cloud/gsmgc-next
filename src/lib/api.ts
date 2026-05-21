@@ -78,17 +78,39 @@ async function _actualFetchProducts(): Promise<Product[]> {
       console.warn(`[fetchProducts] returned ${res.status}`);
       return [];
     }
-    const json = await res.json();
+
+    // ★ 防御 JSON 污染：SG 缓存可能混入 mu-plugin echo 输出（多 JSON 拼接）
+    //    先读文本 → 解析失败时提取最后一个合法 JSON → 兼容多种响应格式
+    const text = await res.text();
+    let data: any;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // JSON 解析失败 → 可能是缓存污染（多个 JSON 对象拼接）
+      const markerPos = text.lastIndexOf('{"success"');
+      if (markerPos >= 0) {
+        const tail = text.substring(markerPos);
+        try {
+          data = JSON.parse(tail);
+        } catch {
+          console.warn('[fetchProducts] sanitized JSON parse also failed');
+          return [];
+        }
+      } else {
+        console.warn('[fetchProducts] JSON parse failed, head:', text.substring(0, 200));
+        return [];
+      }
+    }
+
     // 兼容多种响应格式：
     // - /api/products (旧) → { products: Product[], totalCount, totalPages, ... }
     // - /api/products (新) → { success: true, products: Product[], ... }
     // - products-raw → { success: true, products: Product[] }
     // - 旧版 → Product[]
-    if (Array.isArray(json)) return json;
-    // 先检查 products 数组（不要求 success 字段）
-    if (json.products && Array.isArray(json.products)) return json.products;
-    if (json.success && Array.isArray(json.products)) return json.products;
-    console.warn('[fetchProducts] invalid response format:', Object.keys(json));
+    if (Array.isArray(data)) return data;
+    if (data.products && Array.isArray(data.products)) return data.products;
+    if (data.success && Array.isArray(data.products)) return data.products;
+    console.warn('[fetchProducts] invalid response format:', Object.keys(data));
     return [];
   } catch (err) {
     console.warn('[fetchProducts] fetch failed:', err);
