@@ -3,10 +3,9 @@ import { Suspense } from 'react';
 import type { Product } from '@/lib/api';
 import TiendaClient from '@/components/TiendaClient';
 
-// ★ /tienda — SSR 首屏直接渲染商品（无 loading skeleton）
-//    服务端 fetch products-paginated 初始数据
-//    翻页/筛选/搜索走客户端 fetch /api/products-v2
-export const dynamic = 'force-dynamic';
+// ISR: revalidate 120s，对齐后端 CDN-Cache-Control max-age=120
+// 翻页/筛选/搜索走客户端（TiendaClient 不受影响）
+export const revalidate = 120;
 
 export const metadata: Metadata = {
   title: 'Catálogo - GSMGC Accesorios Móvil Mayorista Canarias',
@@ -42,7 +41,7 @@ export default async function TiendaPage({
   let initialProducts: Product[] = [];
   let initialTotal = 0;
 
-  // ★ SSR fetch + 1次重试（CF Bot Fight Mode 随机拦截 Vercel IP）
+  // ISR fetch + 1次重试（应对 CF Bot Fight Mode 冷缓存场景）
   const backendParams = new URLSearchParams();
   backendParams.set('per_page', '24');
   backendParams.set('page', page);
@@ -51,7 +50,7 @@ export default async function TiendaPage({
   if (category) backendParams.set('category', category);
   if (search) backendParams.set('search', search);
   const backendUrl = `https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?${backendParams.toString()}`;
-  const fetchOpts = { headers: { 'User-Agent': 'GSMGC-Next-Server/1.0', 'Accept': 'application/json' }, cache: 'no-store' } as const;
+  const fetchOpts = { headers: { 'User-Agent': 'GSMGC-Next-Server/1.0', 'Accept': 'application/json' }, next: { revalidate: 120 } };
 
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
