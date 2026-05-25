@@ -3,8 +3,9 @@ import { Suspense } from 'react';
 import type { Product } from '@/lib/api';
 import TiendaClient from '@/components/TiendaClient';
 
-// ISR: revalidate 120s，对齐后端 CDN-Cache-Control max-age=120
-// 翻页/筛选/搜索走客户端（TiendaClient 不受影响）
+// ISR revalidate=120s — 缓存默认视图（per_page=24, orderby=price, order=desc）
+// 对齐后端 CDN-Cache-Control max-age=120
+// 所有筛选/搜索/翻页由 TiendaClient 客户端处理
 export const revalidate = 120;
 
 export const metadata: Metadata = {
@@ -28,28 +29,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function TiendaPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | undefined }>;
-}) {
-  const sp = await searchParams;
-  const category = sp.category || '';
-  const search = sp.search || '';
-  const page = sp.page || '1';
-
+// ★ 不使用 searchParams prop（否则 Next.js 忽略 ISR，强制 no-store）
+// ★ 始终渲染默认视图，客户端 TiendaClient 读取 URL 参数后自行 fetch
+export default async function TiendaPage() {
   let initialProducts: Product[] = [];
   let initialTotal = 0;
 
-  // ISR fetch + 1次重试（应对 CF Bot Fight Mode 冷缓存场景）
-  const backendParams = new URLSearchParams();
-  backendParams.set('per_page', '24');
-  backendParams.set('page', page);
-  backendParams.set('orderby', sp.orderby || 'price');
-  backendParams.set('order', sp.order || 'desc');
-  if (category) backendParams.set('category', category);
-  if (search) backendParams.set('search', search);
-  const backendUrl = `https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?${backendParams.toString()}`;
+  // ISR fetch — 默认排序 + 1次重试（应对 CF Bot Fight Mode）
+  const backendUrl = 'https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?per_page=24&page=1&orderby=price&order=desc';
   const fetchOpts = { headers: { 'User-Agent': 'GSMGC-Next-Server/1.0', 'Accept': 'application/json' }, next: { revalidate: 120 } };
 
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -62,24 +49,22 @@ export default async function TiendaPage({
           initialTotal = json.total || 0;
           break;
         }
-        // 空结果也视为成功（后端正常但无匹配）
         if (json.success && Array.isArray(json.products)) {
           initialProducts = [];
           initialTotal = 0;
           break;
         }
       }
-      // ★ 被 CF 拦截或其他错误 → 重试
       if (attempt === 0) {
-        console.warn('[tienda SSR] fetch failed, retrying...');
-        await new Promise(r => setTimeout(r, 200)); // 200ms 间隔
+        console.warn('[tienda ISR] fetch failed, retrying...');
+        await new Promise(r => setTimeout(r, 200));
       }
     } catch (err) {
       if (attempt === 0) {
-        console.warn('[tienda SSR] fetch exception, retrying:', (err as Error).message);
+        console.warn('[tienda ISR] fetch exception, retrying:', (err as Error).message);
         await new Promise(r => setTimeout(r, 200));
       } else {
-        console.error('[tienda SSR] fetch failed after retry:', (err as Error).message);
+        console.error('[tienda ISR] fetch failed after retry:', (err as Error).message);
       }
     }
   }
@@ -89,7 +74,7 @@ export default async function TiendaPage({
     <TiendaClient
       initialProducts={initialProducts}
       initialTotal={initialTotal}
-      initialPage={parseInt(page) || 1}
+      initialPage={1}
       apiEndpoint="/api/products-v2"
     />
     </Suspense>
