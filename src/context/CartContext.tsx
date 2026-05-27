@@ -290,10 +290,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const saveImmediateRef = useRef(saveImmediate);
   saveImmediateRef.current = saveImmediate;
 
-  // 登录时自动拉取
+  // 登录时自动拉取（掉线重登也触发）
   useEffect(() => {
     const userId = user?.id ?? null;
-    if (!userId || checkedUserIdRef.current === userId) return;
+    // ★ v9.6: 掉线时复位，确保重登触发拉取
+    if (!userId) {
+      checkedUserIdRef.current = null;
+      return;
+    }
+    if (checkedUserIdRef.current === userId) return;
     checkedUserIdRef.current = userId;
     lastPullRef.current = 0;
     pullFromServer();
