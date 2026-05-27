@@ -64,6 +64,14 @@ const nextConfig: NextConfig = {
           { key: "Permissions-Policy", value: PERMISSIONS_POLICY },
         ],
       },
+      // ★ v9.10: 强制浏览器每次验证 HTML，不缓存旧版本
+      //   JS 文件有哈希名，HTML 不缓存 = 普通刷新就拿最新 JS
+      {
+        source: "/((?!_next/|wp-|api/|favicon).*)",
+        headers: [
+          { key: "Cache-Control", value: "no-cache" },
+        ],
+      },
       {
         source: "/_next/static/(.*)",
         headers: [
