@@ -326,7 +326,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!user?.id || !isHydratedRef.current) return;
+    // ★ v9.11: 首次拉取完成前禁止保存（防空购物车覆盖服务器数据）
+    if (!user?.id || !isHydratedRef.current || serverVersionRef.current === 0) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       saveImmediate();
