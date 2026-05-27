@@ -173,7 +173,7 @@ interface CartContextType {
   clearStockError: (id: number) => void;
   totalItems: number;
   totalPrice: number;
-  // ★ v9.4: 跨设备购物车自动同步
+  // ★ v9.5: 跨设备购物车自动同步
   saveCartSnap: () => Promise<void>;
 }
 
@@ -199,6 +199,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } catch {
       localStorage.removeItem(CART_KEY);
     }
+    // ★ v9.5: 标记 hydration 完成，之后才允许自动保存
+    isHydratedRef.current = true;
   }, []);
 
   // 持久化
@@ -229,6 +231,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(() => {
     dispatch({ type: 'CLEAR' });
+    // ★ v9.5: 清空立即保存到服务器，其他设备拉取时同步清空
+    setTimeout(() => saveImmediateRef.current([]), 50);
   }, []);
 
   const getStockError = useCallback((id: number): string | null => {
@@ -242,14 +246,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = state.items.reduce((sum, i) => sum + i.qty, 0);
   const totalPrice = state.items.reduce((sum, i) => sum + (parseFloat(i.price) || 0) * i.qty, 0);
 
-  // ── ★ v9.4: 跨设备购物车自动同步（登录自动合并 + 切回页面拉取 + 800ms防抖保存）──
+  // ── ★ v9.5: 跨设备购物车自动同步（replace 模式 + 清空同步 + 切走保存）──
   const { user } = useAuth();
   const checkedUserIdRef = useRef<number | null>(null);
   const lastPullRef = useRef<number>(0);
+  const isHydratedRef = useRef(false);
   const itemsRef = useRef(state.items);
   itemsRef.current = state.items;
 
-  function pullAndMerge() {
+  // ★ v9.5: 服务器为权威 — replace 模式（不是 merge）
+  // 好处：删除/清空在其他设备上同步，不再出现"只增不减"
+  function pullFromServer() {
     const token = getAuthToken();
     if (!token || !user?.id) return;
     const now = Date.now();
@@ -261,55 +268,55 @@ export function CartProvider({ children }: { children: ReactNode }) {
     })
     .then(r => r.json())
     .then(data => {
-      if (data.success && data.snap && Array.isArray(data.snap.items) && data.snap.items.length > 0) {
-        const local = itemsRef.current;
-        const merged = [...local];
-        data.snap.items.forEach((si: CartItem) => {
-          const exist = merged.find(m => m.id === si.id);
-          if (exist) {
-            exist.qty = Math.max(exist.qty, si.qty);
-          } else {
-            merged.push({ ...si });
-          }
-        });
-        dispatch({ type: 'SET_ITEMS', items: merged });
-      }
+      if (!data.success || !data.snap || !Array.isArray(data.snap.items)) return;
+      const serverItems: CartItem[] = data.snap.items;
+      // 服务器为空 → 清空本地；有数据 → 直接替换
+      dispatch({ type: 'SET_ITEMS', items: serverItems });
     })
     .catch(() => {});
   }
 
-  // 登录时自动拉取合并
+  // ★ v9.5: 立即保存（不防抖）— 用于 clearCart 和页面切走
+  function saveImmediate(items?: CartItem[]) {
+    const token = getAuthToken();
+    if (!token || !user?.id) return;
+    const payload = items !== undefined ? items : itemsRef.current;
+    fetch('https://api.gsmgc.es/wp-json/gsmgc/v1/cart-snap', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ items: payload })
+    }).catch(() => {});
+  }
+  const saveImmediateRef = useRef(saveImmediate);
+  saveImmediateRef.current = saveImmediate;
+
+  // 登录时自动拉取
   useEffect(() => {
     const userId = user?.id ?? null;
     if (!userId || checkedUserIdRef.current === userId) return;
     checkedUserIdRef.current = userId;
     lastPullRef.current = 0;
-    pullAndMerge();
+    pullFromServer();
   }, [user?.id]);
 
-  // 切回页面时拉取（30s 冷却）
+  // 切回页面时拉取（30s 冷却）+ 切走时立即保存
   useEffect(() => {
     const onVisible = () => {
-      if (document.visibilityState === 'visible') pullAndMerge();
+      if (document.visibilityState === 'visible') pullFromServer();
+      if (document.visibilityState === 'hidden') saveImmediate();
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [user?.id]);
 
-  // ★ v9.4: 购物车变化时自动保存快照（防抖 800ms）
+  // ★ v9.5: 购物车变化时自动保存快照（防抖 800ms，含清空场景）
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!user?.id || state.items.length === 0) return;
+    if (!user?.id || !isHydratedRef.current) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      const token = getAuthToken();
-      if (!token) return;
-      fetch('https://api.gsmgc.es/wp-json/gsmgc/v1/cart-snap', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ items: state.items })
-      }).catch(() => {});
+      saveImmediate();
     }, 800);
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -318,7 +325,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   async function saveCartSnap() {
     const token = getAuthToken();
-    if (!token || state.items.length === 0) return;
+    if (!token) return;
     try {
       await fetch('https://api.gsmgc.es/wp-json/gsmgc/v1/cart-snap', {
         method: 'POST',
