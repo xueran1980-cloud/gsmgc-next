@@ -246,7 +246,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = state.items.reduce((sum, i) => sum + i.qty, 0);
   const totalPrice = state.items.reduce((sum, i) => sum + (parseFloat(i.price) || 0) * i.qty, 0);
 
-  // ── ★ v9.5: 跨设备购物车自动同步（replace 模式 + 清空同步 + 切走保存）──
+  // ── ★ v9.7: 跨设备购物车自动同步（replace 模式 + 清空同步 + 拉取冷却 10s）──
   const { user } = useAuth();
   const checkedUserIdRef = useRef<number | null>(null);
   const lastPullRef = useRef<number>(0);
@@ -260,7 +260,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const token = getAuthToken();
     if (!token || !user?.id) return;
     const now = Date.now();
-    if (lastPullRef.current > 0 && now - lastPullRef.current < 30000) return;
+    if (lastPullRef.current > 0 && now - lastPullRef.current < 10000) return;
     lastPullRef.current = now;
 
     fetch('https://api.gsmgc.es/wp-json/gsmgc/v1/cart-snap', {
@@ -276,7 +276,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     .catch(() => {});
   }
 
-  // ★ v9.5: 立即保存（不防抖）— 用于 clearCart 和页面切走
+  // ★ v9.7: 立即保存（不防抖）— 用于 clearCart
   function saveImmediate(items?: CartItem[]) {
     const token = getAuthToken();
     if (!token || !user?.id) return;
@@ -304,17 +304,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     pullFromServer();
   }, [user?.id]);
 
-  // 切回页面时拉取（30s 冷却）+ 切走时立即保存
+  // ★ v9.7: 切回页面时拉取（10s 冷却）。
+  // 删掉了 hidden 保存 — 切走时保存会覆盖另一设备刚清空的购物车。
+  // 800ms 防抖已兜底保存，不需要切走时额外存。
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState === 'visible') pullFromServer();
-      if (document.visibilityState === 'hidden') saveImmediate();
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [user?.id]);
 
-  // ★ v9.5: 购物车变化时自动保存快照（防抖 800ms，含清空场景）
+  // ★ v9.7: 购物车变化时自动保存（防抖 800ms，含清空）
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
