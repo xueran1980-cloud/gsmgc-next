@@ -175,6 +175,7 @@ interface CartContextType {
   totalPrice: number;
   // ★ v9.5: 跨设备购物车自动同步
   saveCartSnap: () => Promise<void>;
+  pullCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -359,6 +360,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       totalItems,
       totalPrice,
       saveCartSnap,
+      pullCart: pullFromServer,
     }}>
       {children}
     </CartContext.Provider>
