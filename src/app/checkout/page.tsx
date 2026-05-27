@@ -58,7 +58,7 @@ const PAYMENT_METHODS = [
 ];
 
 export default function CheckoutPage() {
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, totalPrice, clearCart, pullCart } = useCart();
   const { user, isLoggedIn, refreshUser, setUser, loading } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState<'form' | 'loading' | 'success' | 'error'>('form');
@@ -81,6 +81,9 @@ export default function CheckoutPage() {
   // ★ ORDER-SAFETY: 稳定幂等key — 同一个下单会话复用同一key
   //    之前每次 submit 用 crypto.randomUUID() 生成新key = 无法防重复
   const idempotencyKey = useRef<string>('');
+
+  // ★ v9.9: 进入结算页时拉取最新购物车（防下单重复）
+  useEffect(() => { pullCart(); }, [pullCart]);
 
   // ★ v6.1: latestUser ref — 用于 UI 展示，确保 billingInfo 和 orderBilling 用同一个数据源
   //    refreshUser 成功后更新此 ref，billingInfo 从这里读数据而非 state.user
