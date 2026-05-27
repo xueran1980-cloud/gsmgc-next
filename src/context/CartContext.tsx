@@ -173,10 +173,7 @@ interface CartContextType {
   clearStockError: (id: number) => void;
   totalItems: number;
   totalPrice: number;
-  // ★ v9.2: 跨设备购物车合并
-  remoteSnap: RemoteSnap | null;
-  mergeRemoteCart: () => void;
-  dismissRemoteCart: () => void;
+  // ★ v9.4: 跨设备购物车自动同步
   saveCartSnap: () => Promise<void>;
 }
 
@@ -245,19 +242,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = state.items.reduce((sum, i) => sum + i.qty, 0);
   const totalPrice = state.items.reduce((sum, i) => sum + (parseFloat(i.price) || 0) * i.qty, 0);
 
-  // ── ★ v9.3: 跨设备购物车快照合并（修复 v9.2 登录后不触发问题）──
+  // ── ★ v9.4: 跨设备购物车自动同步（登录自动合并 + 切回页面拉取 + 800ms防抖保存）──
   const { user } = useAuth();
-  const [remoteSnap, setRemoteSnap] = useState<RemoteSnap | null>(null);
   const checkedUserIdRef = useRef<number | null>(null);
+  const lastPullRef = useRef<number>(0);
+  const itemsRef = useRef(state.items);
+  itemsRef.current = state.items;
 
-  // 登录后静默检测远程快照（user.id 变化时触发）
-  useEffect(() => {
-    const userId = user?.id ?? null;
-    if (!userId || checkedUserIdRef.current === userId) return;
-    checkedUserIdRef.current = userId;
-
+  function pullAndMerge() {
     const token = getAuthToken();
-    if (!token) return;
+    if (!token || !user?.id) return;
+    const now = Date.now();
+    if (lastPullRef.current > 0 && now - lastPullRef.current < 30000) return;
+    lastPullRef.current = now;
 
     fetch('https://api.gsmgc.es/wp-json/gsmgc/v1/cart-snap', {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -265,13 +262,41 @@ export function CartProvider({ children }: { children: ReactNode }) {
     .then(r => r.json())
     .then(data => {
       if (data.success && data.snap && Array.isArray(data.snap.items) && data.snap.items.length > 0) {
-        setRemoteSnap(data.snap);
+        const local = itemsRef.current;
+        const merged = [...local];
+        data.snap.items.forEach((si: CartItem) => {
+          const exist = merged.find(m => m.id === si.id);
+          if (exist) {
+            exist.qty = Math.max(exist.qty, si.qty);
+          } else {
+            merged.push({ ...si });
+          }
+        });
+        dispatch({ type: 'SET_ITEMS', items: merged });
       }
     })
     .catch(() => {});
+  }
+
+  // 登录时自动拉取合并
+  useEffect(() => {
+    const userId = user?.id ?? null;
+    if (!userId || checkedUserIdRef.current === userId) return;
+    checkedUserIdRef.current = userId;
+    lastPullRef.current = 0;
+    pullAndMerge();
   }, [user?.id]);
 
-  // ★ v9.3: 购物车变化时自动保存快照（防抖 3 秒）
+  // 切回页面时拉取（30s 冷却）
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') pullAndMerge();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [user?.id]);
+
+  // ★ v9.4: 购物车变化时自动保存快照（防抖 800ms）
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -285,30 +310,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ items: state.items })
       }).catch(() => {});
-    }, 3000);
+    }, 800);
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, [state.items, user?.id]);
-
-  function mergeRemoteCart() {
-    if (!remoteSnap) return;
-    const merged = [...state.items];
-    remoteSnap.items.forEach((si: CartItem) => {
-      const exist = merged.find(m => m.id === si.id);
-      if (exist) {
-        exist.qty = Math.max(exist.qty, si.qty);
-      } else {
-        merged.push({ ...si });
-      }
-    });
-    dispatch({ type: 'SET_ITEMS', items: merged });
-    setRemoteSnap(null);
-  }
-
-  function dismissRemoteCart() {
-    setRemoteSnap(null);
-  }
 
   async function saveCartSnap() {
     const token = getAuthToken();
@@ -333,9 +339,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       clearStockError,
       totalItems,
       totalPrice,
-      remoteSnap,
-      mergeRemoteCart,
-      dismissRemoteCart,
       saveCartSnap,
     }}>
       {children}
