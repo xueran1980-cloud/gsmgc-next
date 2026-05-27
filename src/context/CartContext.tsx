@@ -246,16 +246,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = state.items.reduce((sum, i) => sum + i.qty, 0);
   const totalPrice = state.items.reduce((sum, i) => sum + (parseFloat(i.price) || 0) * i.qty, 0);
 
-  // ── ★ v9.7: 跨设备购物车自动同步（replace 模式 + 清空同步 + 拉取冷却 10s）──
+  // ── ★ v9.8: 版本戳防旧客户端覆盖 ──
   const { user } = useAuth();
   const checkedUserIdRef = useRef<number | null>(null);
   const lastPullRef = useRef<number>(0);
   const isHydratedRef = useRef(false);
+  const serverVersionRef = useRef(0);
   const itemsRef = useRef(state.items);
   itemsRef.current = state.items;
 
-  // ★ v9.5: 服务器为权威 — replace 模式（不是 merge）
-  // 好处：删除/清空在其他设备上同步，不再出现"只增不减"
+  // ★ v9.8: 服务器为权威 — replace 模式 + 版本追踪
   function pullFromServer() {
     const token = getAuthToken();
     if (!token || !user?.id) return;
@@ -268,15 +268,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     })
     .then(r => r.json())
     .then(data => {
+      // ★ v9.8: 记录服务端版本号
+      if (data.snap?.v) serverVersionRef.current = data.snap.v;
       if (!data.success || !data.snap || !Array.isArray(data.snap.items)) return;
-      const serverItems: CartItem[] = data.snap.items;
-      // 服务器为空 → 清空本地；有数据 → 直接替换
-      dispatch({ type: 'SET_ITEMS', items: serverItems });
+      dispatch({ type: 'SET_ITEMS', items: data.snap.items });
     })
     .catch(() => {});
   }
 
-  // ★ v9.7: 立即保存（不防抖）— 用于 clearCart
+  // ★ v9.8: 带版本号的保存 — 旧客户端数据不会覆盖新数据
   function saveImmediate(items?: CartItem[]) {
     const token = getAuthToken();
     if (!token || !user?.id) return;
@@ -284,8 +284,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     fetch('https://api.gsmgc.es/wp-json/gsmgc/v1/cart-snap', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ items: payload })
-    }).catch(() => {});
+      body: JSON.stringify({ items: payload, v: serverVersionRef.current })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.v) serverVersionRef.current = data.v;
+      if (data.code === 'stale') pullFromServer(); // 数据过期，立即拉最新
+    })
+    .catch(() => {});
   }
   const saveImmediateRef = useRef(saveImmediate);
   saveImmediateRef.current = saveImmediate;
