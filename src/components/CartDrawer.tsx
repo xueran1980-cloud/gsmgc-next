@@ -2,6 +2,7 @@
 
 import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 
 interface CartDrawerProps {
@@ -10,7 +11,12 @@ interface CartDrawerProps {
 }
 
 export default function CartDrawer({ open, onClose }: CartDrawerProps) {
-  const { items, totalItems, totalPrice, removeItem, updateQty, clearCart } = useCart();
+  const { items, totalItems, totalPrice, removeItem, updateQty, clearCart, pullCart } = useCart();
+
+  // ★ v9.9: 每次打开购物车拉取最新数据
+  useEffect(() => {
+    if (open) pullCart();
+  }, [open, pullCart]);
 
   return (
     <>
