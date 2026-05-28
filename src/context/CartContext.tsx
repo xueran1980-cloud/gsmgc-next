@@ -217,12 +217,47 @@ export function CartProvider({ children }: { children: ReactNode }) {
     .then(r => r.json())
     .then(data => {
       if (data.v) serverVersionRef.current = data.v;
-      if (data.code === 'stale') pullFromServer();
+      if (data.code === 'stale') retryAfterPull(payload); // 竞争失败，拉新版本重试
     })
     .catch(() => {});
   }
   const saveImmediateRef = useRef(saveImmediate);
   saveImmediateRef.current = saveImmediate;
+
+  // ── stale 时拉取并重试保存（防同时写入竞争）──
+  const staleRetryRef = useRef(0);
+  function retryAfterPull(payload: CartItem[]) {
+    if (staleRetryRef.current > 2) { staleRetryRef.current = 0; return; }
+    staleRetryRef.current++;
+    // 拉取最新版本
+    const token = getAuthToken();
+    if (!token || !user?.id) return;
+    fetch('https://api.gsmgc.es/wp-json/gsmgc/v1/cart-snap', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.snap?.v) serverVersionRef.current = data.snap.v;
+      else if (data.success) serverVersionRef.current = 1;
+      if (data.success && data.snap && Array.isArray(data.snap.items)) {
+        dispatch({ type: 'SET_ITEMS', items: data.snap.items });
+      }
+      // 用新版本重试保存
+      fetch('https://api.gsmgc.es/wp-json/gsmgc/v1/cart-snap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ items: payload, v: serverVersionRef.current })
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.v) serverVersionRef.current = d.v;
+        if (d.code === 'stale' && staleRetryRef.current < 2) retryAfterPull(payload);
+        staleRetryRef.current = 0;
+      })
+      .catch(() => { staleRetryRef.current = 0; });
+    })
+    .catch(() => { staleRetryRef.current = 0; });
+  }
 
   // ── 登录时拉取 ──
   useEffect(() => {
