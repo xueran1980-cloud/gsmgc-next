@@ -6,9 +6,8 @@ import CategoriesSection from "@/components/CategoriesSection";
 import BrandsSection from "@/components/BrandsSection";
 import StatsSection from "@/components/StatsSection";
 
-// ISR: revalidate every 60s via CF Edge Cache (products-raw TTL = 600s).
-// CF Bot Fight Mode is bypassed with User-Agent header in fetchProducts().
-export const revalidate = 60;
+// ISR: revalidate every 3600s (1h). 首页非交易页，1h刷新够用。
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "GSMGC - Mayorista Accesorios Móviles Canarias | B2B",
