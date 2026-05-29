@@ -6,8 +6,9 @@ import CategoriesSection from "@/components/CategoriesSection";
 import BrandsSection from "@/components/BrandsSection";
 import StatsSection from "@/components/StatsSection";
 
-// ISR: revalidate every 3600s (1h). 首页非交易页，1h刷新够用。
-export const revalidate = 3600;
+// ISR: revalidate 600s — CF Edge HTML cache 5min, ISR 对齐避免浪费 CPU
+// 产品数据实时性由客户端 API 调用保证
+export const revalidate = 600;
 
 export const metadata: Metadata = {
   title: "GSMGC - Mayorista Accesorios Móviles Canarias | B2B",
