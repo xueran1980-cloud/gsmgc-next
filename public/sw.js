@@ -1,9 +1,9 @@
 // GSMGC Service Worker — PWA Offline Support
 // 策略：Network First（API/页面实时优先）+ Cache First（静态资源秒开）
 
-const CACHE_STATIC = 'gsmgc-static-v1';
-const CACHE_PAGES = 'gsmgc-pages-v1';
-const CACHE_API = 'gsmgc-api-v1';
+const CACHE_STATIC = 'gsmgc-static-v2';
+const CACHE_PAGES = 'gsmgc-pages-v2';
+const CACHE_API = 'gsmgc-api-v2';
 
 const STATIC_EXT = ['.js', '.css', '.woff2', '.svg', '.png', '.jpg', '.ico'];
 
