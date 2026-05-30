@@ -4,6 +4,7 @@ import ImageGallery from "@/components/ImageGallery";
 import ShareButton from "@/components/ShareButton";
 import { getDisplayPrice } from "@/lib/display-formatter";
 import { resolveImageUrl } from "@/lib/image";
+import { PriceOrLoginPrompt } from "@/components/PriceOrLoginPrompt";
 import ProductDetailActions from "./ProductDetailActions";
 
 // ── 数据 ──
@@ -116,26 +117,12 @@ export default async function ProductDetailPage({ params }: Props) {
             </span>
           )}
 
-          {/* Price */}
+          {/* Price — client-side auth guard */}
           <div className="mb-6">
-            {dp.showBadge ? (
-              <div className="flex items-baseline gap-3 flex-wrap">
-                <span className="text-3xl font-black text-[#2563eb]">
-                  {dp.base}
-                </span>
-                <span className="text-lg text-gray-400 line-through">
-                  {dp.regular}
-                </span>
-                <span className="bg-[#ea580c] text-white text-sm font-bold px-2 py-0.5 rounded-lg">
-                  -{dp.discountPct}%
-                </span>
-              </div>
-            ) : (
-              <span className="text-3xl font-black text-gray-900">
-                {dp.base}
-              </span>
-            )}
-            <span className="block text-xs text-gray-400 mt-1">IGIC incluido</span>
+            <PriceOrLoginPrompt
+              price={String(product.price ?? 0)}
+              regularPrice={String(product.regular_price ?? "")}
+            />
           </div>
 
           {/* Stock */}
