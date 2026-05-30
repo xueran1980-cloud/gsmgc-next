@@ -279,9 +279,11 @@ export default function ProductDetailActions({ product, waMsg }: ProductDetailAc
             )}
           </div>
 
-          {/* WhatsApp CTA (always visible for guests) */}
+          {/* WhatsApp CTA (always visible for guests) — ★ no price, B2B solicitation only */}
           <a
-            href={`https://wa.me/34688560560?text=${waMsg}`}
+            href={`https://wa.me/34688560560?text=${encodeURIComponent(
+              `Hola! Me interesa este producto:\n\n📱 ${product.name || 'Producto'}${product.sku ? `\n📦 SKU: ${product.sku}` : ''}\n\nSolicito informacion de precio B2B. ¿Tienen stock disponible?`
+            )}`}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-[#25d366] text-[#128c7e] font-semibold hover:bg-[#25d366]/5 transition mb-6 text-sm"
