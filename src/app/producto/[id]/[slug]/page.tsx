@@ -38,6 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const desc = product.short_description ||
     product.description?.replace(/<[^>]*>/g, "").slice(0, 160) ||
     `SKU: ${product.sku || id}`;
+  const canonicalUrl = `https://gsmgc.es/producto/${product.id}/${product.slug}`;
 
   return {
     title: product.name,
@@ -45,10 +46,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: product.name,
       description: typeof desc === "string" ? desc.slice(0, 160) : "",
+      url: canonicalUrl,
       images: product.images?.length > 0
         ? [{ url: resolveImageUrl(product.images[0].src) }]
         : [],
     },
+    alternates: { canonical: canonicalUrl },
+    robots: { index: true, follow: true },
   };
 }
 
@@ -59,6 +63,10 @@ export default async function ProductDetailPage({ params }: Props) {
   const product = await getProduct(id);
 
   if (!product || product.slug !== slug) notFound();
+
+  const desc = (product.short_description ||
+    product.description?.replace(/<[^>]*>/g, "").slice(0, 160) ||
+    `SKU: ${product.sku || id}`) as string;
 
   const dp = getDisplayPrice(
     String(product.price ?? 0),
@@ -189,6 +197,26 @@ export default async function ProductDetailPage({ params }: Props) {
           />
         </div>
       )}
+
+      {/* JSON-LD structured data (SEO — no price to protect B2B pricing) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: product.name,
+            description: typeof desc === "string" ? desc.slice(0, 300) : "",
+            image: product.images?.[0]?.src
+              ? resolveImageUrl(product.images[0].src)
+              : undefined,
+            sku: product.sku || undefined,
+            brand: product.vendor
+              ? { "@type": "Brand", name: product.vendor }
+              : undefined,
+          }),
+        }}
+      />
     </div>
   );
 }
