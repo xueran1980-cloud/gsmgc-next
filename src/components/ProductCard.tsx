@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ShoppingCart, Eye, Lock } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { resolveImageUrl } from "@/lib/image";
 import type { Product } from "@/lib/api";
 import { getDisplayPrice, getProductUrl } from "@/lib/display-formatter";
 
@@ -51,7 +52,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
     && product.stock_quantity !== undefined
     && parseInt(String(product.stock_quantity)) <= 0;
   const inStock = statusInstock && !isActuallyOutOfStock;
-  const imgUrl = product.images?.[0]?.src || "";
+  const imgUrl = resolveImageUrl(product.images?.[0]?.src) || "";
   const productUrl = getProductUrl(product);
 
   const handleAdd = (e: React.MouseEvent) => {
