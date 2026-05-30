@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ZoomIn, X } from 'lucide-react';
 import type { ProductImage } from '@/lib/api';
+import { resolveImageUrl } from '@/lib/image';
 
 interface ImageGalleryProps {
   images: ProductImage[];
@@ -74,7 +75,7 @@ export default function ImageGallery({ images, productName, hasDiscount, discoun
     );
   }
 
-  const currentSrc = images[activeImg]?.src || '';
+  const currentSrc = resolveImageUrl(images[activeImg]?.src) || '';
 
   return (
     <>
