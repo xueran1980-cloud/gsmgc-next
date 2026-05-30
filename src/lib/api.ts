@@ -63,7 +63,7 @@ async function _actualFetchProducts(): Promise<Product[]> {
     const res = await fetch(getProductsUrl(), {
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; GSMGC/1.0)',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
       },
     });
 
