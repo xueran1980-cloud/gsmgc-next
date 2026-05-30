@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ImageGallery from "@/components/ImageGallery";
 import { getDisplayPrice } from "@/lib/display-formatter";
+import { resolveImageUrl } from "@/lib/image";
 
 // ── 数据 ──
 
@@ -40,7 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: product.name,
       description: typeof desc === "string" ? desc.slice(0, 160) : "",
       images: product.images?.length > 0
-        ? [{ url: product.images[0].src }]
+        ? [{ url: resolveImageUrl(product.images[0].src) }]
         : [],
     },
   };
