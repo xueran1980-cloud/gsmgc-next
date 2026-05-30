@@ -1,3 +1,4 @@
+// ISR cache reset — force re-render
 import type { Metadata } from "next";
 import { fetchProducts } from "@/lib/api";
 import Hero from "@/components/Hero";
