@@ -56,8 +56,8 @@ export default async function ProductDetailPage({ params }: Props) {
   if (!product || product.slug !== slug) notFound();
 
   const dp = getDisplayPrice(
-    String(product.prices?.price ?? product.price ?? "0"),
-    String(product.prices?.regular_price ?? product.regular_price ?? "")
+    String((Number(product.prices?.price ?? 0)) / 100),
+    String((Number(product.prices?.regular_price ?? 0)) / 100)
   );
 
   const inStock = product.stock_status === "instock" ||
@@ -103,7 +103,7 @@ export default async function ProductDetailPage({ params }: Props) {
             {dp.showBadge ? (
               <div className="flex items-baseline gap-3 flex-wrap">
                 <span className="text-3xl font-black text-[#2563eb]">
-                  {dp.igic}
+                  {dp.base}
                 </span>
                 <span className="text-lg text-gray-400 line-through">
                   {dp.regular}
@@ -114,7 +114,7 @@ export default async function ProductDetailPage({ params }: Props) {
               </div>
             ) : (
               <span className="text-3xl font-black text-gray-900">
-                {dp.igic}
+                {dp.base}
               </span>
             )}
             <span className="block text-xs text-gray-400 mt-1">IGIC incluido</span>
