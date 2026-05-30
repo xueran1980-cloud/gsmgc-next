@@ -148,7 +148,7 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
           </div>
 
-          {/* Product Actions — shopping button + WhatsApp  */}
+          {/* Product Actions — shopping button + WhatsApp */}
           <div className="mb-6">
             <ProductDetailActions product={adaptedProduct} waMsg={waMsg} />
           </div>
