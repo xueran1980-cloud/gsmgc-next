@@ -11,11 +11,13 @@ import ProductDetailActions from "./ProductDetailActions";
 async function getProduct(id: string) {
   try {
     const res = await fetch(
-      `https://api.gsmgc.es/wp-json/wc/store/v1/products/${id}`,
+      `https://api.gsmgc.es/wp-json/gsmgc/v1/products-raw`,
       { next: { revalidate: 60 } }
     );
     if (!res.ok) return null;
-    return await res.json();
+    const data = await res.json();
+    const products = data.products || data;
+    return products.find((p: any) => String(p.id) === id) || null;
   } catch {
     return null;
   }
@@ -58,28 +60,25 @@ export default async function ProductDetailPage({ params }: Props) {
   if (!product || product.slug !== slug) notFound();
 
   const dp = getDisplayPrice(
-    String((Number(product.prices?.price ?? 0)) / 100),
-    String((Number(product.prices?.regular_price ?? 0)) / 100)
+    String(product.price ?? 0),
+    String(product.regular_price ?? "")
   );
 
-  const inStock = product.stock_status === "instock" ||
-    product.is_in_stock === true;
+  const inStock = product.stock_status === "instock";
 
   // WhatsApp message
-  const waPrice = Number(product.prices?.price ?? 0) / 100;
+  const waPrice = Number(product.price ?? 0);
   const canonicalUrl = `https://gsmgc.es/producto/${product.id}/${product.slug}`;
   const waMsg = encodeURIComponent(
     `Hola! Me interesa este producto:\n\n📱 ${(product.name || 'Producto')}\n💰 Precio: €${waPrice.toFixed(2)}\n🔗 ${canonicalUrl}\n\n¿Tienen stock disponible?`
   );
 
-  // Adapt WC Store data for ProductDetailActions (expects top-level price/stock fields)
   const adaptedProduct = {
     ...product,
-    price: String(waPrice),
-    regular_price: String((Number(product.prices?.regular_price ?? 0)) / 100),
-    stock_status: inStock ? "instock" : "outofstock",
-    stock_quantity: null,
-    min_qty: 1,
+    price: String(product.price ?? 0),
+    regular_price: String(product.regular_price ?? 0),
+    stock_status: product.stock_status || (inStock ? "instock" : "outofstock"),
+    min_qty: product.min_qty || 1,
   };
 
   return (
