@@ -1,0 +1,172 @@
+// GSMGC Next.js - 数据获取层
+// ★ 数据源：全部 → api.gsmgc.es (WooCommerce)
+// ★ 禁止本地缓存、禁止 fs、禁止 SSG
+// ★ 服务端：绝对 URL（Node.js fetch 要求）
+// ★ 统一直连 api.gsmgc.es（避免 Vercel server-side → CF 被拦截）
+
+// ---------- 类型定义 ----------
+
+export interface ProductImage {
+  id: number;
+  src: string;
+}
+
+export interface ProductCategory {
+  id: number;
+  name: string;
+  slug: string;
+  parent: number;
+  count?: number;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  slug: string;
+  sku: string;
+  price: string;
+  regular_price: string;
+  sale_price: string;
+  stock_status: string;
+  stock_quantity: number | null;
+  manage_stock: boolean;
+  short_description: string;
+  description: string;
+  total_sales: number;
+  date_created: string;
+  images: ProductImage[];
+  categories: ProductCategory[];
+  status: string;
+  min_qty: number;
+}
+
+// ---------- 产品数据 ----------
+
+const API_PATH = '/wp-json/gsmgc/v1/products-raw';
+const API_ORIGIN = 'https://api.gsmgc.es';
+
+function getProductsUrl(): string {
+  // ★ 统一直连 api.gsmgc.es（避免 Vercel server-side → CF 被拦截）
+  return 'https://api.gsmgc.es/wp-json/gsmgc/v1/products-raw';
+}
+
+// ★ 请求内去重：同一请求周期内只拉一次全量产品
+//    /producto/[id]/[slug] 页面 generateMetadata + 主组件 + 相关产品
+//    原本会调用 fetchProducts() 3 次，现在合并为 1 次
+// ★ TTL：60 秒后自动过期，确保产品变更及时反映
+let _fetchProductsPromise: Promise<Product[]> | null = null;
+let _fetchProductsTimestamp = 0;
+const PRODUCTS_CACHE_TTL = 60_000; // 60s
+
+async function _actualFetchProducts(): Promise<Product[]> {
+  try {
+    const res = await fetch(getProductsUrl(), {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+      },
+    });
+
+    // ★ CF 拦截检测：如果被返回 HTML（challenge page），记录并走空数组
+    const ct = res.headers.get('Content-Type') || '';
+    if (ct.includes('text/html')) {
+      console.warn('[fetchProducts] CF intercepted (HTML response), status=', res.status);
+      return [];
+    }
+
+    if (!res.ok) {
+      console.warn(`[fetchProducts] returned ${res.status}`);
+      return [];
+    }
+
+    // ★ 防御 JSON 污染：SG 缓存可能混入 mu-plugin echo 输出（多 JSON 拼接）
+    //    先读文本 → 解析失败时提取最后一个合法 JSON → 兼容多种响应格式
+    const text = await res.text();
+    let data: any;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // JSON 解析失败 → 可能是缓存污染（多个 JSON 对象拼接）
+      const markerPos = text.lastIndexOf('{"success"');
+      if (markerPos >= 0) {
+        const tail = text.substring(markerPos);
+        try {
+          data = JSON.parse(tail);
+        } catch {
+          console.warn('[fetchProducts] sanitized JSON parse also failed');
+          return [];
+        }
+      } else {
+        console.warn('[fetchProducts] JSON parse failed, head:', text.substring(0, 200));
+        return [];
+      }
+    }
+
+    // 兼容多种响应格式：
+    // - /api/products (旧) → { products: Product[], totalCount, totalPages, ... }
+    // - /api/products (新) → { success: true, products: Product[], ... }
+    // - products-raw → { success: true, products: Product[] }
+    // - 旧版 → Product[]
+    if (Array.isArray(data)) return data;
+    if (data.products && Array.isArray(data.products)) return data.products;
+    if (data.success && Array.isArray(data.products)) return data.products;
+    console.warn('[fetchProducts] invalid response format:', Object.keys(data));
+    return [];
+  } catch (err) {
+    console.warn('[fetchProducts] fetch failed:', err);
+    return [];
+  }
+}
+
+export async function fetchProducts(): Promise<Product[]> {
+  if (_fetchProductsPromise && (Date.now() - _fetchProductsTimestamp) < PRODUCTS_CACHE_TTL) {
+    // ★ 检查缓存是否为空（可能是 generateMetadata 阶段 fetch 失败）
+    //    如果是，清除缓存允许重试
+    try {
+      const cached = await _fetchProductsPromise;
+      if (cached.length > 0) return cached;
+      _fetchProductsPromise = null; // 空结果 → 清除，允许重试
+    } catch {
+      _fetchProductsPromise = null; // Promise 异常 → 清除
+    }
+  }
+  _fetchProductsTimestamp = Date.now();
+  _fetchProductsPromise = _actualFetchProducts();
+  return _fetchProductsPromise;
+}
+// ---------- 分类数据 ----------
+
+export async function fetchCategories(): Promise<ProductCategory[]> {
+  try {
+    const products = await fetchProducts();
+    const catMap = new Map<number, ProductCategory>();
+    for (const p of products) {
+      if (!p.categories) continue;
+      for (const c of p.categories) {
+        if (!catMap.has(c.id)) catMap.set(c.id, c);
+      }
+    }
+    return Array.from(catMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  } catch (err) {
+    console.warn('[fetchCategories] failed:', err);
+    return [];
+  }
+}
+
+// ---------- Slug 生成（与 ProductCard 一致） ----------
+
+export function generateSlug(name: string): string {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+// ---------- 客户端工具函数 ----------
+
+export function getProductImage(product: Product): string {
+  return product.images?.[0]?.src || '/product-placeholder.svg';
+}
