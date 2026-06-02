@@ -90,23 +90,27 @@ export default function TiendaClient({
     return () => clearTimeout(timer);
   }, [searchParam]);
 
-  // ★ 参数透传给 /api/products（后端处理排序/筛选）
-  const updateParam = useCallback((key: string, val: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (val) params.set(key, val);
-    else params.delete(key);
-    // 只有切换筛选条件时才重置到第1页（翻页时不重置）
-    if (key !== 'page') params.delete('page');
-    const qs = params.toString();
-    console.log('[DIAG]', { t: Date.now(), react: searchParams.toString(), real: typeof window !== 'undefined' ? window.location.search : 'SSR', target: qs, key, val });
-    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-    window.scrollTo(0, 0);
+  // ★ URL 驱动导航：只修改 URL，不合成状态
+  const buildUrl = (updates: Record<string, string | null>, clear?: string[]) => {
+    const p = new URLSearchParams(searchParams.toString());
+    for (const [k, v] of Object.entries(updates)) {
+      if (v) p.set(k, v);
+      else p.delete(k);
+    }
+    if (clear) clear.forEach(k => p.delete(k));
+    return p.toString() ? `${pathname}?${p}` : pathname;
+  };
+
+  const setCategory = useCallback((slug: string) => {
+    router.replace(buildUrl({ category: slug }, ['page', 'search']), { scroll: false });
   }, [searchParams, pathname, router]);
 
-  // ★ resetFilters — 清除所有筛选
-  const resetFilters = useCallback(() => {
-    router.push(pathname, { scroll: false });
-    window.scrollTo(0, 0);
+  const setPage = useCallback((n: number) => {
+    router.replace(buildUrl({ page: String(n) }), { scroll: false });
+  }, [searchParams, pathname, router]);
+
+  const resetAll = useCallback(() => {
+    router.replace(pathname, { scroll: false });
   }, [router, pathname]);
 
   // ★ 独立获取分类（不受 SSR 跳过影响）
@@ -220,7 +224,7 @@ export default function TiendaClient({
         pages.push(
           <button
             key={p}
-            onClick={() => updateParam('page', String(p))}
+            onClick={() => setPage(p)}
             className={`w-9 h-9 rounded-lg text-sm font-semibold transition ${
               p === page
                 ? 'bg-[#2563eb] text-white'
@@ -263,7 +267,7 @@ export default function TiendaClient({
                   params.set('orderby', ob);
                   params.set('order', or);
                   params.delete('page');
-                  router.push(`${pathname}?${params.toString()}`, { scroll: false });
+                  router.replace(`${pathname}?${params.toString()}`, { scroll: false });
                 }}
                 className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
               >
@@ -297,7 +301,7 @@ export default function TiendaClient({
                 <h3 className="font-bold text-sm text-gray-800 mb-2.5 tracking-tight">Marcas</h3>
                 <div className="flex flex-wrap gap-1.5 mb-3 max-h-48 overflow-y-auto pr-0.5 scrollbar-thin">
                   <button
-                    onClick={() => resetFilters()}
+                    onClick={() => resetAll()}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 ${
                       !categoryParam
                         ? 'bg-[#2563eb] text-white shadow-md shadow-blue-200 scale-105'
@@ -313,14 +317,7 @@ export default function TiendaClient({
                       <button
                         key={brand.id}
                         onClick={() => {
-                          updateParam('category', brandSlug);
-                          // ★ 切换品牌时清除 search（对齐旧站）
-                          const params = new URLSearchParams(searchParams.toString());
-                          params.set('category', brandSlug);
-                          params.delete('page'); params.delete('search');
-                          const qs = params.toString();
-                          router.push(`${pathname}?${qs}`, { scroll: false });
-                          window.scrollTo(0, 0);
+                          setCategory(brandSlug);
                         }}
                         className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 whitespace-nowrap ${
                           isActive
@@ -340,7 +337,7 @@ export default function TiendaClient({
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#2563eb] animate-pulse"></span>
                     <span className="capitalize">{categoryParam}</span>
                     <button
-                      onClick={() => resetFilters()}
+                      onClick={() => resetAll()}
                       className="ml-auto underline hover:no-underline"
                     >Limpiar</button>
                   </p>
@@ -358,14 +355,7 @@ export default function TiendaClient({
                       return (
                         <button
                           key={cat.id}
-                          onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString());
-                            params.set('category', catSlug);
-                            params.delete('page'); params.delete('search');
-                            const qs = params.toString();
-                            router.push(`${pathname}?${qs}`, { scroll: false });
-                            window.scrollTo(0, 0);
-                          }}
+                          onClick={() => setCategory(catSlug)}
                           className={`w-full text-left flex items-center justify-between px-2.5 py-2 rounded-lg text-xs transition-all ${
                             isActive
                               ? 'bg-[#2563eb] text-white font-semibold'
@@ -420,7 +410,7 @@ export default function TiendaClient({
                 <h2 className="text-xl font-bold text-gray-800 mb-2">No se encontraron productos</h2>
                 <p className="text-gray-500 mb-4">Prueba con otros filtros o categorías</p>
                 <button
-                  onClick={() => resetFilters()}
+                  onClick={() => resetAll()}
                   className="bg-[#2563eb] text-white font-bold px-6 py-3 rounded-xl"
                 >
                   Ver todo
@@ -445,7 +435,7 @@ export default function TiendaClient({
                 {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-10">
                     <button
-                      onClick={() => updateParam('page', String(pageParam - 1))}
+                      onClick={() => setPage(pageParam - 1)}
                       disabled={pageParam <= 1}
                       className="p-2 rounded-lg border border-gray-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
                     >
@@ -453,7 +443,7 @@ export default function TiendaClient({
                     </button>
                     {renderPagination()}
                     <button
-                      onClick={() => updateParam('page', String(pageParam + 1))}
+                      onClick={() => setPage(pageParam + 1)}
                       disabled={pageParam >= totalPages}
                       className="p-2 rounded-lg border border-gray-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
                     >
@@ -499,9 +489,8 @@ export default function TiendaClient({
                 <div className="flex flex-wrap gap-1.5">
                   <button
                     onClick={() => {
-                      router.push(pathname, { scroll: false });
+                      resetAll();
                       setFilterOpen(false);
-                      window.scrollTo(0, 0);
                     }}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all ${
                       !categoryParam ? 'bg-[#2563eb] text-white' : 'bg-gray-100 text-gray-600'
@@ -514,13 +503,8 @@ export default function TiendaClient({
                       <button
                         key={brand.id}
                         onClick={() => {
-                          const params = new URLSearchParams(searchParams.toString());
-                          params.set('category', brandSlug);
-                          params.delete('page'); params.delete('search');
-                          const qs = params.toString();
-                          router.push(`${pathname}?${qs}`, { scroll: false });
+                          setCategory(brandSlug);
                           setFilterOpen(false);
-                          window.scrollTo(0, 0);
                         }}
                         className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all whitespace-nowrap ${
                           isActive ? 'bg-[#2563eb] text-white' : 'bg-gray-50 text-gray-600 hover:bg-blue-50'
@@ -543,13 +527,8 @@ export default function TiendaClient({
                         <button
                           key={cat.id}
                           onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString());
-                            params.set('category', catSlug);
-                            params.delete('page'); params.delete('search');
-                            const qs = params.toString();
-                            router.push(`${pathname}?${qs}`, { scroll: false });
+                            setCategory(catSlug);
                             setFilterOpen(false);
-                            window.scrollTo(0, 0);
                           }}
                           className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all whitespace-nowrap ${
                             isActive ? 'bg-[#2563eb] text-white' : 'bg-gray-50 text-gray-600 hover:bg-blue-50'
