@@ -98,6 +98,7 @@ export default function TiendaClient({
     // 只有切换筛选条件时才重置到第1页（翻页时不重置）
     if (key !== 'page') params.delete('page');
     const qs = params.toString();
+    console.log('[DIAG]', { t: Date.now(), react: searchParams.toString(), real: typeof window !== 'undefined' ? window.location.search : 'SSR', target: qs, key, val });
     router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     window.scrollTo(0, 0);
   }, [searchParams, pathname, router]);
