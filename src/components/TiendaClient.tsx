@@ -107,6 +107,9 @@ export default function TiendaClient({
 
   const setPage = useCallback((n: number) => {
     router.replace(buildUrl({ page: String(n) }), { scroll: false });
+    if (typeof window !== 'undefined') {
+      requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    }
   }, [searchParams, pathname, router]);
 
   const resetAll = useCallback(() => {

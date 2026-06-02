@@ -62,6 +62,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
       id: product.id, name: product.name, price: product.price,
       regular_price: product.regular_price, image: imgUrl,
       sku: product.sku, stock_quantity: product.stock_quantity,
+      qty: Math.max(1, product.min_qty || 1),
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
