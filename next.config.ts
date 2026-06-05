@@ -81,7 +81,7 @@ const nextConfig: NextConfig = {
       // ★ 性能优化: products-raw API 允许 CDN 缓存 120s
       // v9.3 返回全量数据，不区分用户状态 → 符合 CDN 缓存条件
       {
-        source: "/wp-json/gsmgc/v1/products-raw:path*",
+        source: "/wp-json/gsmgc/v1/products-raw",
         headers: [
           { key: "Cache-Control", value: "public, max-age=120, s-maxage=120" },
         ],
