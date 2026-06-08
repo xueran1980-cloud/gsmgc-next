@@ -13,19 +13,21 @@ export const dynamicParams = true;
 
 // ★ ISR 生效关键: generateStaticParams 声明本路由为静态预渲染
 export async function generateStaticParams() {
-  return [];
+  return [] as { id: string; slug: string }[];
 }
 
-// ── 数据（单产品 fetch）──
+// ── 数据（products-raw 格式与产品页完全兼容，CF 缓存 120s）──
 
 async function getProduct(id: string) {
   try {
     const res = await fetch(
-      `https://api.gsmgc.es/wp-json/wc/store/v1/products/${id}`,
+      `https://api.gsmgc.es/wp-json/gsmgc/v1/products-raw`,
       { next: { revalidate: 60 } }
     );
     if (!res.ok) return null;
-    return await res.json();
+    const data = await res.json();
+    const products = data.products || data;
+    return products.find((p: any) => String(p.id) === id) || null;
   } catch {
     return null;
   }
