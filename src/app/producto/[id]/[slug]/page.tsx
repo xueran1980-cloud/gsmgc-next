@@ -9,51 +9,37 @@ import ProductDetailActions from "./ProductDetailActions";
 
 export const revalidate = 60;
 
-// ── 数据 ──
+// ── 数据（单产品 fetch，不拉全量 2143）──
 
 async function getProduct(id: string) {
   try {
     const res = await fetch(
-      `https://api.gsmgc.es/wp-json/gsmgc/v1/products-raw`,
+      `https://api.gsmgc.es/wp-json/wc/store/v1/products/${id}`,
       { next: { revalidate: 60 } }
     );
     if (!res.ok) return null;
-    const data = await res.json();
-    const products = data.products || data;
-    return products.find((p: any) => String(p.id) === id) || null;
+    return await res.json();
   } catch {
     return null;
   }
 }
 
-// ── SEO ──
+// ── SEO（纯 params，零网络调用，保证 ISR 兼容）──
 
 interface Props {
   params: { id: string; slug: string };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = params;
-  const product = await getProduct(id);
-  if (!product) return { title: "Producto no encontrado" };
-
-  const desc = product.short_description ||
-    product.description?.replace(/<[^>]*>/g, "").slice(0, 160) ||
-    `SKU: ${product.sku || id}`;
-  const canonicalUrl = `https://gsmgc.es/producto/${product.id}/${product.slug}`;
-
+  const { id, slug } = params;
+  const title = slug
+    .split('-')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
   return {
-    title: product.name,
-    description: typeof desc === "string" ? desc.slice(0, 160) : "",
-    openGraph: {
-      title: product.name,
-      description: typeof desc === "string" ? desc.slice(0, 160) : "",
-      url: canonicalUrl,
-      images: product.images?.length > 0
-        ? [{ url: resolveImageUrl(product.images[0].src) }]
-        : [],
-    },
-    alternates: { canonical: canonicalUrl },
+    title,
+    description: `Producto ${id} — detalles, especificaciones y disponibilidad en GSMGC`,
+    alternates: { canonical: `https://gsmgc.es/producto/${id}/${slug}` },
     robots: { index: true, follow: true },
   };
 }
