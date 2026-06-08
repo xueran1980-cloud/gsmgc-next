@@ -8,6 +8,12 @@ import { PriceOrLoginPrompt } from "@/components/PriceOrLoginPrompt";
 import ProductDetailActions from "./ProductDetailActions";
 
 export const revalidate = 60;
+export const dynamicParams = true;
+
+// ── ISR: 预生成热门产品
+export async function generateStaticParams() {
+  return []; // 全 on-demand ISR
+}
 
 // ── 数据（单产品 fetch，不拉全量 2143）──
 
