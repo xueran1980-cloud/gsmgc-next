@@ -5,17 +5,18 @@ import ShareButton from "@/components/ShareButton";
 import { getDisplayPrice } from "@/lib/display-formatter";
 import { resolveImageUrl } from "@/lib/image";
 import { PriceOrLoginPrompt } from "@/components/PriceOrLoginPrompt";
+import type { Metadata } from "next";
 import ProductDetailActions from "./ProductDetailActions";
 
 export const revalidate = 60;
 export const dynamicParams = true;
 
-// ── ISR: 预生成热门产品
+// ★ ISR 生效关键: generateStaticParams 声明本路由为静态预渲染
 export async function generateStaticParams() {
-  return []; // 全 on-demand ISR
+  return [];
 }
 
-// ── 数据（单产品 fetch，不拉全量 2143）──
+// ── 数据（单产品 fetch）──
 
 async function getProduct(id: string) {
   try {
