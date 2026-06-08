@@ -7,7 +7,6 @@ import { resolveImageUrl } from "@/lib/image";
 import { PriceOrLoginPrompt } from "@/components/PriceOrLoginPrompt";
 import ProductDetailActions from "./ProductDetailActions";
 
-// ★ ISR: 产品页每 60s 重新验证，减少 Vercel CPU 消耗
 export const revalidate = 60;
 
 // ── 数据 ──
