@@ -30,11 +30,11 @@ async function getProduct(id: string) {
 // ── SEO ──
 
 interface Props {
-  params: Promise<{ id: string; slug: string }>;
+  params: { id: string; slug: string };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = await params;
+  const { id } = params;
   const product = await getProduct(id);
   if (!product) return { title: "Producto no encontrado" };
 
@@ -62,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // ── 页面 ──
 
 export default async function ProductDetailPage({ params }: Props) {
-  const { id, slug } = await params;
+  const { id, slug } = params;
   const product = await getProduct(id);
 
   if (!product || product.slug !== slug) notFound();
