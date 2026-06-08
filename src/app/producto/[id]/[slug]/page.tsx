@@ -27,11 +27,11 @@ async function getProduct(id: string) {
 // ── SEO（纯 params，零网络调用，保证 ISR 兼容）──
 
 interface Props {
-  params: { id: string; slug: string };
+  params: Promise<{ id: string; slug: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id, slug } = params;
+  const { id, slug } = await params;
   const title = slug
     .split('-')
     .map(w => w.charAt(0).toUpperCase() + w.slice(1))
@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // ── 页面 ──
 
 export default async function ProductDetailPage({ params }: Props) {
-  const { id, slug } = params;
+  const { id, slug } = await params;
   const product = await getProduct(id);
 
   if (!product || product.slug !== slug) notFound();
