@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ImageGallery from "@/components/ImageGallery";
 import ShareButton from "@/components/ShareButton";
@@ -24,24 +23,10 @@ async function getProduct(id: string) {
   }
 }
 
-// ── SEO（纯 params，零网络调用，保证 ISR 兼容）──
+// ── 页面（generateMetadata 暂时移除以测试 ISR）──
 
 interface Props {
   params: Promise<{ id: string; slug: string }>;
-}
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id, slug } = await params;
-  const title = slug
-    .split('-')
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-  return {
-    title,
-    description: `Producto ${id} — detalles, especificaciones y disponibilidad en GSMGC`,
-    alternates: { canonical: `https://gsmgc.es/producto/${id}/${slug}` },
-    robots: { index: true, follow: true },
-  };
 }
 
 // ── 页面 ──
