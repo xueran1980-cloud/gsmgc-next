@@ -5,7 +5,6 @@ import ShareButton from "@/components/ShareButton";
 import { getDisplayPrice } from "@/lib/display-formatter";
 import { resolveImageUrl } from "@/lib/image";
 import { PriceOrLoginPrompt } from "@/components/PriceOrLoginPrompt";
-import type { Metadata } from "next";
 import ProductDetailActions from "./ProductDetailActions";
 
 export const revalidate = 60;
