@@ -27,9 +27,7 @@ async function getProduct(id: string) {
   }
 }
 
-// ── 页面 (SEO 元数据内联生成，保证 ISR 兼容) ──
-
-import type { Metadata } from "next";
+// ── SEO ──
 
 interface Props {
   params: Promise<{ id: string; slug: string }>;
@@ -40,17 +38,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product = await getProduct(id);
   if (!product) return { title: "Producto no encontrado" };
 
-  const desc = (product.short_description ||
+  const desc = product.short_description ||
     product.description?.replace(/<[^>]*>/g, "").slice(0, 160) ||
-    `SKU: ${product.sku || id}`) as string;
+    `SKU: ${product.sku || id}`;
   const canonicalUrl = `https://gsmgc.es/producto/${product.id}/${product.slug}`;
 
   return {
     title: product.name,
-    description: desc.slice(0, 160),
+    description: typeof desc === "string" ? desc.slice(0, 160) : "",
     openGraph: {
       title: product.name,
-      description: desc.slice(0, 160),
+      description: typeof desc === "string" ? desc.slice(0, 160) : "",
       url: canonicalUrl,
       images: product.images?.length > 0
         ? [{ url: resolveImageUrl(product.images[0].src) }]
@@ -61,7 +59,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-// ── 页面渲染 ──
+// ── 页面 ──
 
 export default async function ProductDetailPage({ params }: Props) {
   const { id, slug } = await params;
