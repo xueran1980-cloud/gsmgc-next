@@ -15,24 +15,19 @@ export async function generateStaticParams() {
   return [] as { id: string; slug: string }[];
 }
 
-// ── 数据（include=排序提示, per_page=100 确保目标在结果集中, ~35KB vs 2.6MB）──
+// ── 数据（products-raw 格式与产品页完全兼容，CF 缓存 120s）──
 
 async function getProduct(id: string) {
   try {
-    // include 参数仅影响排序不做过滤，需 per_page=100 确保目标产品在结果集中
-    const url = `https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?include=${id}&per_page=100`;
-    const res = await fetch(url, { next: { revalidate: 60 } });
-    if (!res.ok) {
-      console.warn('[getProduct] non-ok', id, res.status);
-      return null;
-    }
+    const res = await fetch(
+      `https://api.gsmgc.es/wp-json/gsmgc/v1/products-raw`,
+      { next: { revalidate: 60 } }
+    );
+    if (!res.ok) return null;
     const data = await res.json();
-    const products = Array.isArray(data.products) ? data.products : [];
-    const product = products.find((p: any) => String(p.id) === id) || null;
-    if (!product) console.warn('[getProduct] not found', id, 'results:', products.length);
-    return product;
-  } catch (e) {
-    console.warn('[getProduct] fetch error', id, String(e).slice(0, 100));
+    const products = data.products || data;
+    return products.find((p: any) => String(p.id) === id) || null;
+  } catch {
     return null;
   }
 }
