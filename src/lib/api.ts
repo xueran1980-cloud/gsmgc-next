@@ -202,10 +202,12 @@ export async function fetchHomepageData(): Promise<HomepageData> {
 
     // Parse products
     let products: Product[] = [];
+    let totalFromResponse = 0;
     try {
       const text = await productsRes.text();
       const data = JSON.parse(text);
       products = data.products || [];
+      totalFromResponse = data.total || 0;
     } catch (e) {
       console.warn('[fetchHomepageData] products parse failed, falling back to fetchProducts()');
       const fallback = await fetchProducts();
@@ -226,7 +228,8 @@ export async function fetchHomepageData(): Promise<HomepageData> {
       console.warn('[fetchHomepageData] categories parse failed, using empty');
     }
 
-    const totalProductCount = categories.reduce((sum, c) => sum + (c.count || 0), 0);
+    const totalProductCount = totalFromResponse
+      || categories.reduce((sum, c) => sum + (c.count || 0), 0);
 
     return { products, categories, totalProductCount };
   } catch (err) {
