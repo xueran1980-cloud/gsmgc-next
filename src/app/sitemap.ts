@@ -1,8 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { fetchProducts, fetchCategories, generateSlug } from '@/lib/api';
 
-// Dynamic rendering: generate sitemap at request time (not build time)
-export const dynamic = 'force-dynamic';
+// ISR: revalidate every hour — sitemap doesn't need real-time updates
+export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [products, categories] = await Promise.all([
