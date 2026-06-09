@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { fetchProducts, fetchCategories, generateSlug } from '@/lib/api';
+import { fetchProducts, fetchCategoriesDirect, generateSlug } from '@/lib/api';
 
 // ISR: revalidate every hour — sitemap doesn't need real-time updates
 export const revalidate = 3600;
@@ -7,7 +7,7 @@ export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [products, categories] = await Promise.all([
     fetchProducts(),
-    fetchCategories(),
+    fetchCategoriesDirect(),  // 直调 categories-raw，不再内部调 fetchProducts()
   ]);
 
   const baseUrl = 'https://gsmgc.es';

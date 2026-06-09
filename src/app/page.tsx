@@ -1,6 +1,6 @@
 // ISR cache reset — force re-render
 import type { Metadata } from "next";
-import { fetchProducts } from "@/lib/api";
+import { fetchHomepageData } from "@/lib/api";
 import Hero from "@/components/Hero";
 import { ProductsCarousel } from "@/components/ProductsCarousel";
 import CategoriesSection from "@/components/CategoriesSection";
@@ -31,57 +31,33 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const products = await fetchProducts();
+  const { products, categories, totalProductCount } = await fetchHomepageData();
 
-  // Compute category counts from products
-  const categoryMap = new Map<number, { id: number; name: string; slug: string; parent: number; count: number }>();
-  for (const product of products) {
-    if (!product.categories) continue;
-    for (const cat of product.categories) {
-      const existing = categoryMap.get(cat.id);
-      if (existing) {
-        existing.count++;
-      } else {
-        categoryMap.set(cat.id, { ...cat, count: 1 });
-      }
-    }
-  }
-  const categoriesWithCounts = Array.from(categoryMap.values())
-    .sort((a, b) => b.count - a.count);
+  // categoriesWithCounts: from categories-raw (real WC counts)
+  const categoriesWithCounts = categories
+    .sort((a, b) => (b.count || 0) - (a.count || 0));
 
-  // Select products for sections（双重检查：stock_status + stock_quantity > 0）
-  const inStockProducts = products.filter(p => {
-    if (p.stock_status !== "instock") return false;
+  // 有图+有库存过滤（products 已是从 API 获取的 instock 产品）
+  const inStockWithImages = products.filter(p => {
     if (!p.images || p.images.length === 0) return false;
-    // 双检：status=instock 但 quantity=0 可能已被售罄
+    if (p.stock_status !== "instock") return false;
     if (p.stock_quantity !== null && p.stock_quantity !== undefined && parseInt(String(p.stock_quantity)) <= 0) return false;
     return true;
   });
-  
-  // Latest products (by date_created, newest first) — 1:1 现站 30个
-  const latest = [...inStockProducts]
-    .sort((a, b) => new Date(b.date_created).getTime() - new Date(a.date_created).getTime())
-    .slice(0, 30);
 
-  // Featured products (best sellers by total_sales) — 1:1 现站 30个
-  const featured = [...inStockProducts]
+  // Latest: API 已按 date desc 排序，直接 slice
+  const latest = inStockWithImages.slice(0, 30);
+
+  // Featured: JS sort by total_sales (100 items, not 2143)
+  const featured = [...inStockWithImages]
     .sort((a, b) => (b.total_sales || 0) - (a.total_sales || 0))
     .slice(0, 30);
 
   // Hero products (3 with images)
-  const heroProducts = inStockProducts.slice(0, 3);
+  const heroProducts = inStockWithImages.slice(0, 3);
 
-  // Count unique categories for Hero
-  const uniqueCategoryIds = new Set();
-  for (const product of products) {
-    if (product.categories) {
-      for (const cat of product.categories) {
-        uniqueCategoryIds.add(cat.id);
-      }
-    }
-  }
-  const categoryCount = uniqueCategoryIds.size;
-  const productCount = products.length;
+  const categoryCount = categories.length;
+  const productCount = totalProductCount;
 
   return (
     <>
