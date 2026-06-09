@@ -65,6 +65,7 @@ async function _actualFetchProducts(): Promise<Product[]> {
         'Accept': 'application/json',
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
       },
+      next: { revalidate: 300 },
     });
 
     // ★ CF 拦截检测：如果被返回 HTML（challenge page），记录并走空数组
