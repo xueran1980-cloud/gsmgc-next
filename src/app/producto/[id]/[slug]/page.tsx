@@ -15,22 +15,21 @@ export async function generateStaticParams() {
   return [] as { id: string; slug: string }[];
 }
 
-// ── 数据（单品查询 ~750B vs products-raw 2.6MB，CF 缓存 120s）──
+// ── 数据（include=排序提示, per_page=100 确保目标在结果集中, ~35KB vs 2.6MB）──
 
 async function getProduct(id: string) {
   try {
-    const url = `https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?include=${id}&per_page=1`;
+    // include 参数仅影响排序不做过滤，需 per_page=100 确保目标产品在结果集中
+    const url = `https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?include=${id}&per_page=100`;
     const res = await fetch(url, { next: { revalidate: 60 } });
     if (!res.ok) {
       console.warn('[getProduct] non-ok', id, res.status);
       return null;
     }
     const data = await res.json();
-    // schema normalization：兼容数组/单对象两种返回
-    const product = Array.isArray(data.products)
-      ? data.products[0]
-      : data.products ?? null;
-    if (!product) console.warn('[getProduct] not found', id);
+    const products = Array.isArray(data.products) ? data.products : [];
+    const product = products.find((p: any) => String(p.id) === id) || null;
+    if (!product) console.warn('[getProduct] not found', id, 'results:', products.length);
     return product;
   } catch (e) {
     console.warn('[getProduct] fetch error', id, String(e).slice(0, 100));
