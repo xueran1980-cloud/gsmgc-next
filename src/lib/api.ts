@@ -168,13 +168,7 @@ export async function fetchProductById(id: string): Promise<Product | null> {
 
 // ---------- P2: 首页轻量数据 ----------
 
-export interface HomepageProduct {
-  id: number; name: string; slug: string; categories: ProductCategory[];
-  stock_status: string; stock_quantity: number | null;
-  date_created: string | null; total_sales: number; has_image: boolean;
-}
-
-export async function fetchHomepageData(): Promise<HomepageProduct[]> {
+export async function fetchHomepageData(): Promise<Product[]> {
   try {
     const res = await fetch(
       'https://api.gsmgc.es/wp-json/gsmgc/v1/homepage-data',
@@ -182,10 +176,13 @@ export async function fetchHomepageData(): Promise<HomepageProduct[]> {
     );
     if (!res.ok) return [];
     const data = await res.json();
-    if (Array.isArray(data)) return data;
+    if (Array.isArray(data)) {
+      // Map compact format to Product-compatible format (add images: [] for component compatibility)
+      return data.map((item: any) => ({ ...item, images: [] as any[] }));
+    }
     return [];
   } catch {
-    return fetchProducts() as any;
+    return fetchProducts();
   }
 }
 
