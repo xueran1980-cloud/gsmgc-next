@@ -177,13 +177,16 @@ export async function fetchHomepageData(): Promise<Product[]> {
     if (!res.ok) return [];
     const data = await res.json();
     if (Array.isArray(data)) {
-      // Map compact format to Product-compatible format (add images: [] for component compatibility)
       return data.map((item: any) => ({ ...item, images: [] as any[] }));
     }
     return [];
   } catch {
     return fetchProducts();
   }
+}
+
+export async function fetchCategoriesDirect(): Promise<ProductCategory[]> {
+  return fetchCategories();
 }
 
 // ---------- 分类数据 ----------
