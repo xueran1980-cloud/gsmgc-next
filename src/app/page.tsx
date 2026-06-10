@@ -31,33 +31,57 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const { products, categories, totalProductCount } = await fetchHomepageData();
+  const products = await fetchHomepageData();
 
-  // categoriesWithCounts: from categories-raw (real WC counts)
-  const categoriesWithCounts = categories
-    .sort((a, b) => (b.count || 0) - (a.count || 0));
+  // Compute category counts from products
+  const categoryMap = new Map<number, { id: number; name: string; slug: string; parent: number; count: number }>();
+  for (const product of products) {
+    if (!product.categories) continue;
+    for (const cat of product.categories) {
+      const existing = categoryMap.get(cat.id);
+      if (existing) {
+        existing.count++;
+      } else {
+        categoryMap.set(cat.id, { ...cat, count: 1 });
+      }
+    }
+  }
+  const categoriesWithCounts = Array.from(categoryMap.values())
+    .sort((a, b) => b.count - a.count);
 
-  // 有图+有库存过滤（products 已是从 API 获取的 instock 产品）
-  const inStockWithImages = products.filter(p => {
-    if (!p.images || p.images.length === 0) return false;
+  // Select products for sections（双重检查：stock_status + stock_quantity > 0）
+  const inStockProducts = products.filter(p => {
     if (p.stock_status !== "instock") return false;
+    if (!p.images || p.images.length === 0) return false;
+    // 双检：status=instock 但 quantity=0 可能已被售罄
     if (p.stock_quantity !== null && p.stock_quantity !== undefined && parseInt(String(p.stock_quantity)) <= 0) return false;
     return true;
   });
+  
+  // Latest products (by date_created, newest first) — 1:1 现站 30个
+  const latest = [...inStockProducts]
+    .sort((a, b) => new Date(b.date_created).getTime() - new Date(a.date_created).getTime())
+    .slice(0, 30);
 
-  // Latest: API 已按 date desc 排序，直接 slice
-  const latest = inStockWithImages.slice(0, 30);
-
-  // Featured: JS sort by total_sales (100 items, not 2143)
-  const featured = [...inStockWithImages]
+  // Featured products (best sellers by total_sales) — 1:1 现站 30个
+  const featured = [...inStockProducts]
     .sort((a, b) => (b.total_sales || 0) - (a.total_sales || 0))
     .slice(0, 30);
 
   // Hero products (3 with images)
-  const heroProducts = inStockWithImages.slice(0, 3);
+  const heroProducts = inStockProducts.slice(0, 3);
 
-  const categoryCount = categories.length;
-  const productCount = totalProductCount;
+  // Count unique categories for Hero
+  const uniqueCategoryIds = new Set();
+  for (const product of products) {
+    if (product.categories) {
+      for (const cat of product.categories) {
+        uniqueCategoryIds.add(cat.id);
+      }
+    }
+  }
+  const categoryCount = uniqueCategoryIds.size;
+  const productCount = products.length;
 
   return (
     <>
