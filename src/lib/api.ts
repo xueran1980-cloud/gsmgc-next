@@ -176,9 +176,7 @@ export async function fetchHomepageData(): Promise<Product[]> {
     );
     if (!res.ok) return [];
     const data = await res.json();
-    if (Array.isArray(data)) {
-      return data.map((item: any) => ({ ...item, images: [] as any[] }));
-    }
+    if (Array.isArray(data)) return data;
     return [];
   } catch {
     return fetchProducts();
