@@ -27,8 +27,10 @@ const nextConfig: NextConfig = {
       { source: "/terminos", destination: "/condiciones-de-venta", permanent: true },
       { source: "/terminos-de-uso", destination: "/condiciones-de-venta", permanent: true },
       { source: "/terminos-y-condiciones", destination: "/condiciones-de-venta", permanent: true },
+      { source: "/condiciones", destination: "/condiciones-de-venta", permanent: true },
       { source: "/aviso", destination: "/politica-de-privacidad", permanent: true },
       { source: "/legal", destination: "/politica-de-privacidad", permanent: true },
+      { source: "/privacidad", destination: "/politica-de-privacidad", permanent: true },
       // ★ 2026-05-04: 清理废弃路由 → /tienda
       { source: "/tienda-v2", destination: "/tienda", permanent: true },
       { source: "/tienda-v2/:path*", destination: "/tienda/:path*", permanent: true },
