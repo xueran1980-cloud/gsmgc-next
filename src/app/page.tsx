@@ -1,6 +1,6 @@
 // ISR cache reset — force re-render
 import type { Metadata } from "next";
-import { fetchProducts } from "@/lib/api";
+import { fetchHomepageData } from "@/lib/api";
 import Hero from "@/components/Hero";
 import { ProductsCarousel } from "@/components/ProductsCarousel";
 import CategoriesSection from "@/components/CategoriesSection";
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const products = await fetchProducts();
+  const products = await fetchHomepageData();
 
   // Compute category counts from products
   const categoryMap = new Map<number, { id: number; name: string; slug: string; parent: number; count: number }>();

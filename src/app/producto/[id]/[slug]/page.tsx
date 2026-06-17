@@ -15,12 +15,27 @@ export async function generateStaticParams() {
   return [] as { id: string; slug: string }[];
 }
 
-// ── 数据（products-raw 格式与产品页完全兼容，CF 缓存 120s）──
+// ── 数据（P1: O(1) product-by-id，fallback products-raw）──
+
+const API = 'https://api.gsmgc.es';
 
 async function getProduct(id: string) {
+  // ★ 优先走 O(1) 单品端点
   try {
     const res = await fetch(
-      `https://api.gsmgc.es/wp-json/gsmgc/v1/products-raw`,
+      `${API}/wp-json/gsmgc/v1/product-by-id?id=${id}`,
+      { next: { revalidate: 60 } }
+    );
+    if (res.ok) {
+      const json = await res.json();
+      if (json?.success && json?.data) return json.data;
+    }
+  } catch { /* fallback */ }
+
+  // Fallback: products-raw（兼容未部署或端点异常）
+  try {
+    const res = await fetch(
+      `${API}/wp-json/gsmgc/v1/products-raw`,
       { next: { revalidate: 60 } }
     );
     if (!res.ok) return null;

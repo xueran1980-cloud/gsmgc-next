@@ -166,22 +166,55 @@ export async function fetchProductById(id: string): Promise<Product | null> {
   }
 }
 
+// ---------- P2: 首页轻量数据 ----------
+
+export async function fetchHomepageData(): Promise<Product[]> {
+  try {
+    const res = await fetch(
+      'https://api.gsmgc.es/wp-json/gsmgc/v1/homepage-data',
+      { next: { revalidate: 600 } }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (Array.isArray(data)) return data;
+    return [];
+  } catch {
+    return fetchProducts();
+  }
+}
+
+export async function fetchCategoriesDirect(): Promise<ProductCategory[]> {
+  return fetchCategories();
+}
+
 // ---------- 分类数据 ----------
 
 export async function fetchCategories(): Promise<ProductCategory[]> {
   try {
-    const products = await fetchProducts();
-    const catMap = new Map<number, ProductCategory>();
-    for (const p of products) {
-      if (!p.categories) continue;
-      for (const c of p.categories) {
-        if (!catMap.has(c.id)) catMap.set(c.id, c);
-      }
-    }
-    return Array.from(catMap.values()).sort((a, b) => a.name.localeCompare(b.name));
-  } catch (err) {
-    console.warn('[fetchCategories] failed:', err);
+    const res = await fetch(
+      'https://api.gsmgc.es/wp-json/gsmgc/v1/categories-list',
+      { next: { revalidate: 3600 } }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (Array.isArray(data)) return data;
     return [];
+  } catch {
+    // Fallback: derive from products-raw
+    try {
+      const products = await fetchProducts();
+      const catMap = new Map<number, ProductCategory>();
+      for (const p of products) {
+        if (!p.categories) continue;
+        for (const c of p.categories) {
+          if (!catMap.has(c.id)) catMap.set(c.id, c);
+        }
+      }
+      return Array.from(catMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+    } catch (err) {
+      console.warn('[fetchCategories] failed:', err);
+      return [];
+    }
   }
 }
 

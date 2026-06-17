@@ -6,6 +6,7 @@ import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product, ProductCategory } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
 import { BRAND_CATEGORY_NAMES, EXCLUDED_CATEGORY_NAMES } from '@/config/category-config';
+import { useAsyncState } from '@/hooks/useAsyncState';
 
 const PER_PAGE = 24;
 
@@ -57,6 +58,9 @@ export default function TiendaClient({
 
   // ★ SSR 水合：有初始数据 + 无筛选 → 直接用，跳过 fetch
   const ssrReady = useRef(!!(initialProducts && initialProducts.length > 0));
+
+  // ★ 可终止异步状态机 — 15s timeout + abort + auto retry + unmount guard
+  const search = useAsyncState<void>();
   useEffect(() => {
     if (ssrReady.current) {
       ssrReady.current = false;
@@ -127,12 +131,10 @@ export default function TiendaClient({
   }, []);
 
   // ★ useEffect：debouncedSearch / category / page 变化时 fetch
+  //    通过 useAsyncState 管理 fetch 生命周期：15s timeout + abort + auto retry + unmount guard
   useEffect(() => {
     // ★ 最小 3 字符才触发搜索（空值=清空搜索，允许）
     if (debouncedSearch && debouncedSearch.trim().length < 3) return;
-
-    let cancelled = false;
-    setLoading(true);
 
     const params = new URLSearchParams();
     if (finalOrderby) params.set('orderby', finalOrderby);
@@ -151,37 +153,33 @@ export default function TiendaClient({
 
     // ★ 客户端直连后端（绕过 Vercel 代理避免 CF Bot Fight Mode 拦截）
     const directUrl = `https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?${params.toString()}`;
-    fetch(directUrl, {
-      headers: fetchHeaders,
-      cache: 'no-store',
-    }).then(r => r.json()).then((prodData) => {
-      if (!cancelled) {
-        // ★ 兼容两种响应格式: Vercel代理(camelCase) + 后端直连(snake_case)
-        if (prodData && Array.isArray(prodData.products)) {
-          setProducts(prodData.products);
-          setTotalCount(prodData.totalCount || prodData.total || prodData.products.length);
-          setTotalPages(prodData.totalPages || prodData.total_pages || 1);
-        } else if (Array.isArray(prodData)) {
-          // 兼容旧格式（纯数组）
-          setProducts(prodData);
-          setTotalCount(prodData.length);
-          setTotalPages(1);
-        } else {
-          setProducts([]);
-          setTotalCount(0);
-          setTotalPages(0);
-        }
-        setLoading(false);
-      }
-    }).catch(err => {
-      console.error('[TiendaClient] fetch error:', err);
-      if (!cancelled) {
-        setLoading(false);
+
+    search.run(async (signal) => {
+      const res = await fetch(directUrl, {
+        headers: fetchHeaders,
+        cache: 'no-store',
+        signal,
+      });
+      const prodData = await res.json();
+
+      // ★ 兼容两种响应格式: Vercel代理(camelCase) + 后端直连(snake_case)
+      if (prodData && Array.isArray(prodData.products)) {
+        setProducts(prodData.products);
+        setTotalCount(prodData.totalCount || prodData.total || prodData.products.length);
+        setTotalPages(prodData.totalPages || prodData.total_pages || 1);
+      } else if (Array.isArray(prodData)) {
+        // 兼容旧格式（纯数组）
+        setProducts(prodData);
+        setTotalCount(prodData.length);
+        setTotalPages(1);
+      } else {
+        setProducts([]);
+        setTotalCount(0);
         setTotalPages(0);
       }
+      setLoading(false);
     });
-    return () => { cancelled = true; };
-  }, [finalOrderby, finalOrder, categoryParam, debouncedSearch, pageParam, apiEndpoint]);
+  }, [finalOrderby, finalOrder, categoryParam, debouncedSearch, pageParam]);
 
   // ★ activeCategory — 同时匹配 id 和 slug（对齐旧站）
   const safeCategories = Array.isArray(categories) ? categories : [];
