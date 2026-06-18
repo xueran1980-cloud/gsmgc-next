@@ -59,6 +59,9 @@ export default function TiendaClient({
   // ★ SSR 水合：有初始数据 + 无筛选 → 直接用，跳过 fetch
   const ssrReady = useRef(!!(initialProducts && initialProducts.length > 0));
 
+  // ★ 请求 ID 计数器 — 防止旧请求结果覆盖新请求（竞态保护）
+  const fetchRequestId = useRef(0);
+
   // ★ 可终止异步状态机 — 15s timeout + abort + auto retry + unmount guard
   const search = useAsyncState<void>();
   useEffect(() => {
@@ -155,30 +158,46 @@ export default function TiendaClient({
     const directUrl = `https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?${params.toString()}`;
 
     search.run(async (signal) => {
-      const res = await fetch(directUrl, {
-        headers: fetchHeaders,
-        cache: 'no-store',
-        signal,
-      });
-      const prodData = await res.json();
+      const thisId = ++fetchRequestId.current;
+      try {
+        const res = await fetch(directUrl, {
+          headers: fetchHeaders,
+          cache: 'no-store',
+          signal,
+        });
+        const prodData = await res.json();
 
-      // ★ 兼容两种响应格式: Vercel代理(camelCase) + 后端直连(snake_case)
-      if (prodData && Array.isArray(prodData.products)) {
-        setProducts(prodData.products);
-        setTotalCount(prodData.totalCount || prodData.total || prodData.products.length);
-        setTotalPages(prodData.totalPages || prodData.total_pages || 1);
-      } else if (Array.isArray(prodData)) {
-        // 兼容旧格式（纯数组）
-        setProducts(prodData);
-        setTotalCount(prodData.length);
-        setTotalPages(1);
-      } else {
-        setProducts([]);
-        setTotalCount(0);
-        setTotalPages(0);
+        // ★ 防止旧请求结果覆盖新请求
+        if (thisId !== fetchRequestId.current) return;
+
+        // ★ 兼容两种响应格式: Vercel代理(camelCase) + 后端直连(snake_case)
+        if (prodData && Array.isArray(prodData.products)) {
+          setProducts(prodData.products);
+          setTotalCount(prodData.totalCount || prodData.total || prodData.products.length);
+          setTotalPages(prodData.totalPages || prodData.total_pages || 1);
+        } else if (Array.isArray(prodData)) {
+          // 兼容旧格式（纯数组）
+          setProducts(prodData);
+          setTotalCount(prodData.length);
+          setTotalPages(1);
+        } else {
+          setProducts([]);
+          setTotalCount(0);
+          setTotalPages(0);
+        }
+        setLoading(false);
+      } catch (_err) {
+        // ★ 只有最新请求才清 loading（防竞态）
+        if (thisId === fetchRequestId.current) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
     });
+
+    // ★ 卸载/依赖变化时终止正在进行的请求
+    return () => {
+      search._unmount.current();
+    };
   }, [finalOrderby, finalOrder, categoryParam, debouncedSearch, pageParam]);
 
   // ★ activeCategory — 同时匹配 id 和 slug（对齐旧站）

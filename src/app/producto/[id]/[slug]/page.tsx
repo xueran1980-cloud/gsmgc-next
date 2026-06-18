@@ -7,7 +7,7 @@ import { resolveImageUrl } from "@/lib/image";
 import { PriceOrLoginPrompt } from "@/components/PriceOrLoginPrompt";
 import ProductDetailActions from "./ProductDetailActions";
 
-export const revalidate = 60;
+export const revalidate = 180;
 export const dynamicParams = true;
 
 // ★ ISR 生效关键: generateStaticParams 声明本路由为静态预渲染
@@ -24,7 +24,7 @@ async function getProduct(id: string) {
   try {
     const res = await fetch(
       `${API}/wp-json/gsmgc/v1/product-by-id?id=${id}`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 180 } }
     );
     if (res.ok) {
       const json = await res.json();
@@ -36,7 +36,7 @@ async function getProduct(id: string) {
   try {
     const res = await fetch(
       `${API}/wp-json/gsmgc/v1/products-raw`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 180 } }
     );
     if (!res.ok) return null;
     const data = await res.json();
