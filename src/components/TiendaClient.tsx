@@ -194,11 +194,18 @@ export default function TiendaClient({
       }
     });
 
-    // ★ 卸载/依赖变化时终止正在进行的请求
+    // ★ 依赖变化时中止当前请求（不标记卸载，让下次 run 正常工作）
+    return () => {
+      search.abort();
+    };
+  }, [finalOrderby, finalOrder, categoryParam, debouncedSearch, pageParam]);
+
+  // ★ 组件卸载时完整清理
+  useEffect(() => {
     return () => {
       search._unmount.current();
     };
-  }, [finalOrderby, finalOrder, categoryParam, debouncedSearch, pageParam]);
+  }, []);
 
   // ★ activeCategory — 同时匹配 id 和 slug（对齐旧站）
   const safeCategories = Array.isArray(categories) ? categories : [];
