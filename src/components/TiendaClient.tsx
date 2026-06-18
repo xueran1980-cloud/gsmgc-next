@@ -87,15 +87,16 @@ export default function TiendaClient({
   const [debouncedSearch, setDebouncedSearch] = useState(searchParam);
   const skipDebounce = useRef(true); // 首次加载时跳过去抖
   useEffect(() => {
-    if (!searchParam) { setDebouncedSearch(''); return; }
+    const rawSearch = searchParams.get('search') || '';
+    if (!rawSearch) { setDebouncedSearch(''); return; }
     if (skipDebounce.current) {
       skipDebounce.current = false;
-      setDebouncedSearch(searchParam); // 立即生效
+      setDebouncedSearch(rawSearch); // 立即生效
       return;
     }
-    const timer = setTimeout(() => setDebouncedSearch(searchParam), 300);
+    const timer = setTimeout(() => setDebouncedSearch(rawSearch), 300);
     return () => clearTimeout(timer);
-  }, [searchParam]);
+  }, [searchParams]);
 
   // ★ URL 驱动导航：只修改 URL，不合成状态
   const buildUrl = (updates: Record<string, string | null>, clear?: string[]) => {
@@ -133,19 +134,26 @@ export default function TiendaClient({
       });
   }, []);
 
-  // ★ useEffect：debouncedSearch / category / page 变化时 fetch
+  // ★ useEffect：URL (searchParams) 为唯一状态源，URL 变化时 fetch
   //    通过 useAsyncState 管理 fetch 生命周期：15s timeout + abort + auto retry + unmount guard
   useEffect(() => {
+    const category = searchParams.get('category') || '';
+    const rawSearch = debouncedSearch;
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+
     // ★ 最小 3 字符才触发搜索（空值=清空搜索，允许）
-    if (debouncedSearch && debouncedSearch.trim().length < 3) return;
+    if (rawSearch && rawSearch.trim().length < 3) return;
+
+    const orderby = searchParams.get('orderby') || 'price'; // ★ 旧站默认：price-desc
+    const order = searchParams.get('order') || 'desc';
 
     const params = new URLSearchParams();
-    if (finalOrderby) params.set('orderby', finalOrderby);
-    if (finalOrder) params.set('order', finalOrder);
-    if (categoryParam) params.set('category', categoryParam);
-    if (debouncedSearch) params.set('search', debouncedSearch);
+    params.set('orderby', orderby);
+    params.set('order', order);
+    if (category) params.set('category', category);
+    if (rawSearch) params.set('search', rawSearch);
     params.set('per_page', String(PER_PAGE));
-    params.set('page', String(pageParam));
+    params.set('page', String(page));
 
     // ★ 构建请求 headers：透传 Bearer token 给 /api/products → WP 后端
     const fetchHeaders: Record<string, string> = {};
@@ -198,7 +206,7 @@ export default function TiendaClient({
     return () => {
       search.abort();
     };
-  }, [finalOrderby, finalOrder, categoryParam, debouncedSearch, pageParam]);
+  }, [searchParams, debouncedSearch]);
 
   // ★ 组件卸载时完整清理
   useEffect(() => {
