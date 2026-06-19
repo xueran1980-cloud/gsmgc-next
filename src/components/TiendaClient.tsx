@@ -62,6 +62,9 @@ export default function TiendaClient({
   // ★ 请求 ID 计数器 — 防止旧请求结果覆盖新请求（竞态保护）
   const fetchRequestId = useRef(0);
 
+  // ★ Safari Router 冻结自愈：防止连续点击触发重复导航
+  const navigationLockRef = useRef(false);
+
   // ★ 可终止异步状态机 — 15s timeout + abort + auto retry + unmount guard
   const search = useAsyncState<void>();
   useEffect(() => {
@@ -109,19 +112,41 @@ export default function TiendaClient({
     return p.toString() ? `${pathname}?${p}` : pathname;
   };
 
+  // ★ Safari Router 冻结自愈：router.replace 失败时 800ms 硬导航 fallback
+  const safeReplace = (url: string) => {
+    if (!url.startsWith('/')) return;        // ★ 防御：拒绝非站内路径
+    if (navigationLockRef.current) return;
+    const before = window.location.href;
+    const targetUrl = new URL(url, window.location.origin).href;
+    if (before === targetUrl) return;         // ★ 同 URL 不触发
+    navigationLockRef.current = true;
+    router.replace(url, { scroll: false });
+    let checked = false;
+    const check = () => {
+      if (checked) return;
+      checked = true;
+      if (window.location.href === before) {
+        window.location.assign(url);
+      }
+      navigationLockRef.current = false;
+    };
+    setTimeout(check, 800);
+    requestAnimationFrame(() => setTimeout(check, 200));
+  };
+
   const setCategory = useCallback((slug: string) => {
-    router.replace(buildUrl({ category: slug }, ['page', 'search']), { scroll: false });
+    safeReplace(buildUrl({ category: slug }, ['page', 'search']));
   }, [searchParams, pathname, router]);
 
   const setPage = useCallback((n: number) => {
-    router.replace(buildUrl({ page: String(n) }), { scroll: false });
+    safeReplace(buildUrl({ page: String(n) }));
     if (typeof window !== 'undefined') {
       requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
     }
   }, [searchParams, pathname, router]);
 
   const resetAll = useCallback(() => {
-    router.replace(pathname, { scroll: false });
+    safeReplace(pathname);
   }, [router, pathname]);
 
   // ★ 独立获取分类（不受 SSR 跳过影响）
@@ -302,7 +327,7 @@ export default function TiendaClient({
                   params.set('orderby', ob);
                   params.set('order', or);
                   params.delete('page');
-                  router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+                  safeReplace(`${pathname}?${params.toString()}`);
                 }}
                 className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
               >
