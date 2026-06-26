@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import ImageGallery from "@/components/ImageGallery";
 import ShareButton from "@/components/ShareButton";
 import { getDisplayPrice } from "@/lib/display-formatter";
@@ -47,7 +47,7 @@ async function getProduct(id: string) {
   }
 }
 
-// ── SEO（纯 params，零网络调用）──
+// ── SEO（P1: O(1) product-by-id，复用页面 fetch cache）──
 
 interface Props {
   params: Promise<{ id: string; slug: string }>;
@@ -55,13 +55,15 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, slug } = await params;
-  const title = slug
-    .split('-')
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+  const product = await getProduct(id);
+  const title = product?.name
+    || slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const desc = product
+    ? (product.short_description || product.description?.replace(/<[^>]*>/g, '').slice(0, 160) || '')
+    : `Producto ${id} — detalles y disponibilidad en GSMGC`;
   return {
     title,
-    description: `Producto ${id} — detalles y disponibilidad en GSMGC`,
+    description: desc,
     alternates: { canonical: `https://gsmgc.es/producto/${id}/${slug}` },
     robots: { index: true, follow: true },
   };
@@ -73,7 +75,10 @@ export default async function ProductDetailPage({ params }: Props) {
   const { id, slug } = await params;
   const product = await getProduct(id);
 
-  if (!product || product.slug !== slug) notFound();
+  if (!product?.slug?.trim()) return notFound();
+  if (product.slug !== slug) {
+    return redirect(`/producto/${product.id}/${encodeURIComponent(product.slug)}`);
+  }
 
   const desc = (product.short_description ||
     product.description?.replace(/<[^>]*>/g, "").slice(0, 160) ||

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   alternates: { canonical: 'https://gsmgc.es/checkout' },
-  robots: { index: false, follow: false },
+  robots: { index: false, follow: true },
 };
 
 export default function CheckoutLayout({
