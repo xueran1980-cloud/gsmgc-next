@@ -77,7 +77,7 @@ export default async function ProductDetailPage({ params }: Props) {
 
   if (!product?.slug?.trim()) return notFound();
   if (product.slug !== slug) {
-    return redirect(`/producto/${product.id}/${encodeURIComponent(product.slug)}`);
+    redirect(`/producto/${product.id}/${encodeURIComponent(product.slug)}`);
   }
 
   const desc = (product.short_description ||
