@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import ImageGallery from "@/components/ImageGallery";
 import ShareButton from "@/components/ShareButton";
 import { getDisplayPrice } from "@/lib/display-formatter";
@@ -75,10 +75,7 @@ export default async function ProductDetailPage({ params }: Props) {
   const { id, slug } = await params;
   const product = await getProduct(id);
 
-  if (!product?.slug?.trim()) return notFound();
-  if (product.slug !== slug) {
-    permanentRedirect(`/producto/${product.id}/${encodeURIComponent(product.slug)}`);
-  }
+  if (!product?.slug?.trim() || product.slug !== slug) return notFound();
 
   const desc = (product.short_description ||
     product.description?.replace(/<[^>]*>/g, "").slice(0, 160) ||
