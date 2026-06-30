@@ -30,7 +30,12 @@ async function getProduct(id: string) {
       const json = await res.json();
       if (json?.success && json?.data) return json.data;
     }
-  } catch { /* fallback */ }
+    // ★ 观测: product-by-id 非 200 响应（502/503/504）
+    console.warn(`[getProduct] product-by-id id=${id} status=${res.status}`);
+  } catch (err) {
+    // ★ 观测: 网络错误/超时/DNS
+    console.error(`[getProduct] product-by-id id=${id} error=${(err as Error).message}`);
+  }
 
   // Fallback: products-raw（兼容未部署或端点异常）
   try {
@@ -42,7 +47,9 @@ async function getProduct(id: string) {
     const data = await res.json();
     const products = data.products || data;
     return products.find((p: any) => String(p.id) === id) || null;
-  } catch {
+  } catch (err) {
+    // ★ 观测: fallback 也失败
+    console.error(`[getProduct] fallback products-raw failed id=${id} error=${(err as Error).message}`);
     return null;
   }
 }
