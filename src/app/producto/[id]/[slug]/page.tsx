@@ -20,38 +20,49 @@ export async function generateStaticParams() {
 const API = 'https://api.gsmgc.es';
 
 async function getProduct(id: string) {
-  // ★ 优先走 O(1) 单品端点
-  try {
-    const res = await fetch(
-      `${API}/wp-json/gsmgc/v1/product-by-id?id=${id}`,
-      { next: { revalidate: 600 } }
-    );
-    if (res.ok) {
-      const json = await res.json();
-      if (json?.success && json?.data) return json.data;
+  const TIMEOUT_MS = 8000;
+  const MAX_RETRIES = 3;
+  const RETRY_DELAYS = [1000, 2000, 4000];
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(
+        `${API}/wp-json/gsmgc/v1/product-by-id?id=${id}`,
+        { next: { revalidate: 600 }, signal: AbortSignal.timeout(TIMEOUT_MS) }
+      );
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.success && json?.data) return json.data;
+      }
+      // 400/404: 确定不存在，不重试
+      if (res.status === 400 || res.status === 404) {
+        return null;
+      }
+      console.warn(`[getProduct] product-by-id id=${id} attempt=${attempt + 1} status=${res.status}`);
+    } catch (err) {
+      console.error(`[getProduct] product-by-id id=${id} attempt=${attempt + 1} error=${(err as Error).message}`);
     }
-    // ★ 观测: product-by-id 非 200 响应（502/503/504）
-    console.warn(`[getProduct] product-by-id id=${id} status=${res.status}`);
-  } catch (err) {
-    // ★ 观测: 网络错误/超时/DNS
-    console.error(`[getProduct] product-by-id id=${id} error=${(err as Error).message}`);
+    if (attempt < MAX_RETRIES - 1) {
+      await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
+    }
   }
 
-  // Fallback: products-raw（兼容未部署或端点异常）
+  // ★ 全部重试失败 → 最后一次 fallback products-raw
+  console.warn(`[getProduct] product-by-id failed after ${MAX_RETRIES} retries, falling back to products-raw id=${id}`);
   try {
     const res = await fetch(
       `${API}/wp-json/gsmgc/v1/products-raw`,
-      { next: { revalidate: 600 } }
+      { next: { revalidate: 600 }, signal: AbortSignal.timeout(15000) }
     );
-    if (!res.ok) return null;
-    const data = await res.json();
-    const products = data.products || data;
-    return products.find((p: any) => String(p.id) === id) || null;
+    if (res.ok) {
+      const data = await res.json();
+      const products = data.products || data;
+      return products.find((p: any) => String(p.id) === id) || null;
+    }
   } catch (err) {
-    // ★ 观测: fallback 也失败
-    console.error(`[getProduct] fallback products-raw failed id=${id} error=${(err as Error).message}`);
-    return null;
+    console.error(`[getProduct] products-raw fallback failed id=${id} error=${(err as Error).message}`);
   }
+  return null;
 }
 
 // ── SEO（P1: O(1) product-by-id，复用页面 fetch cache）──
@@ -72,8 +83,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description: desc,
     alternates: { canonical: `https://gsmgc.es/producto/${id}/${slug}` },
-    robots: { index: true, follow: true },
+    robots: product ? { index: true, follow: true } : { index: false, follow: false },
   };
+}
+
+// ── API 失败降级 UI（不进 404 链，ISR 600s 后自动恢复）──
+
+function ProductUnavailable({ id }: { id: string }) {
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-24 text-center">
+      <h1 className="text-2xl font-bold text-gray-900 mb-4">
+        Producto no disponible temporalmente
+      </h1>
+      <p className="text-gray-500 mb-8 max-w-md mx-auto">
+        No se ha podido cargar la información de este producto.
+        Por favor, inténtalo de nuevo en unos instantes.
+      </p>
+      <div className="flex gap-3 justify-center">
+        <a href="/tienda"
+          className="bg-[#2563eb] text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-[#1d4ed8] transition">
+          Volver a la tienda
+        </a>
+        <a href="/"
+          className="border border-gray-200 text-gray-700 px-6 py-2.5 rounded-xl font-bold text-sm hover:border-[#2563eb] transition">
+          Ir al inicio
+        </a>
+      </div>
+    </div>
+  );
 }
 
 // ── 页面 ──
@@ -82,7 +119,13 @@ export default async function ProductDetailPage({ params }: Props) {
   const { id, slug } = await params;
   const product = await getProduct(id);
 
-  if (!product?.slug?.trim() || product.slug !== slug) return notFound();
+  // API 失败（重试+fallback 全部失败）→ 不进 404 链
+  if (!product) {
+    return <ProductUnavailable id={id} />;
+  }
+
+  // 真 404: slug 不匹配
+  if (product.slug !== slug) return notFound();
 
   const desc = (product.short_description ||
     product.description?.replace(/<[^>]*>/g, "").slice(0, 160) ||
