@@ -47,20 +47,30 @@ async function getProduct(id: string) {
     }
   }
 
-  // ★ 全部重试失败 → 最后一次 fallback products-raw
+  // ★ 全部重试失败 → fallback products-raw（2 次重试，2s→4s 退避）
   console.warn(`[getProduct] product-by-id failed after ${MAX_RETRIES} retries, falling back to products-raw id=${id}`);
-  try {
-    const res = await fetch(
-      `${API}/wp-json/gsmgc/v1/products-raw`,
-      { next: { revalidate: 600 }, signal: AbortSignal.timeout(15000) }
-    );
-    if (res.ok) {
-      const data = await res.json();
-      const products = data.products || data;
-      return products.find((p: any) => String(p.id) === id) || null;
+  const FB_RETRIES = 2;
+  const FB_DELAYS = [2000, 4000];
+  for (let fbAttempt = 0; fbAttempt < FB_RETRIES; fbAttempt++) {
+    try {
+      const res = await fetch(
+        `${API}/wp-json/gsmgc/v1/products-raw`,
+        { next: { revalidate: 600 }, signal: AbortSignal.timeout(15000) }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const products = data.products || data;
+        const product = products.find((p: any) => String(p.id) === id);
+        if (product) return product;
+        return null; // 产品确实不存在
+      }
+      console.warn(`[getProduct] products-raw fallback id=${id} attempt=${fbAttempt + 1} status=${res.status}`);
+    } catch (err) {
+      console.error(`[getProduct] products-raw fallback id=${id} attempt=${fbAttempt + 1} error=${(err as Error).message}`);
     }
-  } catch (err) {
-    console.error(`[getProduct] products-raw fallback failed id=${id} error=${(err as Error).message}`);
+    if (fbAttempt < FB_RETRIES - 1) {
+      await new Promise(r => setTimeout(r, FB_DELAYS[fbAttempt]));
+    }
   }
   return null;
 }
