@@ -1,0 +1,635 @@
+# ============================================================================
+# 标准风险类型分类表 (Risk Type Taxonomy)
+# ============================================================================
+#
+# 引用方：references/contracts/output-schemas.md、agents/vuln-scan.md（按需 Read）
+#         scripts/merge_findings.py（启动时动态加载，构建 slug↔中文名映射）
+#
+# 此表并非穷举——agent 应基于实际代码发现风险，而非仅匹配此表中的类别。
+# 对于未列出的风险类型，agent 应自行创建 slug（小写、连字符分隔）并附上中文分类注释。
+# 不得因类型不在表中而忽略真实风险。
+#
+# ============================================================================
+# 字段规范（保持所有条目格式一致）
+# ============================================================================
+#
+# 必选字段（所有条目必须提供）:
+#   - slug:        风险类型唯一标识，小写连字符分隔
+#   - name:        中文名称（标准显示名）
+#   - name_en:     英文名称（用于国际化和英文报告输出）
+#   - scan_level:  可检测的扫描级别 ["fast", "light", "deep"]
+#                  - fast: sink-patterns.yaml 中有对应 grep 模式，可通过模式匹配快速检测
+#                  - light: 需要 LLM 上下文分析但不需要 LSP/语义索引
+#                  - deep: 需要 LSP 追踪、跨文件调用图或语义索引
+#   - tech_stack:  适用技术栈，["*"] 表示通用
+#   - scenarios:   典型场景描述（中文）
+#
+# 可选字段（有专属知识文件或特殊检测策略的条目应提供）:
+#   - aliases:          agent 实际产出的非标准 riskType 别名列表（跨概念/长描述性名称）
+#                       用于 merge_findings.py 精确归一化为当前 slug
+#   - severity_default: 默认严重等级（critical/high/medium/low）
+#   - cwe:              CWE 编号
+#
+
+risk_types:
+
+  injection:
+    label: "注入类"
+    types:
+      - slug: "sql-injection"
+        name: "SQL 注入"
+        name_en: "SQL Injection"
+        aliases: ["JWT KID 参数 SQL 注入"]
+        severity_default: "high"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "字符串拼接 SQL、未参数化查询、MyBatis ${}"
+      - slug: "command-injection"
+        name: "命令注入"
+        name_en: "Command Injection"
+        severity_default: "high"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "os.system、exec、Runtime.exec、ProcessBuilder"
+      - slug: "xss"
+        name: "跨站脚本攻击"
+        name_en: "Cross-Site Scripting"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "未转义的用户输入渲染到 HTML、innerHTML、v-html"
+      - slug: "xxe"
+        name: "XML 外部实体注入"
+        name_en: "XML External Entity Injection"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "XML 解析未禁用外部实体"
+      - slug: "ssti"
+        name: "模板注入"
+        name_en: "Server-Side Template Injection"
+        severity_default: "critical"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "render_template_string、Velocity.evaluate、Freemarker"
+      - slug: "csv-injection"
+        name: "CSV 公式注入"
+        name_en: "CSV Injection"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "导出 CSV 时未中和 =、+、-、@ 等公式前缀"
+      - slug: "expression-injection"
+        name: "表达式注入"
+        name_en: "Expression Language Injection"
+        severity_default: "critical"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["java-*"]
+        scenarios: "SpEL、OGNL、EL 注入"
+      - slug: "jndi-injection"
+        name: "远程类加载注入"
+        name_en: "JNDI Injection"
+        severity_default: "critical"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["java-*"]
+        scenarios: "InitialContext.lookup、Log4Shell"
+      - slug: "code-execution"
+        name: "代码执行"
+        name_en: "Remote Code Execution"
+        severity_default: "critical"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "eval()、exec()、new Function()"
+      - slug: "nosql-injection"
+        name: "NoSQL 查询注入"
+        name_en: "NoSQL Injection"
+        severity_default: "high"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["nodejs-*", "python-*"]
+        scenarios: "MongoDB $where、$regex、$ne 操作符注入，Mongoose 查询对象注入"
+      - slug: "ldap-injection"
+        name: "目录服务查询注入"
+        name_en: "LDAP Injection"
+        severity_default: "high"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "未转义的用户输入拼接 LDAP 查询过滤器"
+      - slug: "crlf-injection"
+        name: "HTTP 响应头注入"
+        name_en: "CRLF Injection"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "用户输入直接写入 HTTP 响应头，可插入 CRLF 实现头注入/响应拆分"
+      - slug: "second-order-injection"
+        name: "二阶注入"
+        name_en: "Second-Order Injection"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["deep"]
+        tech_stack: ["*"]
+        scenarios: "用户输入存入数据库/缓存后，另一个查询读出并用于 SQL/命令拼接"
+      - slug: "ghost-bits-truncation"
+        name: "字节高位截断攻击"
+        name_en: "Ghost Bits Truncation"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["java-*"]
+        scenarios: "(byte)ch、ch & 0xFF、DataOutputStream.writeBytes()、ByteArrayOutputStream.write(ch)，Java char→byte 高位截断导致 WAF 绕过后还原攻击载荷"
+
+  frontend_security:
+    label: "前端安全类"
+    types:
+      - slug: "open-redirect"
+        name: "开放重定向"
+        name_en: "Open Redirect"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "未验证的 redirect URL、用户可控的 returnUrl/next 参数"
+      - slug: "clickjacking"
+        name: "点击劫持"
+        name_en: "Clickjacking"
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "缺少 X-Frame-Options、缺少 CSP frame-ancestors"
+      - slug: "missing-security-headers"
+        name: "安全头缺失"
+        name_en: "Missing Security Headers"
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "缺少 CSP、X-Content-Type-Options、Strict-Transport-Security"
+      - slug: "prototype-pollution"
+        name: "原型链污染"
+        name_en: "Prototype Pollution"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["javascript", "typescript", "nodejs-*"]
+        scenarios: "__proto__、constructor.prototype、Object.assign 深合并、lodash.merge 不安全使用"
+      - slug: "postmessage-origin-bypass"
+        name: "跨窗口消息来源未验证"
+        name_en: "PostMessage Origin Bypass"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["javascript", "typescript"]
+        scenarios: "监听 message 事件未校验 event.origin、postMessage 目标 origin 为 *"
+      - slug: "dom-clobbering"
+        name: "DOM 属性覆盖攻击"
+        name_en: "DOM Clobbering"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["javascript", "typescript"]
+        scenarios: "HTML 元素 name/id 覆盖全局 DOM 对象属性，劫持应用逻辑"
+      - slug: "websocket-hijacking"
+        name: "WebSocket 连接劫持"
+        name_en: "WebSocket Hijacking"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "WebSocket 连接未验证 Origin 头、无认证机制、使用 ws:// 明文协议"
+      - slug: "cors-misconfiguration"
+        name: "跨域资源共享配置缺陷"
+        name_en: "CORS Misconfiguration"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "Origin 反射、endsWith 模糊匹配、Credentials+通配符"
+      - slug: "client-side-bypass"
+        name: "客户端验证绕过"
+        name_en: "Client-Side Bypass"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["javascript", "typescript"]
+        scenarios: "仅前端权限控制、仅前端输入验证、前端价格计算"
+      - slug: "insecure-localstorage"
+        name: "本地存储泄露敏感数据"
+        name_en: "Insecure LocalStorage"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["javascript", "typescript"]
+        scenarios: "Token/密码等凭证存储在 LocalStorage/SessionStorage"
+
+  auth_and_access:
+    label: "认证与授权类"
+    types:
+      - slug: "access-control"
+        name: "访问控制缺失"
+        name_en: "Broken Access Control"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "@PermitAll、缺少鉴权检查、CRUD 权限不一致"
+      - slug: "idor"
+        name: "越权访问"
+        name_en: "Insecure Direct Object Reference"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "findById 无用户归属校验、水平/垂直越权"
+      - slug: "auth-bypass"
+        name: "认证绕过"
+        name_en: "Authentication Bypass"
+        severity_default: "high"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "可信来源伪造、认证逻辑短路、TOCTOU"
+      - slug: "csrf"
+        name: "跨站请求伪造"
+        name_en: "Cross-Site Request Forgery"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "缺少 CSRF Token、状态变更接口无防护"
+      - slug: "mass-assignment"
+        name: "批量赋值"
+        name_en: "Mass Assignment"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["java-*", "nodejs-*"]
+        scenarios: "@ModelAttribute/@RequestBody 自动绑定到 Entity，未限制可绑定字段，攻击者可修改 role/admin/balance 等敏感字段"
+      - slug: "session-fixation"
+        name: "会话固定攻击"
+        name_en: "Session Fixation"
+        aliases: ["会话 ID 生成使用可预测的顺序递增算法"]
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "登录成功后未重新生成 Session ID，攻击者可预设 Session 劫持"
+      - slug: "insecure-cookie"
+        name: "Cookie 安全属性缺失"
+        name_en: "Insecure Cookie"
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "认证 Cookie 缺少 Secure/HttpOnly/SameSite 属性"
+      - slug: "jwt-weak-key"
+        name: "令牌签名密钥不安全"
+        name_en: "JWT Weak Key"
+        aliases: ["JWT Refresh Token 流程中信任过期 Token 的 Claims"]
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "JWT 签名密钥硬编码、过短或为常见弱密钥"
+      - slug: "jwt-algorithm-confusion"
+        name: "令牌算法降级攻击"
+        name_en: "JWT Algorithm Confusion"
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "允许 alg:none、同时接受 HS256 和 RS256 导致算法降级"
+      - slug: "brute-force-unprotected"
+        name: "暴力破解防护缺失"
+        name_en: "Brute Force Unprotected"
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "登录接口无失败锁定/速率限制/验证码"
+      - slug: "credential-enumeration"
+        name: "凭证枚举"
+        name_en: "Credential Enumeration"
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "登录/注册/重置密码接口通过不同响应泄露用户是否存在"
+
+  data_and_config:
+    label: "数据与配置类"
+    types:
+      - slug: "information-leak"
+        name: "敏感信息泄露"
+        name_en: "Information Disclosure"
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "日志或错误信息中包含敏感数据、堆栈跟踪泄露"
+      - slug: "hardcoded-secret"
+        name: "硬编码凭证"
+        name_en: "Hardcoded Secret"
+        aliases: ["JWT 签名密钥硬编码且强度不足"]
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "源码中的 Token、密码、密钥、AK/SK"
+      - slug: "weak-crypto"
+        name: "弱加密算法"
+        name_en: "Weak Cryptography"
+        aliases: ["Cookie 认证使用可逆弱编码而非加密签名"]
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "使用 MD5、DES、SHA1、ECB 模式、硬编码密钥"
+      - slug: "endpoint-exposure"
+        name: "敏感端点暴露"
+        name_en: "Sensitive Endpoint Exposure"
+        aliases: ["密码重置链接通过 Host Header 注入劫持"]
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "生产环境暴露 Actuator/Swagger/GraphQL Playground"
+      - slug: "insecure-config"
+        name: "不安全配置"
+        name_en: "Insecure Configuration"
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "DEBUG=True、CORS *、autoindex on"
+      - slug: "plaintext-password"
+        name: "明文密码存储"
+        name_en: "Plaintext Password Storage"
+        aliases: ["明文密码存储（NoOpPasswordEncoder）"]
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "密码未经哈希直接写入数据库"
+      - slug: "weak-password-hash"
+        name: "不安全密码哈希"
+        name_en: "Weak Password Hash"
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "使用 MD5/SHA1/SHA256 无盐哈希存储密码，未使用 bcrypt/argon2/scrypt"
+      - slug: "predictable-reset-token"
+        name: "密码重置令牌可预测"
+        name_en: "Predictable Reset Token"
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "使用 Math.random/时间戳/截断UUID 生成重置令牌"
+      - slug: "log-injection"
+        name: "日志注入"
+        name_en: "Log Injection"
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "用户输入未净化写入日志，可伪造日志条目（CRLF注入）"
+      - slug: "sensitive-data-logging"
+        name: "敏感数据日志泄露"
+        name_en: "Sensitive Data Logging"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "密码、Token、身份证、银行卡等 PII 未脱敏写入日志"
+      - slug: "missing-security-audit"
+        name: "安全事件审计缺失"
+        name_en: "Missing Security Audit"
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["deep"]
+        tech_stack: ["*"]
+        scenarios: "认证失败/权限变更/数据导出等关键安全事件缺少审计日志"
+
+  server_request_and_data:
+    label: "服务端请求与数据处理类"
+    types:
+      - slug: "ssrf"
+        name: "服务端请求伪造"
+        name_en: "Server-Side Request Forgery"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "未验证的外部 URL 请求、IMDS 访问"
+      - slug: "path-traversal"
+        name: "路径遍历"
+        name_en: "Path Traversal"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "未验证的文件路径拼接、文件上传路径可控"
+      - slug: "insecure-deserialization"
+        name: "不安全反序列化"
+        name_en: "Insecure Deserialization"
+        severity_default: "critical"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["java-*", "python-*", "php-*"]
+        scenarios: "ObjectInputStream、Fastjson、pickle、yaml.load"
+      - slug: "file-upload"
+        name: "不安全文件上传"
+        name_en: "Insecure File Upload"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "文件类型/大小未校验、上传路径可控"
+      - slug: "denial-of-service"
+        name: "拒绝服务"
+        name_en: "Denial of Service"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "正则回溯、图片放大、资源消耗型请求"
+      - slug: "redos"
+        name: "正则表达式拒绝服务"
+        name_en: "Regular Expression DoS"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "正则表达式包含灾难性回溯模式（嵌套量词/重叠字符类），用户可控正则注入"
+      - slug: "xml-bomb"
+        name: "XML 实体膨胀攻击"
+        name_en: "XML Bomb"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "XML 实体递归展开（Billion Laughs）、未禁用 DOCTYPE"
+      - slug: "zip-bomb"
+        name: "压缩包膨胀攻击"
+        name_en: "Zip Bomb"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "解压缩未限制展开后大小/条目数量"
+      - slug: "resource-exhaustion"
+        name: "资源耗尽"
+        name_en: "Resource Exhaustion"
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "无限制文件上传、无分页全量查询、外部请求无超时、JSON 深度嵌套"
+
+  dependency:
+    label: "依赖与供应链类"
+    types:
+      - slug: "vulnerable-dependency"
+        name: "高危组件漏洞"
+        name_en: "Vulnerable Dependency"
+        severity_default: "high"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "第三方组件中存在已知 CVE"
+      - slug: "dependency-confusion"
+        name: "依赖混淆"
+        name_en: "Dependency Confusion"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "私有包名被公共仓库抢注、混合 registry 配置导致安装劫持"
+      - slug: "malicious-package"
+        name: "恶意包/投毒"
+        name_en: "Malicious Package"
+        severity_default: "critical"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "已知投毒包版本、install hook 恶意执行、数据外泄行为"
+      - slug: "typosquatting"
+        name: "拼写抢注包"
+        name_en: "Typosquatting"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "依赖名与热门包仅差 1-2 个字符，疑似 typosquatting"
+      - slug: "missing-lockfile"
+        name: "依赖锁定缺失"
+        name_en: "Missing Lockfile"
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "存在依赖声明但缺少 lock 文件，构建不可重现"
+      - slug: "insecure-dependency-source"
+        name: "不安全依赖源"
+        name_en: "Insecure Dependency Source"
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "通过 HTTP 获取依赖、Git 依赖使用分支而非固定 commit、URL 直接安装"
+
+  business_logic:
+    label: "业务逻辑类"
+    types:
+      - slug: "race-condition"
+        name: "竞态条件"
+        name_en: "Race Condition"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["deep"]
+        tech_stack: ["*"]
+        scenarios: "双重支付、超卖、TOCTOU"
+      - slug: "business-logic"
+        name: "业务逻辑缺陷"
+        name_en: "Business Logic Flaw"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["deep"]
+        tech_stack: ["*"]
+        scenarios: "流程绕过、非法状态转换、负数金额"
+      - slug: "payment-logic"
+        name: "支付逻辑缺陷"
+        name_en: "Payment Logic Flaw"
+        severity_default: "high"  # agent-rules.md §4
+        scan_level: ["fast", "light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "价格篡改、优惠券叠加、退款滥用"
+      - slug: "potential-0day"
+        name: "潜在未公开漏洞"
+        name_en: "Potential 0day"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["deep"]
+        tech_stack: ["*"]
+        scenarios: "自定义序列化、自定义加密、复杂状态机"
+      - slug: "missing-idempotency"
+        name: "幂等性缺失"
+        name_en: "Missing Idempotency"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "关键操作（支付/转账/发放）无幂等控制，重复请求导致重复执行"
+      - slug: "data-isolation-failure"
+        name: "数据隔离失效"
+        name_en: "Data Isolation Failure"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "多租户查询未携带租户/用户条件，可越权访问其他租户数据"
+      - slug: "missing-audit-log"
+        name: "审计日志缺失"
+        name_en: "Missing Audit Log"
+        severity_default: "low"  # agent-rules.md §4
+        scan_level: ["deep"]
+        tech_stack: ["*"]
+        scenarios: "敏感操作（删除/权限变更/数据导出）无审计记录"
+      - slug: "callback-trust"
+        name: "回调信任缺失"
+        name_en: "Callback Trust Missing"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "支付回调/WebHook 缺少签名验证，可伪造通知"
+      - slug: "transaction-integrity"
+        name: "事务完整性缺陷"
+        name_en: "Transaction Integrity"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["deep"]
+        tech_stack: ["*"]
+        scenarios: "多步写操作未在事务内，部分失败无补偿导致数据不一致"
+      - slug: "input-boundary"
+        name: "输入边界缺失"
+        name_en: "Input Boundary Missing"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "数值参数无范围校验（0/负数/极大值），字符串参数无长度限制"
+      - slug: "rate-limit-missing"
+        name: "频率限制缺失"
+        name_en: "Rate Limit Missing"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "批量/导出/注册/验证码接口无速率限制，可被滥用"
+      - slug: "state-machine-violation"
+        name: "状态机违规"
+        name_en: "State Machine Violation"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["deep"]
+        tech_stack: ["*"]
+        scenarios: "已完成订单可回退到待支付，状态更新无前置状态校验"
+
+  cloud_security:
+    label: "云安全类"
+    types:
+      - slug: "cloud-imds"
+        name: "云实例元数据未授权访问"
+        name_en: "Cloud IMDS Unrestricted Access"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "SSRF 可达 169.254.169.254 / metadata.tencentyun.com / 100.100.100.200"
+      - slug: "iam-overprivilege"
+        name: "云权限策略过度授权"
+        name_en: "IAM Overprivilege"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "Action: \"*\"、Resource: \"*\"、CAM 高危操作未限制（PassRole/CreatePolicy）"
+      - slug: "public-bucket"
+        name: "公开存储桶"
+        name_en: "Public Bucket"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "COS/S3/OSS ACL/Policy 允许公开访问、预签名 URL 有效期过长"
+      - slug: "security-group-open"
+        name: "安全组过度开放"
+        name_en: "Security Group Overly Open"
+        severity_default: "hgih"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "CVM 安全组对 0.0.0.0/0 开放高危端口（SSH/RDP/DB）"
+      - slug: "serverless-no-auth"
+        name: "云函数无认证"
+        name_en: "Serverless No Auth"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "SCF 云函数 API 网关触发器 authType=NONE"
+      - slug: "cloud-db-exposed"
+        name: "云数据库公网暴露"
+        name_en: "Cloud Database Exposed"
+        severity_default: "medium"  # agent-rules.md §4
+        scan_level: ["light", "deep"]
+        tech_stack: ["*"]
+        scenarios: "CDB/RDS 开启公网访问、连接串硬编码"
+
+
+
+# ============================================================================
+# 扩展规则
+# ============================================================================
+# 发现新类型时，agent 自行创建 {中文简称} + {slug} 并写入对应
+# finding-{slug}.json。不得因类型未预定义而丢弃真实风险。
+# 同一 finding-{slug}.json 中的所有条目 RiskType 必须一致。

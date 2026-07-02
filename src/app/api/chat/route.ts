@@ -87,7 +87,7 @@ function log(level: 'info' | 'error', msg: string, extra?: Record<string, unknow
 
 // ── Types ──
 interface ChatMessage {
-  role: 'user' | 'assistant'
+  role: 'user' | 'assistant' | 'system'
   content: string
 }
 
@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
     const timeoutId = setTimeout(() => controller.abort(), ABORT_TIMEOUT)
 
     const messages: ChatMessage[] = [
-      { role: 'user', content: SYSTEM_PROMPT },
+      { role: 'system', content: SYSTEM_PROMPT },
       ...history.slice(-4),
       { role: 'user', content: message },
     ]

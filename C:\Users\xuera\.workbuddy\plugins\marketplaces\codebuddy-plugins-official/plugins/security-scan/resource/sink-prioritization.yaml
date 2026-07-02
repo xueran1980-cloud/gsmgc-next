@@ -1,0 +1,165 @@
+# Sink 风险优先级排序策略
+# 引用方：agents/vuln-scan.md（步骤 1 完成后按需 Read）
+#
+# 步骤 1 发现 Sink 后，按本表排序，高优先级 Sink 优先进入步骤 2 追踪。
+# 预算耗尽时未分析的 Sink 标记 analysisDepth: "queued"，供续扫使用。
+#
+# 版本：2.0
+# 更新说明：新增 projectType 条件触发机制 + Ghost Bits Sink 优先级
+
+# ============================================================================
+# 项目类型条件触发规则
+# ============================================================================
+# projectType 由 orchestration_helper.py detect-project-type 检测
+# 编排器将 projectType 传递给 Agent，Agent 按以下规则加载优先级表
+#
+# projectType 优先级加载规则：
+#   web    → 加载 web_* 优先级
+
+# ============================================================================
+# Web 项目 Sink 优先级（所有 projectType 均加载）
+# ============================================================================
+
+severity_levels:
+
+  S1_critical:
+    label: "必须分析"
+    severity_level: 1
+    description: "可直接造成入侵（RCE / 远程代码执行）"
+    sink_types:
+      - "command-injection"
+      - "code-execution"
+      - "insecure-deserialization"
+      - "expression-injection"
+      - "jndi-injection"
+      - "ssti"
+    # 条件追加（Java 项目）
+    conditional_sink_types:
+      - condition: "tech_stack contains java-*"
+        types:
+          - "ghost-bits-truncation"     # Ghost Bits char→byte 截断 → WAF 绕过 → RCE/SQLi
+    boost_conditions:
+      - condition: "无认证入口可达"
+        boost: "+1 level"
+      - condition: "多 Agent 交叉确认"
+        boost: "+0.5 level"
+
+  S2_high:
+    label: "优先分析"
+    severity_level: 2
+    description: "可直接入侵或造成大量数据泄漏"
+    sink_types:
+      - "sql-injection"
+      - "nosql-injection"
+      - "auth-bypass"
+      - "hardcoded-secret"
+      - "malicious-package"
+
+  S3_medium:
+    label: "标准分析"
+    severity_level: 3
+    description: "需要上下文或链式利用，不可直接入侵/大量泄漏"
+    sink_types:
+      - "ssrf"
+      - "path-traversal"
+      - "xxe"
+      - "ldap-injection"
+      - "access-control"
+      - "plaintext-password"
+      - "jwt-algorithm-confusion"
+      - "xss"
+      - "csrf"
+      - "idor"
+      - "file-upload"
+      - "open-redirect"
+      - "crlf-injection"
+      - "mass-assignment"
+      - "prototype-pollution"
+      - "session-fixation"
+      - "insecure-cookie"
+      - "jwt-weak-key"
+      - "log-injection"
+      - "postmessage-origin-bypass"
+      - "websocket-hijacking"
+      - "cors-misconfiguration"
+      - "redos"
+      - "xml-bomb"
+      - "dependency-confusion"
+
+  S4_low:
+    label: "预算充裕时分析"
+    severity_level: 4
+    description: "信息泄露 / 配置问题 / 辅助性风险"
+    sink_types:
+      - "information-leak"
+      - "insecure-config"
+      - "weak-crypto"
+      - "missing-security-headers"
+      - "denial-of-service"
+      - "csv-injection"
+      - "weak-password-hash"
+      - "sensitive-data-logging"
+      - "missing-security-audit"
+      - "brute-force-unprotected"
+      - "client-side-bypass"
+      - "resource-exhaustion"
+      - "missing-lockfile"
+
+# ============================================================================
+# Ghost Bits Sink 优先级（仅 Java 项目加载）
+# ============================================================================
+
+ghost_bits_severity:
+  _load_condition: "tech_stack contains java-*"
+
+  GS1_critical:
+    label: "Ghost Bits 必须分析"
+    severity_level: 1
+    description: "Ghost Bits char→byte 截断 + WAF 绕过 → 已知组件 RCE/SQLi"
+    sink_types:
+      - "ghost-bits-rce"               # Ghost Bits → BCEL/Fastjson → 反序列化 RCE
+      - "ghost-bits-file-upload"       # Ghost Bits → Tomcat RFC2231 → Webshell 上传
+
+  GS2_high:
+    label: "Ghost Bits 优先分析"
+    severity_level: 2
+    description: "Ghost Bits 截断 → 注入/穿越（需链式利用）"
+    sink_types:
+      - "ghost-bits-sqli"              # Ghost Bits → char→byte → 单引号还原 → SQL 注入
+      - "ghost-bits-path-traversal"    # Ghost Bits → URL 解码截断 → 路径穿越
+      - "ghost-bits-crlf"             # Ghost Bits → CR/LF 还原 → HTTP 响应拆分/SMTP 注入
+
+# ============================================================================
+# Hybrid 项目合并排序规则
+# ============================================================================
+
+hybrid_merge_rules:
+  description: "当 projectType == 'hybrid' 时，Web 和 Ghost Bits 优先级合并"
+  strategy: "interleave_by_severity"
+  rules:
+    # severity_level 相同时的排序规则（在同一级别内交替排列）：
+    - "同级别内 Web S1 + Ghost Bits GS1 合并为 S1（全部必须分析）"
+    - "同级别内 Web S2 + Ghost Bits GS2 合并为 S2（全部优先分析）"
+    - "同级别内 Web S3 合并为 S3（全部标准分析）"
+    # 同一级别内按以下信号排序
+    - "无认证入口可达 > 认证后可达 > 内部可达"
+    - "多 Agent 交叉确认 > 仅模式匹配发现"
+    - "用户直接输入可控 > 间接输入"
+
+# ============================================================================
+# 排序规则（步骤 1 完成后执行）
+# ============================================================================
+
+# 1. 根据 projectType 加载对应的优先级表
+# 2. 按 severity_level 分组（S1 > S2 > S3 > S4）
+# 3. 同 severity_level 内按以下信号排序：
+#    a. 无认证端点可达 > 认证后可达 > 内部可达
+#    b. 多 Agent 交叉确认 > 仅模式匹配发现
+#    c. 用户直接输入可控 > 间接输入
+# 4. hybrid 项目按 hybrid_merge_rules 合并 Web + Ghost Bits Sink
+# 5. 步骤 2 按排序后的列表顺序处理
+
+# 预算耗尽处理：
+# - 已分析 Sink: analysisDepth = "full"
+# - 分析中断 Sink: analysisDepth = "partial"，记录已完成步骤
+# - 未开始 Sink: analysisDepth = "queued"，记录到 earlyTermination.pendingSinks[]
