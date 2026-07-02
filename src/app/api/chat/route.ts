@@ -141,14 +141,11 @@ export async function POST(req: NextRequest) {
     .replace(/(\d)(pro|max|ultra|plus|air|lite|mini)/gi, '$1 $2')
     .replace(/hua\s+wei/gi, 'huawei')
     .replace(/sam\s+sung/gi, 'samsung')
-  const isProductQuery = /有货|库存|多少钱|价格|有没有|有吗|找|买|链接|购买|下单|吗$|cu[aá]nto|precio|disponible|tienes|SKU|sku|compatible|comprar/i.test(normalizedAllText)
-    // 纯品牌名也视为商品咨询
-    || /^(iphone|huawei|samsung|xiaomi|oneplus|oppo|vivo|pixel|motorola|nokia|sony|lg|ipad|galaxy)(\s|$)/i.test(normalizedMessage.trim())
-
+  // 品牌名检测 + 意图 (维修优先于商品)
+  const isBrandOnly = /^(iphone|huawei|samsung|xiaomi|oneplus|oppo|vivo|pixel|motorola|nokia|sony|lg|ipad|galaxy)(\s|$)/i.test(normalizedMessage.trim())
   const isRepairQuery = /坏|不开机|黑屏|碎了|碎屏|crack|充不进|进水|不开|不充电|不显示|花屏|白屏|摔|broken|won['']t|doesn['']t|no carga|no enciende|pantalla.*neg|calient|distor|falla|no funciona|怎么换|怎么修|更换|拆|教程|安装|换屏|自己换/i.test(normalizedAllText)
-  const isComparison = /哪个好|区别|差别|比较|vs|对比|推荐|建议|mejor|cual|cu[aá]l|diferencia|recomiend/i.test(normalizedAllText)
-  const isAfterSales = /发货|物流|多久|保修|garant[ií]a|退|换|env[ií]o|cu[aá]ndo|plazo|shipping|delivery|return|warranty/i.test(normalizedAllText)
-  const isTechnical = /点位|IC\b|芯片|排线.*型号|JCID|ZXW|图纸|datasheet|schematic|pinout|connector.*type|规格|specification/i.test(normalizedAllText)
+  const isProductQuery = (/有货|库存|多少钱|价格|有没有|有吗|找|买|链接|购买|下单|吗$|cu[aá]nto|precio|disponible|tienes|SKU|sku|compatible|comprar/i.test(normalizedAllText)
+    || isBrandOnly) && !isRepairQuery
 
   // 4. 先查 WP 产品 (从对话历史提取产品上下文)
   let products: ProductBrief[] = []
