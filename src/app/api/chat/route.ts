@@ -133,14 +133,63 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ reply: AI_UNAVAILABLE, products: [] })
   }
 
-  // 4. 调 DeepSeek (15s timeout)
+  // 4. 先查 WP 产品 (让 AI 知道店里有什么)
+  let products: ProductBrief[] = []
+  try {
+    const keywords = message.split(/\s+/).filter((w: string) => w.length >= 2).map((w: string) => w.toLowerCase())
+    const wpController = new AbortController()
+    const wpTimeout = setTimeout(() => wpController.abort(), 5_000)
+
+    const wpRes = await fetch(`${WP_API_URL}/gsmgc/v1/products-raw`, {
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      signal: wpController.signal,
+    })
+    clearTimeout(wpTimeout)
+
+    if (wpRes.ok) {
+      const wpData = await wpRes.json()
+      const allProducts = (wpData.products || []) as any[]
+      // 关键词独立匹配 + 全词组优先 (避免 "Y17S" 匹配 "17" 这种噪声)
+      const matched = allProducts.filter((p: any) => {
+        const name = (p.name || '').toLowerCase()
+        // 先试全词组匹配 (如 "iphone 17")
+        const phraseHit = keywords.length >= 2 && name.includes(keywords.join(' '))
+        if (phraseHit) return true
+        // 单个词用词边界匹配 (数字前面必须有字母前缀如 iphone)
+        return keywords.some((kw: string) => {
+          if (kw.length <= 2) return false // 跳过太短的词
+          // 纯数字关键词需要字母前缀
+          if (/^\d+$/.test(kw)) {
+            return new RegExp(`[a-z]${kw}\\b`, 'i').test(name)
+          }
+          return name.includes(kw)
+        })
+      })
+      products = matched.slice(0, 3).map((p: any) => ({
+        id: p.id,
+        name: p.name || '',
+        price: p.price || '',
+        permalink: p.permalink || `https://gsmgc.es/producto/${p.id}/${p.slug || ''}`,
+      }))
+    }
+  } catch {
+    products = [] // WP 失败不影响 AI
+  }
+
+  // 5. 构建增强 System Prompt (注入真实库存数据)
+  const productContext = products.length > 0
+    ? `\n\nIMPORTANT: Our store actually carries these matching products:\n${products.map(p => `- ${p.name} (€${p.price})`).join('\n')}\nAlways reference real inventory. Do not claim products don't exist if they are listed above.`
+    : ''
+
+  // 6. 调 DeepSeek (15s timeout)
   const ABORT_TIMEOUT = 15_000
   try {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), ABORT_TIMEOUT)
 
     const messages: ChatMessage[] = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: SYSTEM_PROMPT + productContext },
       ...history.slice(-4),
       { role: 'user', content: message },
     ]
@@ -167,39 +216,7 @@ export async function POST(req: NextRequest) {
 
     const dsData = await dsRes.json()
     const reply: string = dsData.choices?.[0]?.message?.content || ''
-
     const duration = Date.now() - start
-
-    // 5. 调 WP products API (只读, 5s timeout)
-    let products: ProductBrief[] = []
-    try {
-      const searchTerm = message.split(/\s+/).slice(0, 3).join(' ').toLowerCase()
-      const wpController = new AbortController()
-      const wpTimeout = setTimeout(() => wpController.abort(), 5_000)
-
-      const wpRes = await fetch(`${WP_API_URL}/gsmgc/v1/products-raw`, {
-        headers: { 'Content-Type': 'application/json' },
-        cache: 'no-store',
-        signal: wpController.signal,
-      })
-      clearTimeout(wpTimeout)
-
-      if (wpRes.ok) {
-        const wpData = await wpRes.json()
-        const allProducts = (wpData.products || []) as any[]
-        const matched = allProducts.filter((p: any) =>
-          (p.name || '').toLowerCase().includes(searchTerm)
-        )
-        products = matched.slice(0, 3).map((p: any) => ({
-          id: p.id,
-          name: p.name || '',
-          price: p.price || '',
-          permalink: p.permalink || `https://gsmgc.es/producto/${p.id}/${p.slug || ''}`,
-        }))
-      }
-    } catch {
-      // WP 失败不影响 AI 回复
-    }
 
     log('info', 'success', { duration, products: products.length })
     return NextResponse.json({ reply, products })
