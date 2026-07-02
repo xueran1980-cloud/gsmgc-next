@@ -127,16 +127,55 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'empty message' }, { status: 400 })
   }
 
-  // 3. Fallback: DeepSeek 不可用
-  if (!DEEPSEEK_API_KEY) {
-    log('error', 'missing_api_key')
-    return NextResponse.json({ reply: AI_UNAVAILABLE, products: [] })
-  }
+  // 3. Intent Classification (规则, 不走 AI)
+  const allText = [message, ...history.filter((m: ChatMessage) => m.role === 'user').map((m: ChatMessage) => m.content)].join(' ')
+  const isProductQuery = /有货|库存|多少钱|价格|有没有|有吗|货\b|买|链接|购买|下单|吗$|cu[aá]nto|precio|disponible|tienes|SKU|sku|compatible|comprar/i.test(allText)
+  const isRepairQuery = /坏|不开机|黑屏|碎了|碎屏|crack|充不进|进水|不开|不充电|不显示|花屏|白屏|摔|broken|won['']t|doesn['']t|no carga|no enciende|pantalla.*neg|calient|distor|falla|no funciona/i.test(allText)
+  const isComparison = /哪个好|区别|差别|比较|vs|对比|推荐|建议|mejor|cual|cu[aá]l|diferencia|recomiend/i.test(allText)
+  const isAfterSales = /发货|物流|多久|保修|garant[ií]a|退|换|env[ií]o|cu[aá]ndo|plazo|shipping|delivery|return|warranty/i.test(allText)
 
-  // 4. 先查 WP 产品 (让 AI 知道店里有什么)
+  // 4. 先查 WP 产品 (从对话历史提取产品上下文)
   let products: ProductBrief[] = []
   try {
-    const keywords = message.split(/\s+/).filter((w: string) => w.length >= 2).map((w: string) => w.toLowerCase())
+    // 触发词 — 出现任一字眼就必须查 WP
+    const triggerWords = /有货|库存|多少钱|价格|兼容|有没有|货|SKU|sku|price|stock|disponible|precio|model|tienes|cu[aá]nto|compatible/i
+
+    // 从当前消息 + 全部历史用户消息提取关键词
+    const allUserMessages = [
+      message,
+      ...history.filter((m: ChatMessage) => m.role === 'user').map((m: ChatMessage) => m.content)
+    ].join(' ')
+
+    const rawKeywords = allUserMessages.split(/\s+/).filter((w: string) => w.length >= 2).map((w: string) => w.toLowerCase())
+
+    // 品牌+数字检测 (从原始关键词提取, 比 regex 更灵活)
+    const brands = ['iphone','ipad','samsung','galaxy','huawei','xiaomi','motorola','oneplus','oppo','vivo','pixel','nokia','sony','lg','realme','honor','zte','lenovo']
+    const modelKeywords: string[] = []
+    for (let i = 0; i < rawKeywords.length; i++) {
+      if (brands.includes(rawKeywords[i]) && i + 1 < rawKeywords.length) {
+        const next = rawKeywords[i + 1]
+        // 数字或型号后缀
+        if (/^\d+$/.test(next) || /^(pro|max|ultra|plus|air|lite|mini|5g|edge|neo)$/i.test(next)) {
+          modelKeywords.push(rawKeywords[i], next)
+        }
+      }
+    }
+
+    // 补充: 用原始 regex 匹配品牌+零件组合
+    const partPattern = /(?:iphone|ipad|samsung|galaxy|huawei|xiaomi|motorola|oneplus|oppo|vivo|pixel|nokia|sony)\s*[\d\w\s\/]*(?:pro|max|ultra|plus|air|lite|mini|5g|edge|neo)?(?:\s+(?:屏幕|pantalla|电池|bater[ií]a|充电|carga|c[aá]mara|camera|后盖|tapa|尾插|flex|carcasa|fund[ae]|protector|lente))/gi
+    const partMatches = allUserMessages.match(partPattern)
+    if (partMatches) {
+      for (const m of partMatches) {
+        modelKeywords.push(...m.toLowerCase().split(/\s+/).filter((w: string) => w.length >= 2))
+      }
+    }
+
+    // 最终关键词
+    const keywords = [...new Set([...modelKeywords, ...rawKeywords])]
+
+    const shouldSearch = isProductQuery || triggerWords.test(allUserMessages) || modelKeywords.length > 0
+
+    if (shouldSearch) {
     const wpController = new AbortController()
     const wpTimeout = setTimeout(() => wpController.abort(), 5_000)
 
@@ -150,19 +189,20 @@ export async function POST(req: NextRequest) {
     if (wpRes.ok) {
       const wpData = await wpRes.json()
       const allProducts = (wpData.products || []) as any[]
-      // 关键词独立匹配 + 全词组优先 (避免 "Y17S" 匹配 "17" 这种噪声)
       const matched = allProducts.filter((p: any) => {
         const name = (p.name || '').toLowerCase()
-        // 先试全词组匹配 (如 "iphone 17")
-        const phraseHit = keywords.length >= 2 && name.includes(keywords.join(' '))
-        if (phraseHit) return true
-        // 单个词用词边界匹配 (数字前面必须有字母前缀如 iphone)
+        // 如果有模型关键词, 必须匹配品牌+数字对 (如 "iphone 13"), 否则会返回所有 iPhone
+        if (modelKeywords.length >= 2) {
+          return keywords.some((_kw, i) => {
+            if (i + 1 >= keywords.length) return false
+            const pair = `${keywords[i]} ${keywords[i + 1]}`
+            return name.includes(pair)
+          })
+        }
+        // 无模型关键词时用单关键词匹配
         return keywords.some((kw: string) => {
-          if (kw.length <= 2) return false // 跳过太短的词
-          // 纯数字关键词需要字母前缀
-          if (/^\d+$/.test(kw)) {
-            return new RegExp(`[a-z]${kw}\\b`, 'i').test(name)
-          }
+          if (kw.length <= 2) return false
+          if (/^\d+$/.test(kw)) return new RegExp(`[a-z]${kw}\\b`, 'i').test(name)
           return name.includes(kw)
         })
       })
@@ -173,23 +213,38 @@ export async function POST(req: NextRequest) {
         permalink: p.permalink || `https://gsmgc.es/producto/${p.id}/${p.slug || ''}`,
       }))
     }
+    } // shouldSearch
   } catch {
     products = [] // WP 失败不影响 AI
   }
 
-  // 5. 构建增强 System Prompt (注入真实库存数据)
-  const productContext = products.length > 0
-    ? `\n\nIMPORTANT: Our store actually carries these matching products:\n${products.map(p => `- ${p.name} (€${p.price})`).join('\n')}\nAlways reference real inventory. Do not claim products don't exist if they are listed above.`
+  // 5. Fallback: DeepSeek 不可用
+  if (!DEEPSEEK_API_KEY) {
+    log('error', 'missing_api_key')
+    return NextResponse.json({ reply: AI_UNAVAILABLE, products: [] })
+  }
+
+  // 6. 构建增强 System Prompt (注入意图 + 库存)
+  const intentTag = isProductQuery ? '\n\nUSER INTENT: Product shopping. List what we have. Do NOT give repair causes.'
+    : isRepairQuery ? '\n\nUSER INTENT: Repair diagnosis. Give likely cause, ask one question. Be brief.'
+    : isComparison ? '\n\nUSER INTENT: Comparison. Compare options in 1-2 sentences. Ask what matters most.'
+    : isAfterSales ? '\n\nUSER INTENT: After-sales. Answer directly about shipping/warranty/returns.'
     : ''
 
-  // 6. 调 DeepSeek (15s timeout)
+  const productContext = products.length > 0
+    ? `\n\nSTORE INVENTORY — real products at gsmgc.es (use these exact names, prices, and links):\n${products.map((p) => `① ${p.name} — €${p.price}\n🔗 ${p.permalink}`).join('\n')}`
+    : isProductQuery
+      ? '\n\nSTORE INVENTORY: Currently empty for this search. Follow the "no inventory" product template. Do NOT invent products or suggest other stores.'
+      : ''
+
+  // 7. 调 DeepSeek (15s timeout)
   const ABORT_TIMEOUT = 15_000
   try {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), ABORT_TIMEOUT)
 
     const messages: ChatMessage[] = [
-      { role: 'system', content: SYSTEM_PROMPT + productContext },
+      { role: 'system', content: SYSTEM_PROMPT + intentTag + productContext },
       ...history.slice(-4),
       { role: 'user', content: message },
     ]
