@@ -129,28 +129,44 @@ export async function POST(req: NextRequest) {
 
   // 3. Intent Classification (规则, 不走 AI)
   const allText = [message, ...history.filter((m: ChatMessage) => m.role === 'user').map((m: ChatMessage) => m.content)].join(' ')
-  const isProductQuery = /有货|库存|多少钱|价格|有没有|有吗|货\b|买|链接|购买|下单|吗$|cu[aá]nto|precio|disponible|tienes|SKU|sku|compatible|comprar/i.test(allText)
-  const isRepairQuery = /坏|不开机|黑屏|碎了|碎屏|crack|充不进|进水|不开|不充电|不显示|花屏|白屏|摔|broken|won['']t|doesn['']t|no carga|no enciende|pantalla.*neg|calient|distor|falla|no funciona/i.test(allText)
-  const isComparison = /哪个好|区别|差别|比较|vs|对比|推荐|建议|mejor|cual|cu[aá]l|diferencia|recomiend/i.test(allText)
-  const isAfterSales = /发货|物流|多久|保修|garant[ií]a|退|换|env[ií]o|cu[aá]ndo|plazo|shipping|delivery|return|warranty/i.test(allText)
+
+  // 输入规范化: "hua wei" → "huawei", "iphone17" → "iphone 17"
+  const normalizedMessage = message
+    .replace(/([a-z])(\d)/gi, '$1 $2')     // iphone17 → iphone 17
+    .replace(/(\d)(pro|max|ultra|plus|air|lite|mini)/gi, '$1 $2')
+    .replace(/hua\s+wei/gi, 'huawei')
+    .replace(/sam\s+sung/gi, 'samsung')
+  const normalizedAllText = allText
+    .replace(/([a-z])(\d)/gi, '$1 $2')
+    .replace(/(\d)(pro|max|ultra|plus|air|lite|mini)/gi, '$1 $2')
+    .replace(/hua\s+wei/gi, 'huawei')
+    .replace(/sam\s+sung/gi, 'samsung')
+  const isProductQuery = /有货|库存|多少钱|价格|有没有|有吗|找|买|链接|购买|下单|吗$|cu[aá]nto|precio|disponible|tienes|SKU|sku|compatible|comprar/i.test(normalizedAllText)
+    // 纯品牌名也视为商品咨询
+    || /^(iphone|huawei|samsung|xiaomi|oneplus|oppo|vivo|pixel|motorola|nokia|sony|lg|ipad|galaxy)(\s|$)/i.test(normalizedMessage.trim())
+
+  const isRepairQuery = /坏|不开机|黑屏|碎了|碎屏|crack|充不进|进水|不开|不充电|不显示|花屏|白屏|摔|broken|won['']t|doesn['']t|no carga|no enciende|pantalla.*neg|calient|distor|falla|no funciona|怎么换|怎么修|更换|拆|教程|安装|换屏|自己换/i.test(normalizedAllText)
+  const isComparison = /哪个好|区别|差别|比较|vs|对比|推荐|建议|mejor|cual|cu[aá]l|diferencia|recomiend/i.test(normalizedAllText)
+  const isAfterSales = /发货|物流|多久|保修|garant[ií]a|退|换|env[ií]o|cu[aá]ndo|plazo|shipping|delivery|return|warranty/i.test(normalizedAllText)
+  const isTechnical = /点位|IC\b|芯片|排线.*型号|JCID|ZXW|图纸|datasheet|schematic|pinout|connector.*type|规格|specification/i.test(normalizedAllText)
 
   // 4. 先查 WP 产品 (从对话历史提取产品上下文)
   let products: ProductBrief[] = []
+  let modelKeywords: string[] = [] // 声明在外层, 供意图判断使用
   try {
     // 触发词 — 出现任一字眼就必须查 WP
     const triggerWords = /有货|库存|多少钱|价格|兼容|有没有|货|SKU|sku|price|stock|disponible|precio|model|tienes|cu[aá]nto|compatible/i
 
     // 从当前消息 + 全部历史用户消息提取关键词
     const allUserMessages = [
-      message,
+      normalizedMessage,
       ...history.filter((m: ChatMessage) => m.role === 'user').map((m: ChatMessage) => m.content)
     ].join(' ')
 
     const rawKeywords = allUserMessages.split(/\s+/).filter((w: string) => w.length >= 2).map((w: string) => w.toLowerCase())
 
-    // 品牌+数字检测 (从原始关键词提取, 比 regex 更灵活)
     const brands = ['iphone','ipad','samsung','galaxy','huawei','xiaomi','motorola','oneplus','oppo','vivo','pixel','nokia','sony','lg','realme','honor','zte','lenovo']
-    const modelKeywords: string[] = []
+    modelKeywords = []
     for (let i = 0; i < rawKeywords.length; i++) {
       if (brands.includes(rawKeywords[i]) && i + 1 < rawKeywords.length) {
         const next = rawKeywords[i + 1]
@@ -173,7 +189,7 @@ export async function POST(req: NextRequest) {
     // 最终关键词
     const keywords = [...new Set([...modelKeywords, ...rawKeywords])]
 
-    const shouldSearch = isProductQuery || triggerWords.test(allUserMessages) || modelKeywords.length > 0
+    const shouldSearch = isProductQuery || isRepairQuery || triggerWords.test(allUserMessages) || modelKeywords.length > 0
 
     if (shouldSearch) {
     const wpController = new AbortController()
@@ -189,23 +205,78 @@ export async function POST(req: NextRequest) {
     if (wpRes.ok) {
       const wpData = await wpRes.json()
       const allProducts = (wpData.products || []) as any[]
-      const matched = allProducts.filter((p: any) => {
-        const name = (p.name || '').toLowerCase()
-        // 如果有模型关键词, 必须匹配品牌+数字对 (如 "iphone 13"), 否则会返回所有 iPhone
-        if (modelKeywords.length >= 2) {
+
+      // ── 3 级搜索 (Evidence Gate) ──
+      let matched: any[] = []
+
+      // Tier 1: 精确品牌+数字对 (如 "iphone 13")
+      if (modelKeywords.length >= 2) {
+        matched = allProducts.filter((p: any) => {
+          const name = (p.name || '').toLowerCase()
           return keywords.some((_kw, i) => {
             if (i + 1 >= keywords.length) return false
-            const pair = `${keywords[i]} ${keywords[i + 1]}`
-            return name.includes(pair)
+            return name.includes(`${keywords[i]} ${keywords[i + 1]}`)
+          })
+        })
+        // 精确型号过滤: "iphone 12" 不应返回 "iphone 12 pro max"
+        if (matched.length > 0 && modelKeywords.length === 2) {
+          const [brand, num] = modelKeywords
+          const variants = ['pro', 'max', 'mini', 'plus', 'ultra', 'air', 'lite']
+          const hasVariantKeyword = rawKeywords.some((k: string) => variants.includes(k))
+          if (!hasVariantKeyword) {
+            const exactMatched = matched.filter((p: any) => {
+              const name = (p.name || '').toLowerCase()
+              const afterModel = name.split(`${brand} ${num}`)[1] || ''
+              return !variants.some(v => afterModel.trimStart().startsWith(v))
+            })
+            if (exactMatched.length > 0) matched = exactMatched
+          }
+        }
+      }
+
+      // Tier 2: 规范化尝试 (如 "iphone17" 的 rawKeyword 包含品牌名, 尝试分离)
+      if (matched.length === 0) {
+        const joinedNumbers = normalizedAllText.match(/([a-z]+)(\d+)/gi)
+        if (joinedNumbers) {
+          const splitTerms = joinedNumbers.flatMap(t => {
+            const m = t.match(/([a-z]+)(\d+)/i)
+            return m ? [m[1], m[2]] : [t]
+          })
+          matched = allProducts.filter((p: any) => {
+            const name = (p.name || '').toLowerCase()
+            return splitTerms.every(t => name.includes(t.toLowerCase()))
           })
         }
-        // 无模型关键词时用单关键词匹配
-        return keywords.some((kw: string) => {
-          if (kw.length <= 2) return false
-          if (/^\d+$/.test(kw)) return new RegExp(`[a-z]${kw}\\b`, 'i').test(name)
-          return name.includes(kw)
+      }
+
+      // Tier 3: 模糊 (单个关键词, 至少匹配 2 个词)
+      if (matched.length === 0) {
+        const meaningful = keywords.filter((k: string) => k.length > 2)
+        matched = allProducts.filter((p: any) => {
+          const name = (p.name || '').toLowerCase()
+          const hits = meaningful.filter((k: string) => name.includes(k)).length
+          return hits >= 2
         })
-      })
+      }
+
+      // ── 相关性过滤: 用户提了具体部件, 不相关的产品不要展示 ──
+      // 提取用户关心的部件类型 (屏幕/电池/尾插/Face ID/摄像头等)
+      const partTypes = ['屏幕','pantalla','电池','bater','尾插','flex','carga','c[aá]mara','camera','后盖','tapa','听筒','earpiece','face id','面容','true.?depth','点阵','前摄','front','lente','排线','sensor','protector','fund[ae]','carcasa','auricular','altavoz','speaker','vibra']
+      const userParts = partTypes.filter(pt => new RegExp(pt, 'i').test(normalizedAllText))
+      if (userParts.length > 0 && matched.length > 0) {
+        const relevant = matched.filter((p: any) => {
+          const name = (p.name || '').toLowerCase()
+          return userParts.some(pt => new RegExp(pt, 'i').test(name))
+        })
+        // 只有相关产品占比 ≥30% 才展示; 否则全部丢弃
+        if (relevant.length > 0 && relevant.length / matched.length >= 0.3) {
+          matched.length = 0
+          matched.push(...relevant)
+        } else if (relevant.length === 0) {
+          matched.length = 0 // 完全不相关, 全部丢弃
+        }
+      }
+
       products = matched.slice(0, 3).map((p: any) => ({
         id: p.id,
         name: p.name || '',
@@ -225,17 +296,30 @@ export async function POST(req: NextRequest) {
   }
 
   // 6. 构建增强 System Prompt (注入意图 + 库存)
-  const intentTag = isProductQuery ? '\n\nUSER INTENT: Product shopping. List what we have. Do NOT give repair causes.'
-    : isRepairQuery ? '\n\nUSER INTENT: Repair diagnosis. Give likely cause, ask one question. Be brief.'
-    : isComparison ? '\n\nUSER INTENT: Comparison. Compare options in 1-2 sentences. Ask what matters most.'
-    : isAfterSales ? '\n\nUSER INTENT: After-sales. Answer directly about shipping/warranty/returns.'
+  const isAmbiguousProduct = isProductQuery && modelKeywords.length === 0
+  const intentTag = isAmbiguousProduct
+    ? '\n\nUSER INTENT: Ambiguous — ask clarifying questions.'
+    : isProductQuery ? '\n\nUSER INTENT: Product — evidence required, no guessing.'
+    : isRepairQuery ? '\n\nUSER INTENT: Repair — reasoning allowed, probability language only.'
+    : isTechnical ? '\n\nUSER INTENT: Technical Reference — use knowledge base, or say "no reliable data".'
+    : isAfterSales ? '\n\nUSER INTENT: AfterSales — policy only, no guessing.'
     : ''
 
-  const productContext = products.length > 0
-    ? `\n\nSTORE INVENTORY — real products at gsmgc.es (use these exact names, prices, and links):\n${products.map((p) => `① ${p.name} — €${p.price}\n🔗 ${p.permalink}`).join('\n')}`
+  const evidenceContext = products.length > 0
+    ? `\n\nEVIDENCE — real gsmgc.es inventory (trust this over your own knowledge):\n${products.map((p) => `① ${p.name} — €${p.price}\n🔗 ${p.permalink}`).join('\n')}`
     : isProductQuery
-      ? '\n\nSTORE INVENTORY: Currently empty for this search. Follow the "no inventory" product template. Do NOT invent products or suggest other stores.'
+      ? '__EVIDENCE_GATE__'
       : ''
+
+  // Evidence Gate: 商品查询无证据 → 不走 AI
+  if (evidenceContext === '__EVIDENCE_GATE__') {
+    return NextResponse.json({
+      reply: isAmbiguousProduct
+        ? `I can help you find that. Please tell me: are you looking for a phone, screen, battery, charging port, camera, or another part? Also, which specific model? (e.g., iPhone 13, Samsung S23)\n\nThis is AI-assisted advice for reference only.`
+        : `No matching products found for this search. Our inventory is updated daily. Please provide a specific model and part type, and I'll check again.\n\nThis is AI-assisted advice for reference only.`,
+      products: [],
+    })
+  }
 
   // 7. 调 DeepSeek (15s timeout)
   const ABORT_TIMEOUT = 15_000
@@ -244,7 +328,7 @@ export async function POST(req: NextRequest) {
     const timeoutId = setTimeout(() => controller.abort(), ABORT_TIMEOUT)
 
     const messages: ChatMessage[] = [
-      { role: 'system', content: SYSTEM_PROMPT + intentTag + productContext },
+      { role: 'system', content: SYSTEM_PROMPT + intentTag + evidenceContext },
       ...history.slice(-4),
       { role: 'user', content: message },
     ]
