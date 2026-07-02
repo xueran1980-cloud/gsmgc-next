@@ -8,9 +8,52 @@ const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions'
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || ''
 const WP_API_URL = 'https://api.gsmgc.es/wp-json'
 
-export const runtime = 'edge' // Vercel Edge runtime, 0 冷启动
-export const dynamic = 'force-dynamic' // 硬约束 #3: 不进 ISR cache
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 
+// ── 统一用户提示 (生产安全: 禁止暴露技术细节) ──
+const AI_UNAVAILABLE = 'AI assistant temporarily unavailable. Browsing, ordering, and checkout are unaffected. Please try again later.'
+
+// ── 简易 Rate Limit (基于 IP, v0.1 版本) ──
+const RATE_LIMIT_WINDOW = 60_000 // 1 分钟
+const RATE_LIMIT_MAX = 20 // 每分钟最多 20 次
+const rateMap = new Map<string, { count: number; resetAt: number }>()
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now()
+  const entry = rateMap.get(ip)
+  if (!entry || now > entry.resetAt) {
+    rateMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW })
+    return true
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false
+  entry.count++
+  return true
+}
+
+// 定期清理过期条目
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now()
+    for (const [key, val] of rateMap) {
+      if (now > val.resetAt) rateMap.delete(key)
+    }
+  }, 60_000)
+}
+
+// ── 日志 (不记录用户隐私) ──
+function log(level: 'info' | 'error', msg: string, extra?: Record<string, unknown>) {
+  const entry = {
+    t: new Date().toISOString(),
+    l: level,
+    m: msg,
+    ...extra,
+  }
+  if (level === 'error') console.error(JSON.stringify(entry))
+  else console.log(JSON.stringify(entry))
+}
+
+// ── Types ──
 interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
@@ -24,30 +67,46 @@ interface ProductBrief {
 }
 
 export async function POST(req: NextRequest) {
-  // 1. 解析输入
-  const { message, history = [] } = (await req.json()) as {
-    message: string
-    history?: ChatMessage[]
+  const start = Date.now()
+
+  // 1. Rate Limit
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  if (!checkRateLimit(ip)) {
+    log('info', 'rate_limited', { ip })
+    return NextResponse.json({ reply: AI_UNAVAILABLE, products: [] }, { status: 429 })
+  }
+
+  // 2. 解析输入
+  let message: string, history: ChatMessage[]
+  try {
+    const body = await req.json()
+    message = body.message
+    history = body.history || []
+  } catch {
+    return NextResponse.json({ error: 'invalid json' }, { status: 400 })
   }
   if (!message?.trim()) {
     return NextResponse.json({ error: 'empty message' }, { status: 400 })
   }
 
-  // 2. Fallback: DeepSeek 不可用 → 立即返回
+  // 3. Fallback: DeepSeek 不可用
   if (!DEEPSEEK_API_KEY) {
-    return NextResponse.json({
-      reply: 'Servicio no disponible temporalmente. Inténtalo de nuevo más tarde.',
-      products: [],
-    })
+    log('error', 'missing_api_key')
+    return NextResponse.json({ reply: AI_UNAVAILABLE, products: [] })
   }
 
+  // 4. 调 DeepSeek (15s timeout)
+  const ABORT_TIMEOUT = 15_000
   try {
-    // 3. 调 DeepSeek (硬约束 #1: 镜像用户语言 - DeepSeek 自动跟随)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), ABORT_TIMEOUT)
+
     const messages: ChatMessage[] = [
       { role: 'user', content: SYSTEM_PROMPT },
       ...history.slice(-4),
       { role: 'user', content: message },
     ]
+
     const dsRes = await fetch(DEEPSEEK_API_URL, {
       method: 'POST',
       headers: {
@@ -60,26 +119,38 @@ export async function POST(req: NextRequest) {
         temperature: 0.3,
         max_tokens: 600,
       }),
+      signal: controller.signal,
     })
-    if (!dsRes.ok) throw new Error(`DeepSeek ${dsRes.status}`)
+    clearTimeout(timeoutId)
+
+    if (!dsRes.ok) {
+      throw new Error(`DeepSeek HTTP ${dsRes.status}`)
+    }
+
     const dsData = await dsRes.json()
     const reply: string = dsData.choices?.[0]?.message?.content || ''
 
-    // 4. 调 WP products API (只读)
+    const duration = Date.now() - start
+
+    // 5. 调 WP products API (只读, 5s timeout)
     let products: ProductBrief[] = []
     try {
       const searchTerm = message.split(/\s+/).slice(0, 3).join(' ').toLowerCase()
+      const wpController = new AbortController()
+      const wpTimeout = setTimeout(() => wpController.abort(), 5_000)
+
       const wpRes = await fetch(`${WP_API_URL}/gsmgc/v1/products-raw`, {
         headers: { 'Content-Type': 'application/json' },
         cache: 'no-store',
+        signal: wpController.signal,
       })
+      clearTimeout(wpTimeout)
+
       if (wpRes.ok) {
         const wpData = await wpRes.json()
         const allProducts = (wpData.products || []) as any[]
-        // Client-side basic keyword filter
-        const matched = allProducts.filter(
-          (p: any) =>
-            (p.name || '').toLowerCase().includes(searchTerm)
+        const matched = allProducts.filter((p: any) =>
+          (p.name || '').toLowerCase().includes(searchTerm)
         )
         products = matched.slice(0, 3).map((p: any) => ({
           id: p.id,
@@ -89,14 +160,22 @@ export async function POST(req: NextRequest) {
         }))
       }
     } catch {
-      products = [] // WP 失败不影响 AI 回复
+      // WP 失败不影响 AI 回复
     }
 
+    log('info', 'success', { duration, products: products.length })
     return NextResponse.json({ reply, products })
-  } catch {
-    return NextResponse.json({
-      reply: 'Servicio no disponible temporalmente. Inténtalo de nuevo más tarde.',
-      products: [],
-    })
+  } catch (err: unknown) {
+    const duration = Date.now() - start
+    const errorType =
+      err instanceof DOMException && err.name === 'AbortError'
+        ? 'deepseek_timeout'
+        : err instanceof Error
+          ? err.message.slice(0, 100)
+          : 'unknown_error'
+    log('error', 'chat_failed', { duration, error: errorType })
+
+    // 统一错误提示, 不暴露技术细节
+    return NextResponse.json({ reply: AI_UNAVAILABLE, products: [] })
   }
 }

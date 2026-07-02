@@ -4,6 +4,9 @@
 // 硬约束 #3: 隐式红线 - 不挂在 checkout/payment 页面
 import { useState, useRef, useEffect, useCallback } from 'react'
 
+// Feature Flag: 一键关闭 AI (NEXT_PUBLIC_AI_ENABLED=false 即可)
+const AI_ENABLED = process.env.NEXT_PUBLIC_AI_ENABLED !== 'false'
+
 interface Product {
   id: number
   name: string
@@ -18,6 +21,9 @@ interface Message {
 }
 
 export default function ChatBubble() {
+  // Feature Flag: 环境变量关闭时完全隐藏
+  if (!AI_ENABLED) return null
+
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
