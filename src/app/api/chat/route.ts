@@ -41,6 +41,38 @@ if (typeof setInterval !== 'undefined') {
   }, 60_000)
 }
 
+// ── 每日预算 (v0.1, 同 MVP 限制: 不跨实例共享) ──
+const DAILY_LIMIT = parseInt(process.env.AI_DAILY_LIMIT || '500', 10)
+let dailyCount = 0
+let dailyResetAt = 0 // midnight UTC timestamp
+
+function getTodayKey(): number {
+  const d = new Date()
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
+}
+
+function checkDailyBudget(): boolean {
+  const today = getTodayKey()
+  if (today !== dailyResetAt) {
+    dailyResetAt = today
+    dailyCount = 0
+  }
+  if (dailyCount >= DAILY_LIMIT) return false
+  dailyCount++
+  return true
+}
+
+// 每小时清理一次过期 daily key
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const today = getTodayKey()
+    if (today !== dailyResetAt) {
+      dailyResetAt = today
+      dailyCount = 0
+    }
+  }, 3600_000)
+}
+
 // ── 日志 (不记录用户隐私) ──
 function log(level: 'info' | 'error', msg: string, extra?: Record<string, unknown>) {
   const entry = {
@@ -73,6 +105,12 @@ export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
   if (!checkRateLimit(ip)) {
     log('info', 'rate_limited', { ip })
+    return NextResponse.json({ reply: AI_UNAVAILABLE, products: [] }, { status: 429 })
+  }
+
+  // 2. Daily Budget
+  if (!checkDailyBudget()) {
+    log('info', 'daily_budget_exceeded', { limit: DAILY_LIMIT })
     return NextResponse.json({ reply: AI_UNAVAILABLE, products: [] }, { status: 429 })
   }
 
