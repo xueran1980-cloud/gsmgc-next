@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
+import ChatBubble from "@/components/ChatBubble"; // v0.1: 硬约束 #3 UI 隔离, 删除此行 = AI 完全消失
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
 
@@ -77,6 +78,7 @@ export default function RootLayout({
             <WhatsAppFloat />
           </CartProvider>
         </AuthProvider>
+        <ChatBubble />{/* v0.1: 硬约束 #3 UI 隔离, 删除此行 = AI 完全消失 */}
         {/* PWA Service Worker */}
         <script
           dangerouslySetInnerHTML={{
