@@ -48,6 +48,44 @@ self.addEventListener('fetch', (event) => {
   // 不拦截 Chrome 扩展请求
   if (url.protocol === 'chrome-extension:') return;
 
+  // 同域请求才处理
+  if (url.origin !== self.location.origin && url.origin !== 'https://api.gsmgc.es') {
+    return; // DIAG: 非同域请求不处理, 不记录
+  }
+
+  // [DIAG] 记录所有拦截的请求
+  console.log('[SW] intercept:', request.method, url.href);
+
+  // ★ API 请求：Network First（实时数据优先）
+  if (url.pathname.includes('/wp-json/') || url.pathname.includes('/api/')) {
+    console.log('[SW] strategy: networkFirst API', url.href);
+    event.respondWith(
+      networkFirst(request, CACHE_API).then(r => {
+        console.log('[SW] respond:', r.status, url.href);
+        return r;
+      }).catch(err => {
+        console.log('[SW] error:', err, url.href);
+        throw err;
+      })
+    );
+    return;
+  }
+
+  // ★ 静态资源：Cache First（秒开）
+  if (STATIC_EXT.some(ext => url.pathname.endsWith(ext))) {
+    console.log('[SW] strategy: cacheFirst STATIC', url.href);
+    event.respondWith(
+      cacheFirst(request, CACHE_STATIC).then(r => {
+        console.log('[SW] respond:', r.status, url.href);
+        return r;
+      }).catch(err => {
+        console.log('[SW] error:', err, url.href);
+        throw err;
+      })
+    );
+    return;
+  }
+
   // 同域请求才缓存
   if (url.origin !== self.location.origin && url.origin !== 'https://api.gsmgc.es') return;
 
@@ -65,12 +103,30 @@ self.addEventListener('fetch', (event) => {
 
   // ★ 页面 HTML：Network First（确保最新内容）
   if (request.headers.get('Accept')?.includes('text/html')) {
-    event.respondWith(networkFirst(request, CACHE_PAGES));
+    console.log('[SW] strategy: networkFirst HTML', url.href);
+    event.respondWith(
+      networkFirst(request, CACHE_PAGES).then(r => {
+        console.log('[SW] respond:', r.status, url.href);
+        return r;
+      }).catch(err => {
+        console.log('[SW] error:', err, url.href);
+        throw err;
+      })
+    );
     return;
   }
 
   // 默认：Network First
-  event.respondWith(networkFirst(request, CACHE_PAGES));
+  console.log('[SW] strategy: networkFirst DEFAULT', url.href);
+  event.respondWith(
+    networkFirst(request, CACHE_PAGES).then(r => {
+      console.log('[SW] respond:', r.status, url.href);
+      return r;
+    }).catch(err => {
+      console.log('[SW] error:', err, url.href);
+      throw err;
+    })
+  );
 });
 
 // ── Cache First 策略 ──

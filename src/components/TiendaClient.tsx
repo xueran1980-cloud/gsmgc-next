@@ -194,6 +194,8 @@ export default function TiendaClient({
 
     // ★ 客户端直连后端（绕过 Vercel 代理避免 CF Bot Fight Mode 拦截）
     const directUrl = `https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?${params.toString()}`;
+    // [DIAG] 记录 fetch 发起时的完整状态
+    console.log('[Tienda] fetch start | category:', category, '| search:', urlSearch, '| url:', directUrl);
 
     search.run(async (signal) => {
       const thisId = ++fetchRequestId.current;
@@ -204,6 +206,8 @@ export default function TiendaClient({
           signal,
         });
         const prodData = await res.json();
+        // [DIAG] 记录 fetch 结果
+        console.log('[Tienda] fetch done | id:', thisId, '| status:', res.status, '| products:', prodData?.products?.length || prodData?.length || 0);
 
         // ★ 防止旧请求结果覆盖新请求
         if (thisId !== fetchRequestId.current) return;
