@@ -7,8 +7,6 @@ import { join } from 'path';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'https://api.gsmgc.es';
 
-console.log('[API /categories] BACKEND_URL:', BACKEND_URL);
-
 // 开发模式：使用本地 fixture
 function loadDevFixture(): any[] | null {
   if (process.env.NODE_ENV !== 'development') return null;
