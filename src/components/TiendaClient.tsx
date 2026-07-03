@@ -163,14 +163,14 @@ export default function TiendaClient({
   //    通过 useAsyncState 管理 fetch 生命周期：15s timeout + abort + auto retry + unmount guard
   useEffect(() => {
     const category = searchParams.get('category') || '';
-    const rawSearch = debouncedSearch;
+    const urlSearch = searchParams.get('search') || '';
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
 
-    // ★ 最小 3 字符才触发搜索（空值=清空搜索，允许）
-    if (rawSearch && rawSearch.trim().length < 3) return;
+    // ★ 最小 3 字符才触发搜索 — guard 用 debouncedSearch 防打字风暴
+    if (debouncedSearch && debouncedSearch.trim().length < 3) return;
 
-    // ★ 有筛选条件时立即显示 loading, 避免 ISR 初始数据短暂闪现
-    if (category || rawSearch || page > 1) {
+    // ★ 有筛选条件时立即显示 loading
+    if (category || urlSearch || page > 1) {
       setLoading(true);
     }
 
@@ -181,7 +181,7 @@ export default function TiendaClient({
     params.set('orderby', orderby);
     params.set('order', order);
     if (category) params.set('category', category);
-    if (rawSearch) params.set('search', rawSearch);
+    if (urlSearch) params.set('search', urlSearch);
     params.set('per_page', String(PER_PAGE));
     params.set('page', String(page));
 
