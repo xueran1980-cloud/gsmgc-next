@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'https://api.gsmgc.es';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.gsmgc.es';
 
 // 开发模式：使用本地 fixture
 function loadDevFixture(): any[] | null {
