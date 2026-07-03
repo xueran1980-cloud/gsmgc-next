@@ -169,6 +169,11 @@ export default function TiendaClient({
     // ★ 最小 3 字符才触发搜索（空值=清空搜索，允许）
     if (rawSearch && rawSearch.trim().length < 3) return;
 
+    // ★ 有筛选条件时立即显示 loading, 避免 ISR 初始数据短暂闪现
+    if (category || rawSearch || page > 1) {
+      setLoading(true);
+    }
+
     const orderby = searchParams.get('orderby') || 'price'; // ★ 旧站默认：price-desc
     const order = searchParams.get('order') || 'desc';
 
