@@ -62,9 +62,6 @@ export default function TiendaClient({
   // ★ 请求 ID 计数器 — 防止旧请求结果覆盖新请求（竞态保护）
   const fetchRequestId = useRef(0);
 
-  // ★ DEBUG: 请求序号计数器 — 追踪每次 fetch 的参数完整状态
-  const fetchSeqRef = useRef(0);
-
   // ★ Safari Router 冻结自愈：防止连续点击触发重复导航
   const navigationLockRef = useRef(false);
 
@@ -177,17 +174,6 @@ export default function TiendaClient({
       setLoading(true);
     }
 
-    // ★ DEBUG: 记录本次 fetch 的完整输入状态
-    const fetchSeq = ++fetchSeqRef.current;
-    const urlSearch = searchParams.get('search') || '';
-    const urlCategory = searchParams.get('category') || '';
-    const urlPage = searchParams.get('page') || '1';
-    console.log(
-      `[Tienda DEBUG] #${fetchSeq} trigger | ` +
-      `URL search="${urlSearch}" | debouncedSearch="${rawSearch}" | ` +
-      `URL category="${urlCategory}" | page="${urlPage}"`
-    );
-
     const orderby = searchParams.get('orderby') || 'price'; // ★ 旧站默认：price-desc
     const order = searchParams.get('order') || 'desc';
 
@@ -208,7 +194,6 @@ export default function TiendaClient({
 
     // ★ 客户端直连后端（绕过 Vercel 代理避免 CF Bot Fight Mode 拦截）
     const directUrl = `https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?${params.toString()}`;
-    console.log(`[Tienda DEBUG] #${fetchSeq} request → ${directUrl}`);
 
     search.run(async (signal) => {
       const thisId = ++fetchRequestId.current;
@@ -221,11 +206,7 @@ export default function TiendaClient({
         const prodData = await res.json();
 
         // ★ 防止旧请求结果覆盖新请求
-        if (thisId !== fetchRequestId.current) {
-          console.log(`[Tienda DEBUG] #${fetchSeq} response STALE — discarded (current=${fetchRequestId.current})`);
-          return;
-        }
-        console.log(`[Tienda DEBUG] #${fetchSeq} response APPLIED — ${prodData?.products?.length || prodData?.length || 0} products`);
+        if (thisId !== fetchRequestId.current) return;
 
         // ★ 兼容两种响应格式: Vercel代理(camelCase) + 后端直连(snake_case)
         if (prodData && Array.isArray(prodData.products)) {
