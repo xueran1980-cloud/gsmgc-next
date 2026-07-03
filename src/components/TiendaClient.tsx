@@ -76,6 +76,9 @@ export default function TiendaClient({
     // 无初始数据 → 走正常 fetch 流程（与旧版 /tienda 相同）
   }, []);
 
+  // [DIAG] 确认 React 是否重新渲染
+  console.log('[Tienda] render | search:', searchParams.get('search'), '| category:', searchParams.get('category'), '| full:', searchParams.toString());
+
   // Read params from URL — ★ 对齐旧站默认：Precio: mayor a menor (price-desc)
   const categoryParam = searchParams.get('category') || '';
   const searchParam = searchParams.get('search') || '';
