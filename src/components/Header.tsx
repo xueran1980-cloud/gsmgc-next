@@ -79,16 +79,7 @@ export default function Header() {
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     if (searchVal.trim()) {
-      var _t = Date.now();
-      var _url = window.location.href;
-      var _s = searchVal.trim();
-      console.log('[HDR:' + _t + '] submit | url=' + _url + ' | search="' + _s + '"');
-      var target = '/tienda?search=' + encodeURIComponent(_s);
-      console.log('[HDR:' + _t + '] router.push("' + target + '")');
-      router.push(target);
-      setTimeout(function() {
-        console.log('[HDR:' + _t + '] after push | url=' + window.location.href);
-      }, 0);
+      router.push(`/tienda?search=${encodeURIComponent(searchVal.trim())}`);
       setSearchOpen(false);
       setSearchVal('');
     }
