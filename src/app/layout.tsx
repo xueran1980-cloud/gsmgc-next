@@ -87,7 +87,7 @@ export default function RootLayout({
     var now = Date.now();
     var toUrl = arguments[2] || '';
     console.log('[NAV:' + now + '] replaceState | from=' + _href + ' | to=' + toUrl);
-    console.log('[NAV:' + now + '] replaceState STACK\n' + new Error().stack);
+    console.log('[NAV:' + now + '] replaceState STACK', new Error().stack);
     _href = location.href;
     return _replace.apply(this, arguments);
   };
