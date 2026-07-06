@@ -93,7 +93,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description: desc,
     alternates: { canonical: `https://gsmgc.es/producto/${id}/${slug}` },
-    robots: product ? { index: true, follow: true } : { index: false, follow: false },
+    robots: { index: true, follow: true },
   };
 }
 
