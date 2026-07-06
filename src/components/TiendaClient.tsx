@@ -148,6 +148,13 @@ export default function TiendaClient({
   // ★ useEffect：URL (searchParams) 为唯一状态源，URL 变化时 fetch
   //    通过 useAsyncState 管理 fetch 生命周期：15s timeout + abort + auto retry + unmount guard
   useEffect(() => {
+    console.log('[TIENDA render]', JSON.stringify({
+      pathname: pathname,
+      search: searchParams.toString(),
+      href: window.location.href,
+      ts: Math.floor(performance.now())
+    }));
+
     const category = searchParams.get('category') || '';
     const searchTerm = searchParams.get('search') || '';
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
