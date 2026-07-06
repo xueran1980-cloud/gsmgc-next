@@ -101,28 +101,17 @@ export default function TiendaClient({
   // ★ Safari Router 冻结自愈：router.replace 失败时 800ms 硬导航 fallback
   const safeReplace = (url: string) => {
     if (!url.startsWith('/')) return;        // ★ 防御：拒绝非站内路径
-    if (navigationLockRef.current) {
-      console.log('[TND:' + Date.now() + '] safeReplace BLOCKED | lock=true | url=' + url);
-      return;
-    }
-    var _t = Date.now();
+    if (navigationLockRef.current) return;
     const before = window.location.href;
-    console.log('[TND:' + _t + '] safeReplace START | from=' + before + ' | to=' + url);
     const targetUrl = new URL(url, window.location.origin).href;
-    if (before === targetUrl) {
-      console.log('[TND:' + _t + '] safeReplace SKIP | same url');
-      return;         // ★ 同 URL 不触发
-    }
+    if (before === targetUrl) return;         // ★ 同 URL 不触发
     navigationLockRef.current = true;
     router.replace(url, { scroll: false });
     let checked = false;
     const check = () => {
       if (checked) return;
       checked = true;
-      var afterUrl = window.location.href;
-      console.log('[TND:' + _t + '] safeReplace DONE | url=' + afterUrl + ' | changed=' + (afterUrl !== before));
-      if (afterUrl === before) {
-        console.log('[TND:' + _t + '] safeReplace FALLBACK → location.assign("' + url + '")');
+      if (window.location.href === before) {
         window.location.assign(url);
       }
       navigationLockRef.current = false;
