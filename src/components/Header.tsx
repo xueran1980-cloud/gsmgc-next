@@ -70,12 +70,14 @@ export default function Header() {
   const dropdownTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ★ Diag: log every Header render
-  console.log('[HEADER RENDER]', JSON.stringify({
-    pathname: pathname,
-    search: window.location.search,
-    href: window.location.href,
-    ts: Date.now()
-  }));
+  if (typeof window !== 'undefined') {
+    console.log('[HEADER RENDER]', JSON.stringify({
+      pathname: pathname,
+      search: window.location.search,
+      href: window.location.href,
+      ts: Date.now()
+    }));
+  }
 
   // Close all on route change
   useEffect(() => {
