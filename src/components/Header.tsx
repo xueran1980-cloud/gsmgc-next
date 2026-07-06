@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   ShoppingCart, Search, Menu, X, User, Phone,
   ChevronDown, Smartphone, Battery, Cable, Headphones,
@@ -65,19 +65,8 @@ export default function Header() {
   const [searchVal, setSearchVal] = useState('');
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
-  const router = useRouter();
   const pathname = usePathname();
   const dropdownTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // ★ Diag: log every Header render
-  if (typeof window !== 'undefined') {
-    console.log('[HEADER RENDER]', JSON.stringify({
-      pathname: pathname,
-      search: window.location.search,
-      href: window.location.href,
-      ts: Date.now()
-    }));
-  }
 
   // Close all on route change
   useEffect(() => {
@@ -89,23 +78,14 @@ export default function Header() {
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     if (searchVal.trim()) {
-      var _ts = Date.now();
-      console.log('[HEADER:' + _ts + '] before push', JSON.stringify({
-        href: window.location.href,
-        pathname: pathname,
-        search: window.location.search
-      }));
-      router.push(`/tienda?search=${encodeURIComponent(searchVal.trim())}`);
-      queueMicrotask(function() {
-        console.log('[HEADER:' + _ts + '] microtask', JSON.stringify({
-          href: window.location.href
-        }));
-      });
-      requestAnimationFrame(function() {
-        console.log('[HEADER:' + _ts + '] RAF', JSON.stringify({
-          href: window.location.href
-        }));
-      });
+      var target = '/tienda?search=' + encodeURIComponent(searchVal.trim());
+      window.dispatchEvent(new CustomEvent('gsmgc:search', { detail: { url: target } }));
+      // Retry once if TiendaClient hasn't mounted yet
+      setTimeout(function() {
+        if (window.location.href.indexOf('?search=') === -1 && window.location.search.indexOf('search=') === -1) {
+          window.dispatchEvent(new CustomEvent('gsmgc:search', { detail: { url: target } }));
+        }
+      }, 80);
       setSearchOpen(false);
       setSearchVal('');
     }
