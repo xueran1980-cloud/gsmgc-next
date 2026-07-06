@@ -79,7 +79,23 @@ export default function Header() {
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     if (searchVal.trim()) {
+      var _ts = Date.now();
+      console.log('[HEADER:' + _ts + '] before push', JSON.stringify({
+        href: window.location.href,
+        pathname: pathname,
+        search: window.location.search
+      }));
       router.push(`/tienda?search=${encodeURIComponent(searchVal.trim())}`);
+      queueMicrotask(function() {
+        console.log('[HEADER:' + _ts + '] microtask', JSON.stringify({
+          href: window.location.href
+        }));
+      });
+      requestAnimationFrame(function() {
+        console.log('[HEADER:' + _ts + '] RAF', JSON.stringify({
+          href: window.location.href
+        }));
+      });
       setSearchOpen(false);
       setSearchVal('');
     }
