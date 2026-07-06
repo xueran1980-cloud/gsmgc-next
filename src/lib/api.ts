@@ -169,18 +169,31 @@ export async function fetchProductById(id: string): Promise<Product | null> {
 // ---------- P2: 首页轻量数据 ----------
 
 export async function fetchHomepageData(): Promise<Product[]> {
-  try {
-    const res = await fetch(
-      'https://api.gsmgc.es/wp-json/gsmgc/v1/homepage-data',
-      { next: { revalidate: 600 } }
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
-    if (Array.isArray(data)) return data;
-    return [];
-  } catch {
-    return fetchProducts();
+  const WP_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.gsmgc.es';
+  const endpoint = `${WP_URL}/wp-json/gsmgc/v1/homepage-data`;
+
+  // ★ 最多 3 次尝试，带 incremental backoff，应对 SG IP 间歇性阻断
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await fetch(endpoint, { next: { revalidate: 600 } });
+      if (!res.ok) {
+        if (attempt < 3) { await sleep(1000 * attempt); continue; }
+        return [];
+      }
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) return data;
+      if (attempt < 3) { await sleep(1000 * attempt); continue; }
+      return [];
+    } catch {
+      if (attempt < 3) { await sleep(1000 * attempt); continue; }
+      return fetchProducts(); // 终极 fallback
+    }
   }
+  return fetchProducts();
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export async function fetchCategoriesDirect(): Promise<ProductCategory[]> {
