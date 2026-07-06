@@ -79,11 +79,11 @@ export default function Header() {
     e.preventDefault();
     if (searchVal.trim()) {
       var target = '/tienda?search=' + encodeURIComponent(searchVal.trim());
+      var before = window.location.href;
       window.dispatchEvent(new CustomEvent('gsmgc:search', { detail: { url: target } }));
-      // Retry once if TiendaClient hasn't mounted yet
       setTimeout(function() {
-        if (window.location.href.indexOf('?search=') === -1 && window.location.search.indexOf('search=') === -1) {
-          window.dispatchEvent(new CustomEvent('gsmgc:search', { detail: { url: target } }));
+        if (window.location.href === before) {
+          window.location.assign(target);
         }
       }, 80);
       setSearchOpen(false);
