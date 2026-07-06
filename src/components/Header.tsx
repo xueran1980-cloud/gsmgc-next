@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import {
   ShoppingCart, Search, Menu, X, User, Phone,
   ChevronDown, Smartphone, Battery, Cable, Headphones,
@@ -67,7 +67,16 @@ export default function Header() {
 
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const dropdownTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ★ Diag: log every Header render
+  console.log('[HEADER RENDER]', JSON.stringify({
+    pathname: pathname,
+    search: searchParams.toString(),
+    href: window.location.href,
+    ts: Date.now()
+  }));
 
   // Close all on route change
   useEffect(() => {
@@ -75,6 +84,16 @@ export default function Header() {
     setMenuOpen(false);
     setSearchOpen(false);
   }, [pathname]);
+
+  // ★ Diag: log when Router publishes new state
+  useEffect(function() {
+    console.log('[HEADER EFFECT]', JSON.stringify({
+      pathname: pathname,
+      search: searchParams.toString(),
+      href: window.location.href,
+      ts: Date.now()
+    }));
+  }, [pathname, searchParams]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
