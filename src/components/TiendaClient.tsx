@@ -144,13 +144,23 @@ export default function TiendaClient({
     safeReplace(pathname);
   }, [router, pathname]);
 
-  // ★ 独立获取分类（不受 SSR 跳过影响）
+  // ★ 独立获取分类 — 浏览器直连 WP，绕开 Vercel→SG 代理通道（SG IP 阻断）
   useEffect(() => {
-    fetch('/api/categories', { cache: 'no-store' })
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.gsmgc.es';
+    fetch(`${API_BASE}/wp-json/gsmgc/v1/categories-raw`, { cache: 'no-store' })
       .then(r => r.json())
-      .then(cats => setCategories(Array.isArray(cats) ? cats : []))
-      .catch((err: unknown) => {
-        console.error('[TiendaClient] categories fetch failed:', err);
+      .then(data => {
+        const cats = data?.categories ?? (Array.isArray(data) ? data : []);
+        setCategories(cats);
+      })
+      .catch(() => {
+        // Fallback: 通过 categories-list 端点获取
+        fetch(`${API_BASE}/wp-json/gsmgc/v1/categories-list`, { cache: 'no-store' })
+          .then(r => r.json())
+          .then(data => setCategories(Array.isArray(data) ? data : []))
+          .catch((err: unknown) =>
+            console.error('[TiendaClient] categories fetch failed:', err)
+          );
       });
   }, []);
 
