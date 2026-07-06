@@ -69,42 +69,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://api.gsmgc.es" crossOrigin="anonymous" />
       </head>
       <body className={`${inter.className} font-sans antialiased`}>
-        {/* NAV DIAG: intercept History API before React/Next.js code runs */}
-        <script dangerouslySetInnerHTML={{ __html: `
-(function() {
-  var _push = history.pushState;
-  var _replace = history.replaceState;
-  var _href = location.href;
-
-  history.pushState = function() {
-    var now = Date.now();
-    var toUrl = arguments[2] || '';
-    console.log('[NAV:' + now + '] pushState | from=' + _href + ' | to=' + toUrl);
-    _href = location.href;
-    return _push.apply(this, arguments);
-  };
-  history.replaceState = function() {
-    var now = Date.now();
-    var toUrl = arguments[2] || '';
-    console.log('[NAV:' + now + '] replaceState | from=' + _href + ' | to=' + toUrl);
-    console.log('[NAV:' + now + '] replaceState STACK', new Error().stack);
-    _href = location.href;
-    return _replace.apply(this, arguments);
-  };
-
-  window.addEventListener('popstate', function() {
-    console.log('[NAV:' + Date.now() + '] popstate | url=' + location.href);
-  });
-  window.addEventListener('pageshow', function(e) {
-    console.log('[NAV:' + Date.now() + '] pageshow | persisted=' + e.persisted + ' | url=' + location.href);
-  });
-  window.addEventListener('beforeunload', function() {
-    console.log('[NAV:' + Date.now() + '] beforeunload | url=' + location.href);
-  });
-
-  console.log('[NAV] DIAG INSTALLED | url=' + location.href);
-})();
-        ` }} />
         <AuthProvider>
         <CartProvider>
             <Header />
