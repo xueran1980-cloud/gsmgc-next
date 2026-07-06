@@ -98,6 +98,15 @@ export default function TiendaClient({
     return p.toString() ? `${pathname}?${p}` : pathname;
   };
 
+  // ★ Header 搜索事件 → TiendaClient 统一 URL 写入口
+  useEffect(() => {
+    function handler(e: CustomEvent<{ url: string }>) {
+      safeReplace(e.detail.url);
+    }
+    window.addEventListener('gsmgc:search', handler as EventListener);
+    return () => window.removeEventListener('gsmgc:search', handler as EventListener);
+  }, [searchParams, pathname, router]);
+
   // ★ Safari Router 冻结自愈：router.replace 失败时 800ms 硬导航 fallback
   const safeReplace = (url: string) => {
     if (!url.startsWith('/')) return;        // ★ 防御：拒绝非站内路径
@@ -148,13 +157,6 @@ export default function TiendaClient({
   // ★ useEffect：URL (searchParams) 为唯一状态源，URL 变化时 fetch
   //    通过 useAsyncState 管理 fetch 生命周期：15s timeout + abort + auto retry + unmount guard
   useEffect(() => {
-    console.log('[TIENDA render]', JSON.stringify({
-      pathname: pathname,
-      search: searchParams.toString(),
-      href: window.location.href,
-      ts: Math.floor(performance.now())
-    }));
-
     const category = searchParams.get('category') || '';
     const searchTerm = searchParams.get('search') || '';
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
