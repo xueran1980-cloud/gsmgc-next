@@ -72,7 +72,8 @@ async function getProduct(id: string) {
       await new Promise(r => setTimeout(r, FB_DELAYS[fbAttempt]));
     }
   }
-  return null;
+  console.error(`[getProduct] ALL 5 retries exhausted id=${id}, throwing to prevent ISR caching`);
+  throw new Error(`Product ${id}: all retries across 2 endpoints failed`);
 }
 
 // ── SEO（P1: O(1) product-by-id，复用页面 fetch cache）──
@@ -83,7 +84,8 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, slug } = await params;
-  const product = await getProduct(id);
+  let product: any = null;
+  try { product = await getProduct(id); } catch { /* metadata fallback below */ }
   const title = product?.name
     || slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   const desc = product
@@ -97,42 +99,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-// ── API 失败降级 UI（不进 404 链，ISR 600s 后自动恢复）──
-
-function ProductUnavailable({ id }: { id: string }) {
-  return (
-    <div className="max-w-7xl mx-auto px-4 py-24 text-center">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">
-        Producto no disponible temporalmente
-      </h1>
-      <p className="text-gray-500 mb-8 max-w-md mx-auto">
-        No se ha podido cargar la información de este producto.
-        Por favor, inténtalo de nuevo en unos instantes.
-      </p>
-      <div className="flex gap-3 justify-center">
-        <a href="/tienda"
-          className="bg-[#2563eb] text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-[#1d4ed8] transition">
-          Volver a la tienda
-        </a>
-        <a href="/"
-          className="border border-gray-200 text-gray-700 px-6 py-2.5 rounded-xl font-bold text-sm hover:border-[#2563eb] transition">
-          Ir al inicio
-        </a>
-      </div>
-    </div>
-  );
-}
-
 // ── 页面 ──
 
 export default async function ProductDetailPage({ params }: Props) {
   const { id, slug } = await params;
   const product = await getProduct(id);
 
-  // API 失败（重试+fallback 全部失败）→ 不进 404 链
-  if (!product) {
-    return <ProductUnavailable id={id} />;
-  }
+  // getProduct 只有 400/404 才返回 null → 产品不存在
+  // 网络/API 故障会 throw → Next.js 渲染 error.tsx，不缓存 ISR
+  if (!product) notFound();
 
   // 真 404: slug 不匹配
   if (product.slug !== slug) return notFound();
