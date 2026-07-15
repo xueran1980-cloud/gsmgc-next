@@ -25,8 +25,9 @@ async function getProduct(id: string) {
   const RETRY_DELAYS = [1000, 2000, 4000];
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    let res; // 声明在外部，catch 块可访问
     try {
-      const res = await fetch(
+      res = await fetch(
         `${API}/wp-json/gsmgc/v1/product-by-id?id=${id}`,
         { next: { revalidate: 600 }, signal: AbortSignal.timeout(TIMEOUT_MS) }
       );
@@ -40,7 +41,8 @@ async function getProduct(id: string) {
       }
       console.warn(`[getProduct] product-by-id id=${id} attempt=${attempt + 1} status=${res.status}`);
     } catch (err) {
-      console.error(`[getProduct] product-by-id id=${id} attempt=${attempt + 1} error=${(err as Error).message}`);
+      const headers = res ? { server: res.headers.get('server'), cfRay: res.headers.get('cf-ray'), contentType: res.headers.get('content-type') } : {};
+      console.error(`[getProduct] product-by-id id=${id} attempt=${attempt + 1} error=${(err as Error).message}`, headers);
     }
     if (attempt < MAX_RETRIES - 1) {
       await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
@@ -52,21 +54,23 @@ async function getProduct(id: string) {
   const FB_RETRIES = 2;
   const FB_DELAYS = [2000, 4000];
   for (let fbAttempt = 0; fbAttempt < FB_RETRIES; fbAttempt++) {
+    let fbRes;
     try {
-      const res = await fetch(
+      fbRes = await fetch(
         `${API}/wp-json/gsmgc/v1/products-raw`,
         { next: { revalidate: 600 }, signal: AbortSignal.timeout(15000) }
       );
-      if (res.ok) {
-        const data = await res.json();
+      if (fbRes.ok) {
+        const data = await fbRes.json();
         const products = data.products || data;
         const product = products.find((p: any) => String(p.id) === id);
         if (product) return product;
         return null; // 产品确实不存在
       }
-      console.warn(`[getProduct] products-raw fallback id=${id} attempt=${fbAttempt + 1} status=${res.status}`);
+      console.warn(`[getProduct] products-raw fallback id=${id} attempt=${fbAttempt + 1} status=${fbRes.status}`);
     } catch (err) {
-      console.error(`[getProduct] products-raw fallback id=${id} attempt=${fbAttempt + 1} error=${(err as Error).message}`);
+      const h = fbRes ? { server: fbRes.headers.get('server'), cfRay: fbRes.headers.get('cf-ray'), contentType: fbRes.headers.get('content-type') } : {};
+      console.error(`[getProduct] products-raw fallback id=${id} attempt=${fbAttempt + 1} error=${(err as Error).message}`, h);
     }
     if (fbAttempt < FB_RETRIES - 1) {
       await new Promise(r => setTimeout(r, FB_DELAYS[fbAttempt]));
@@ -268,3 +272,4 @@ export default async function ProductDetailPage({ params }: Props) {
     </div>
   );
 }
+
