@@ -72,12 +72,12 @@ async function _actualFetchProducts(): Promise<Product[]> {
     const ct = res.headers.get('Content-Type') || '';
     if (ct.includes('text/html')) {
       console.warn('[fetchProducts] CF intercepted (HTML response), status=', res.status);
-      return [];
+      throw new Error(`Cloudflare returned HTML instead of JSON (status ${res.status})`);
     }
 
     if (!res.ok) {
       console.warn(`[fetchProducts] returned ${res.status}`);
-      return [];
+      throw new Error(`Failed to fetch products, status ${res.status}`);
     }
 
     // ★ 防御 JSON 污染：SG 缓存可能混入 mu-plugin echo 输出（多 JSON 拼接）
@@ -94,12 +94,12 @@ async function _actualFetchProducts(): Promise<Product[]> {
         try {
           data = JSON.parse(tail);
         } catch {
-          console.warn('[fetchProducts] sanitized JSON parse also failed');
-          return [];
+          console.error('[fetchProducts] sanitized JSON parse also failed');
+          throw new Error('Sanitized JSON parse failed');
         }
       } else {
         console.warn('[fetchProducts] JSON parse failed, head:', text.substring(0, 200));
-        return [];
+        throw new Error('Invalid JSON response');
       }
     }
 
@@ -112,10 +112,10 @@ async function _actualFetchProducts(): Promise<Product[]> {
     if (data.products && Array.isArray(data.products)) return data.products;
     if (data.success && Array.isArray(data.products)) return data.products;
     console.warn('[fetchProducts] invalid response format:', Object.keys(data));
-    return [];
+    throw new Error(`Unexpected response format: ${Object.keys(data).join(",")}`);
   } catch (err) {
     console.warn('[fetchProducts] fetch failed:', err);
-    return [];
+    throw err;
   }
 }
 
@@ -178,7 +178,7 @@ export async function fetchHomepageData(): Promise<Product[]> {
       const res = await fetch(endpoint, { next: { revalidate: 600 } });
       if (!res.ok) {
         if (attempt < 3) { await sleep(1000 * attempt); continue; }
-        return [];
+        throw new Error(`Failed to fetch homepage-data after 3 retries, status ${res.status}`);
       }
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) return data;
