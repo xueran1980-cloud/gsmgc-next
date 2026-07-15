@@ -68,10 +68,19 @@ async function _actualFetchProducts(): Promise<Product[]> {
       next: { revalidate: 300 },
     });
 
-    // ★ CF 拦截检测：如果被返回 HTML（challenge page），记录并走空数组
+    // ★ CF 拦截检测：如果被返回 HTML（challenge page），记录详细信息用于诊断
     const ct = res.headers.get('Content-Type') || '';
     if (ct.includes('text/html')) {
-      console.warn('[fetchProducts] CF intercepted (HTML response), status=', res.status);
+      const cfCacheStatus = res.headers.get('cf-cache-status') || '';
+      let preview = '';
+      try {
+        // ★ clone() 后读取 HTML 预览，不消耗原始 response body
+        const html = await res.clone().text();
+        preview = html.replace(/\s+/g, ' ').substring(0, 500).trim();
+      } catch {
+        // ★ 日志采集本身不应成为新的故障源
+      }
+      console.warn(`[fetchProducts] CF intercepted (HTML), url=${res.url}, status=${res.status}, cfCacheStatus=${cfCacheStatus}, preview="${preview}"`);
       throw new Error(`Cloudflare returned HTML instead of JSON (status ${res.status})`);
     }
 
