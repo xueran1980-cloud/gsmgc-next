@@ -40,7 +40,13 @@ export interface Product {
   min_qty: number;
 }
 
-// ---------- 产品数据 ----------
+// ★ 统一服务端请求头 — 防止被 SiteGround ModSecurity 规则误判
+//   UA=GSMGC-Backend/1.0: 取代 Node.js 默认 "node"（SG 官方建议）
+//   Accept=application/json: REST Client 最佳实践
+const SERVER_HEADERS = {
+  'User-Agent': 'GSMGC-Backend/1.0',
+  'Accept': 'application/json',
+};
 
 const API_PATH = '/wp-json/gsmgc/v1/products-raw';
 const API_ORIGIN = 'https://api.gsmgc.es';
@@ -184,7 +190,10 @@ export async function fetchHomepageData(): Promise<Product[]> {
   // ★ 最多 3 次尝试，带 incremental backoff，应对 SG IP 间歇性阻断
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const res = await fetch(endpoint, { next: { revalidate: 600 } });
+      const res = await fetch(endpoint, {
+        next: { revalidate: 600 },
+        headers: SERVER_HEADERS,
+      });
       if (!res.ok) {
         if (attempt < 3) { await sleep(1000 * attempt); continue; }
         throw new Error(`Failed to fetch homepage-data after 3 retries, status ${res.status}`);
@@ -215,7 +224,7 @@ export async function fetchCategories(): Promise<ProductCategory[]> {
   try {
     const res = await fetch(
       'https://api.gsmgc.es/wp-json/gsmgc/v1/categories-list',
-      { next: { revalidate: 3600 } }
+      { next: { revalidate: 3600 }, headers: SERVER_HEADERS }
     );
     if (!res.ok) return [];
     const data = await res.json();

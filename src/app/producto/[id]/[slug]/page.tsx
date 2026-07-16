@@ -19,6 +19,13 @@ export async function generateStaticParams() {
 
 const API = 'https://api.gsmgc.es';
 
+// ★ 2026-07-16: 统一服务端请求头，防止 SiteGround ModSecurity 误判
+//   UA=GSMGC-Backend/1.0: 取代 Node.js 默认 "node"（SG 官方建议）
+const SERVER_HEADERS = {
+  'User-Agent': 'GSMGC-Backend/1.0',
+  'Accept': 'application/json',
+};
+
 async function getProduct(id: string) {
   const TIMEOUT_MS = 8000;
   const MAX_RETRIES = 3;
@@ -29,7 +36,7 @@ async function getProduct(id: string) {
     try {
       res = await fetch(
         `${API}/wp-json/gsmgc/v1/product-by-id?id=${id}`,
-        { next: { revalidate: 600 }, signal: AbortSignal.timeout(TIMEOUT_MS) }
+        { next: { revalidate: 600 }, signal: AbortSignal.timeout(TIMEOUT_MS), headers: SERVER_HEADERS }
       );
       if (res.ok) {
         const json = await res.json();
@@ -58,7 +65,7 @@ async function getProduct(id: string) {
     try {
       fbRes = await fetch(
         `${API}/wp-json/gsmgc/v1/products-raw`,
-        { next: { revalidate: 600 }, signal: AbortSignal.timeout(15000) }
+        { next: { revalidate: 600 }, signal: AbortSignal.timeout(15000), headers: SERVER_HEADERS }
       );
       if (fbRes.ok) {
         const data = await fbRes.json();
