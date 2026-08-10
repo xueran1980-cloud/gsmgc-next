@@ -40,7 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const productPages: MetadataRoute.Sitemap = products
     .filter((p: any) => p.status === 'publish')
     .map((p: any) => {
-      const slug = generateSlug(p.name);
+      const slug = p.slug;
       return {
         url: slug
           ? `${baseUrl}/producto/${p.id}/${slug}`
