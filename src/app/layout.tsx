@@ -41,9 +41,6 @@ export const metadata: Metadata = {
       follow: true,
     },
   },
-  other: {
-    "googlebot": "index, follow",
-  },
 };
 
 export default function RootLayout({

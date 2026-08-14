@@ -139,8 +139,6 @@ export default async function HomePage() {
         }}
       />
 
-      <h1 className="sr-only">Accesorios Móviles Mayorista Canarias - GSMGC Distribuidor B2B</h1>
-
       <Hero featuredProducts={heroProducts} productCount={productCount} categoryCount={categoryCount} />
       <ProductsCarousel
         title="Novedades"

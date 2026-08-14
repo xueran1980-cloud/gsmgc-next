@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint src/",
     "css-guard": "node scripts/css-guard.mjs",
     "prebuild": "node scripts/css-guard.mjs",
     "postbuild": "node scripts/build-stamp.js"
