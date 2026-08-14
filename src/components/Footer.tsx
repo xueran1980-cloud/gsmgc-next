@@ -9,8 +9,10 @@ const FOOTER_LINKS: Record<string, { label: string; href: string }[]> = {
     { label: "Novedades", href: "/tienda?orderby=date" },
   ],
   Legal: [
+    { label: "Aviso legal", href: "/aviso-legal" },
     { label: "Condiciones de venta", href: "/condiciones-de-venta" },
     { label: "Política de privacidad", href: "/politica-de-privacidad" },
+    { label: "Política de cookies", href: "/politica-de-cookies" },
     { label: "Envíos y entregas", href: "/envios-y-entregas" },
     { label: "Devoluciones", href: "/devoluciones" },
   ],

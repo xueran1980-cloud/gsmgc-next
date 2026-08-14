@@ -99,9 +99,9 @@ export default async function HomePage() {
             "description": "Mayorista B2B de accesorios y repuestos para móviles en Canarias. Más de 2.000 productos con envío en 24h.",
             "address": {
               "@type": "PostalAddress",
-              "streetAddress": "C/ Mayor 45",
+              "streetAddress": "Calle La Naval 109, Bajo",
               "addressLocality": "Las Palmas de Gran Canaria",
-              "postalCode": "35001",
+              "postalCode": "35008",
               "addressRegion": "Canarias",
               "addressCountry": "ES",
             },
