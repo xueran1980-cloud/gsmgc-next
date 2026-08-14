@@ -23,7 +23,6 @@ const nextConfig: NextConfig = {
       { source: "/cart", destination: "/checkout", permanent: true },
       { source: "/my-account", destination: "/mi-cuenta", permanent: true },
       { source: "/my-account/:path*", destination: "/mi-cuenta", permanent: true },
-      { source: "/aviso-legal", destination: "/politica-de-privacidad", permanent: true },
       { source: "/terminos", destination: "/condiciones-de-venta", permanent: true },
       { source: "/terminos-de-uso", destination: "/condiciones-de-venta", permanent: true },
       { source: "/terminos-y-condiciones", destination: "/condiciones-de-venta", permanent: true },
