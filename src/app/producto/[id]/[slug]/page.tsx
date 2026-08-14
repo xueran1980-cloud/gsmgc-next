@@ -93,6 +93,15 @@ interface Props {
   params: Promise<{ id: string; slug: string }>;
 }
 
+// 清理描述：去 HTML 标签、压缩空白、过滤垃圾占位（如 "DIAGNÓSTICO"）
+function cleanDesc(raw: string | null | undefined, maxLen = 160): string {
+  if (!raw) return "";
+  const cleaned = raw.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+  const junk = new Set(["diagnóstico", "diagnostico", "pendiente", "tbd", "n/a", "na", "sin descripción", "sin descripcion"]);
+  if (junk.has(cleaned.toLowerCase())) return "";
+  return cleaned.slice(0, maxLen);
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, slug } = await params;
   let product: any = null;
@@ -100,13 +109,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = product?.name
     || slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   const desc = product
-    ? (product.short_description || product.description?.replace(/<[^>]*>/g, '').slice(0, 160) || '')
+    ? (cleanDesc(product.short_description) || cleanDesc(product.description) || `SKU ${product.sku || id} — ${product.name || "GSMGC"}`)
     : `Producto ${id} — detalles y disponibilidad en GSMGC`;
+  const ogImage = product?.images?.[0]?.src ? resolveImageUrl(product.images[0].src) : undefined;
   return {
     title,
     description: desc,
     alternates: { canonical: `https://gsmgc.es/producto/${id}/${slug}` },
     robots: { index: true, follow: true },
+    openGraph: {
+      title,
+      description: desc,
+      url: `https://gsmgc.es/producto/${id}/${slug}`,
+      type: "website",
+      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
+    },
   };
 }
 
@@ -123,8 +140,8 @@ export default async function ProductDetailPage({ params }: Props) {
   // 真 404: slug 不匹配
   if (product.slug !== slug) return notFound();
 
-  const desc = (product.short_description ||
-    product.description?.replace(/<[^>]*>/g, "").slice(0, 160) ||
+  const desc = (cleanDesc(product.short_description) ||
+    cleanDesc(product.description) ||
     `SKU: ${product.sku || id}`) as string;
 
   const dp = getDisplayPrice(
@@ -273,6 +290,11 @@ export default async function ProductDetailPage({ params }: Props) {
             brand: product.vendor
               ? { "@type": "Brand", name: product.vendor }
               : undefined,
+            offers: {
+              "@type": "Offer",
+              availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+              itemCondition: "https://schema.org/NewCondition",
+            },
           }),
         }}
       />
