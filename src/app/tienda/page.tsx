@@ -33,6 +33,7 @@ export const metadata: Metadata = {
 export default async function TiendaPage() {
   let initialProducts: Product[] = [];
   let initialTotal = 0;
+  let fetched = false; // 是否成功获取（含合法空），失败语义用
 
   // ISR fetch — 默认排序 + 1次重试（应对 CF Bot Fight Mode）
   const backendUrl = 'https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?per_page=24&page=1&orderby=price&order=desc';
@@ -46,11 +47,13 @@ export default async function TiendaPage() {
         if (json.success && Array.isArray(json.products) && json.products.length > 0) {
           initialProducts = json.products;
           initialTotal = json.total || 0;
+          fetched = true;
           break;
         }
         if (json.success && Array.isArray(json.products)) {
           initialProducts = [];
           initialTotal = 0;
+          fetched = true;
           break;
         }
       }
@@ -66,6 +69,13 @@ export default async function TiendaPage() {
         console.error('[tienda ISR] fetch failed after retry:', (err as Error).message);
       }
     }
+  }
+
+  // ★ 失败语义：两次尝试均未成功获取 → throw，让 ISR 保留上一份正常 STALE
+  // （成功含合法空目录：API 正常响应空数组不视为失败）
+  if (!fetched) {
+    console.error('[tienda ISR] both attempts failed, throwing to prevent ISR caching of empty Tienda');
+    throw new Error('Tienda: fallo al cargar el catálogo');
   }
 
   return (
