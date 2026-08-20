@@ -67,7 +67,6 @@ export default function TiendaClient({
   const search = useAsyncState<void>();
   useEffect(() => {
     if (ssrReady.current) {
-      ssrReady.current = false;
       setLoading(false);
       return;
     }
@@ -165,6 +164,13 @@ export default function TiendaClient({
   // ★ useEffect：URL (searchParams) 为唯一状态源，URL 变化时 fetch
   //    通过 useAsyncState 管理 fetch 生命周期：15s timeout + abort + auto retry + unmount guard
   useEffect(() => {
+    // ★ 守卫：SSR 已提供首屏数据 → 跳过 hydration 后的重复 fetch
+    //   （消费动作从 effect1 移到这里，确保与 fetch 决策在同一时序点）
+    if (ssrReady.current) {
+      ssrReady.current = false;
+      return;
+    }
+
     const category = searchParams.get('category') || '';
     const searchTerm = searchParams.get('search') || '';
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
