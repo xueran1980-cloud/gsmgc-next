@@ -74,7 +74,6 @@ export default async function TiendaPage() {
       initialProducts={initialProducts}
       initialTotal={initialTotal}
       initialPage={1}
-      apiEndpoint="/api/products-v2"
     />
     </Suspense>
   );

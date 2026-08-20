@@ -35,13 +35,11 @@ function HighlightText({ text, highlight }: { text: string; highlight: string })
 
 export default function TiendaClient({
   categories: categoriesProp,
-  apiEndpoint = '/api/products',
   initialProducts,
   initialTotal,
   initialPage,
 }: {
   categories?: ProductCategory[];
-  apiEndpoint?: string;
   initialProducts?: Product[];
   initialTotal?: number;
   initialPage?: number;

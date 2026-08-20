@@ -151,36 +151,6 @@ export async function fetchProducts(): Promise<Product[]> {
   return _fetchProductsPromise;
 }
 
-// ---------- 服务端获取单个产品 ----------
-
-export async function fetchProductById(id: string): Promise<Product | null> {
-  try {
-    const products = await fetchProducts();
-    // ★ 统一 product identifier（slug / id / permalink fallback）
-    // 1. 优先 id 匹配（主逻辑）
-    let product = products.find((p: Product) => String(p.id) === String(id));
-    // 2. fallback: slug 匹配（URL 中的 slug）
-    if (!product) {
-      product = products.find((p: Product) => p.slug === id);
-    }
-    // 3. fallback: permalink 包含 id（兼容旧链路）
-    if (!product) {
-      product = products.find((p: Product) => {
-        if (!p.name) return false;
-        const generatedSlug = generateSlug(p.name);
-        return generatedSlug === id || p.slug === id;
-      });
-    }
-    if (!product) {
-      console.warn(`[fetchProductById] product not found, id=${id}, total=${products.length}`);
-    }
-    return product || null;
-  } catch (err) {
-    console.warn('[fetchProductById] failed:', err);
-    return null;
-  }
-}
-
 // ---------- P2: 首页轻量数据 ----------
 
 export async function fetchHomepageData(): Promise<Product[]> {
