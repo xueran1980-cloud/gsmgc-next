@@ -67,7 +67,6 @@ export default function TiendaClient({
   const search = useAsyncState<void>();
   useEffect(() => {
     if (ssrReady.current) {
-      ssrReady.current = false;
       setLoading(false);
       return;
     }
@@ -168,14 +167,28 @@ export default function TiendaClient({
     const category = searchParams.get('category') || '';
     const searchTerm = searchParams.get('search') || '';
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+    const orderbyParam = searchParams.get('orderby');
+    const orderParam = searchParams.get('order');
+
+    // ★ 守卫（候选C）：SSR 已提供数据 + 当前 URL = SSR 默认查询 → 跳过重复 fetch
+    //   ssrReady 无条件消费（一次性），isDefaultView 决定是否跳过
+    //   默认查询 = 无 category/search + page<=1 + orderby 缺省或 price + order 缺省或 desc
+    const isDefaultView =
+      !category && !searchTerm && page <= 1 &&
+      (orderbyParam === null || orderbyParam === 'price') &&
+      (orderParam === null || orderParam === 'desc');
+    if (ssrReady.current) {
+      ssrReady.current = false;
+      if (isDefaultView) return;
+    }
 
     // ★ 有筛选条件时立即显示 loading
     if (category || searchTerm || page > 1) {
       setLoading(true);
     }
 
-    const orderby = searchParams.get('orderby') || 'price'; // ★ 旧站默认：price-desc
-    const order = searchParams.get('order') || 'desc';
+    const orderby = orderbyParam || 'price'; // ★ 旧站默认：price-desc
+    const order = orderParam || 'desc';
 
     const params = new URLSearchParams();
     params.set('orderby', orderby);
