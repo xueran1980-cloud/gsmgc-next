@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext';
-import { register as apiRegister, requestPasswordReset } from '@/api/auth';
+import { register as apiRegister, requestPasswordReset, resetPassword } from '@/api/auth';
 import { getCustomerOrders, getOrder, removeOrderItem } from '@/lib/woocommerce';
 import {
   CheckCircle, AlertCircle, Loader, Clock, FileText, MessageCircle,
@@ -37,11 +37,17 @@ function AccountPageContent() {
   const initialMode = (searchParams.get('register') === '1' ? 'register'
     : searchParams.get('forgot') === '1' ? 'forgot'
     : searchParams.get('pending') === '1' ? 'pending'
+    : searchParams.get('action') === 'rp' ? 'reset'
     : 'login');
+
+  const resetKey = searchParams.get('key') ?? '';
+  const resetLogin = searchParams.get('login') ?? '';
 
   return (
     <AccountSwitcher
       initialMode={initialMode}
+      resetKey={resetKey}
+      resetLogin={resetLogin}
       onLoginSuccess={authLogin}
       isPending={isPending}
       user={user}
@@ -500,8 +506,8 @@ function PendingView({ user, onLogout, refreshUser }: { user: any; onLogout: () 
 }
 
 /* ───────── Auth Switcher ───────── */
-function AccountSwitcher({ initialMode = 'login', onLoginSuccess, isPending, user, onLogout, refreshUser }: {
-  initialMode?: string; onLoginSuccess: (email: string, password: string) => Promise<any>; isPending: boolean; user: any; onLogout: () => Promise<void>; refreshUser?: () => Promise<any>;
+function AccountSwitcher({ initialMode = 'login', resetKey = '', resetLogin = '', onLoginSuccess, isPending, user, onLogout, refreshUser }: {
+  initialMode?: string; resetKey?: string; resetLogin?: string; onLoginSuccess: (email: string, password: string) => Promise<any>; isPending: boolean; user: any; onLogout: () => Promise<void>; refreshUser?: () => Promise<any>;
 }) {
   const [mode, setMode] = useState(initialMode);
 
@@ -523,6 +529,7 @@ function AccountSwitcher({ initialMode = 'login', onLoginSuccess, isPending, use
     switch (mode) {
       case 'register': return 'Registrarse como cliente B2B';
       case 'forgot': return 'Recuperar contrasena';
+      case 'reset': return 'Nueva contrasena';
       default: return 'Area de clientes B2B';
     }
   };
@@ -531,6 +538,7 @@ function AccountSwitcher({ initialMode = 'login', onLoginSuccess, isPending, use
     switch (mode) {
       case 'register': return 'Solicita acceso como distribuidor o profesional';
       case 'forgot': return 'Te enviaremos instrucciones por email';
+      case 'reset': return 'Elige una nueva contrasena para tu cuenta';
       default: return 'Accede a tu cuenta mayorista';
     }
   };
@@ -554,6 +562,13 @@ function AccountSwitcher({ initialMode = 'login', onLoginSuccess, isPending, use
         )}
         {mode === 'forgot' && (
           <ForgotPasswordForm
+            onSwitchToLogin={() => setMode('login')}
+          />
+        )}
+        {mode === 'reset' && (
+          <ResetPasswordForm
+            resetKey={resetKey}
+            resetLogin={resetLogin}
             onSwitchToLogin={() => setMode('login')}
           />
         )}
@@ -670,6 +685,111 @@ function ForgotPasswordForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }
           className="text-sm text-gray-500 hover:text-[#2563eb] transition"
         >
           Volver al inicio de sesión
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/* ───────── Reset Password Form（R-2 2026-08-21：邮件链接 ?action=rp&key&login 进入）───────── */
+function ResetPasswordForm({ resetKey, resetLogin, onSwitchToLogin }: { resetKey: string; resetLogin: string; onSwitchToLogin: () => void }) {
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!password || password.length < 8) {
+      setErrors({ password: 'La contrasena debe tener al menos 8 caracteres' });
+      return;
+    }
+    if (password !== confirm) {
+      setErrors({ confirm: 'Las contrasenas no coinciden' });
+      return;
+    }
+    setErrors({});
+    setLoading(true);
+    try {
+      await resetPassword(resetLogin, resetKey, password);
+      setSuccess(true);
+    } catch (err: any) {
+      setErrors({ submit: err.message });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (success) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <CheckCircle size={30} className="text-green-500" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Contrasena actualizada</h2>
+        <p className="text-gray-500 text-sm mb-4">
+          Tu contrasena ha sido actualizada correctamente. Ya puedes iniciar sesion.
+        </p>
+        <button
+          onClick={onSwitchToLogin}
+          className="text-[#2563eb] font-semibold hover:underline"
+        >
+          Volver al inicio de sesion
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+      <div className="text-center mb-6">
+        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+          <Lock className="text-[#2563eb]" size={30} />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Nueva contrasena</h2>
+        <p className="text-gray-500 text-sm">Elige una nueva contrasena para tu cuenta</p>
+      </div>
+
+      <div className="space-y-4">
+        <Field
+          label="Nueva contrasena"
+          name="password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Minimo 8 caracteres"
+          error={errors.password}
+        />
+        <Field
+          label="Confirmar contrasena"
+          name="confirm"
+          type="password"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          placeholder="Repite la contrasena"
+          error={errors.confirm}
+        />
+        {errors.submit && (
+          <p className="text-red-500 text-sm">{errors.submit}</p>
+        )}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] disabled:bg-blue-300 text-white font-bold py-3.5 rounded-xl transition shadow-md flex items-center justify-center gap-2"
+        >
+          {loading ? <Loader size={18} className="animate-spin" /> : <Lock size={18} />}
+          {loading ? 'Procesando...' : 'Actualizar contrasena'}
+        </button>
+      </div>
+
+      <div className="text-center mt-4">
+        <button
+          type="button"
+          onClick={onSwitchToLogin}
+          className="text-sm text-gray-500 hover:text-[#2563eb] transition"
+        >
+          Volver al inicio de sesion
         </button>
       </div>
     </form>
