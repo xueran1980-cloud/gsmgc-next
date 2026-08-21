@@ -6,18 +6,6 @@ import { fetchWithFallbackClient } from '@/lib/fetchWithFallback';
 import { parseApiResponse, fetchAndParse, type FetchResult } from '@/lib/apiParser';
 import { getAuthToken } from '@/api/auth';
 
-// ★ v6.2: WC Basic Auth 也走直连（不再走 /api/proxy/）
-const WC_API_BASE = 'https://api.gsmgc.es/wp-json/wc/v3';
-
-function getBasicAuthHeader(): string {
-  const user = process.env.NEXT_PUBLIC_WP_USER;
-  const pass = process.env.NEXT_PUBLIC_WP_APP_PASSWORD;
-  if (!user || !pass) {
-    throw new Error('Sistema de pedidos no configurado. Contacta con nosotros por WhatsApp.');
-  }
-  return `Basic ${btoa(`${user}:${pass}`)}`;
-}
-
 interface ShippingAddress {
   first_name: string;
   last_name: string;
@@ -77,28 +65,6 @@ export async function createOrder(orderData: Record<string, unknown>): Promise<C
   }
 
   return result.data;
-}
-
-// ★ v5.0: WC Basic Auth 备用下单也走 proxy（不直连 api.gsmgc.es）
-export async function createOrderWC(orderData: CreateOrderRequest): Promise<CreateOrderResponse> {
-  const auth = getBasicAuthHeader();
-
-  const res = await fetch(`${WC_API_BASE}/orders`, {
-    method: 'POST',
-    headers: {
-      Authorization: auth,
-      'Content-Type': 'application/json',
-      'User-Agent': 'GSMGC-Next.js/1.0',
-    },
-    body: JSON.stringify(orderData),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Error al crear el pedido (${res.status})`);
-  }
-
-  return res.json();
 }
 
 // 获取客户订单列表（走 Next.js API Route，不走直连）
