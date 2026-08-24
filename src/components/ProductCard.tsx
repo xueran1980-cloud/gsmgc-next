@@ -55,6 +55,8 @@ export default function ProductCard({ product, compact = false }: { product: Pro
 
   // 登录价格：优先 products-prices；未登录/未拉到 → 骨架
   const priceInfo = getPrice(product.id);
+  // ⭐ 价格就绪守卫：已登录但 products-prices 未就绪 → 禁用加购（防 0 价入车，与 ProductDetailActions 一致）
+  const priceReady = !isLoggedIn || !!priceInfo;
   const dp = priceInfo
     ? getDisplayPrice(priceInfo.price, priceInfo.regular_price)
     : getDisplayPrice("0", "");
@@ -137,8 +139,8 @@ export default function ProductCard({ product, compact = false }: { product: Pro
         <div className="flex items-center justify-between mt-auto">
           <PriceDisplay compact />
           {inStock && isLoggedIn ? (
-            <button onClick={handleAdd}
-              className={`rounded-lg p-1.5 transition shadow-sm ${added ? "bg-green-500 text-white" : "bg-[#2563eb] hover:bg-[#1d4ed8] text-white"}`}>
+            <button onClick={handleAdd} disabled={!priceReady}
+              className={`rounded-lg p-1.5 transition shadow-sm ${added ? "bg-green-500 text-white" : !priceReady ? "bg-gray-200 text-gray-400 cursor-wait" : "bg-[#2563eb] hover:bg-[#1d4ed8] text-white"}`}>
               {added ? <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> : <ShoppingCart size={14} />}
             </button>
           ) : !inStock ? (
@@ -181,8 +183,8 @@ export default function ProductCard({ product, compact = false }: { product: Pro
         <div className="flex-1"><PriceDisplay /></div>
         {isLoggedIn ? (
           <div className="flex items-center gap-1.5">
-            <button onClick={handleAdd} disabled={!inStock}
-              className={`rounded-xl p-2.5 transition font-bold text-sm ${added ? "bg-green-500 text-white shadow-md" : inStock ? "bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-md hover:shadow-lg" : "bg-red-100 text-red-400 cursor-not-allowed"}`}>
+            <button onClick={handleAdd} disabled={!inStock || !priceReady}
+              className={`rounded-xl p-2.5 transition font-bold text-sm ${added ? "bg-green-500 text-white shadow-md" : !priceReady ? "bg-gray-200 text-gray-400 cursor-wait" : inStock ? "bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-md hover:shadow-lg" : "bg-red-100 text-red-400 cursor-not-allowed"}`}>
               {added ? <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> : <ShoppingCart size={16} />}
             </button>
             <button
