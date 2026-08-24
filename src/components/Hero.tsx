@@ -19,7 +19,7 @@ const HOT_CATS = ["iPhone", "Samsung", "Xiaomi", "Cables", "Baterías"];
 
 export default function Hero({ featuredProducts, productCount, categoryCount }: { featuredProducts: Product[]; productCount: number; categoryCount: number }) {
   const { isLoggedIn } = useAuth();
-  const { getPrice, ensurePrices } = usePrices();
+  const { getPrice, ensurePrices, denied } = usePrices();
   // ISSUE-2026-002 Phase 2: 登录后拉取 featured 产品价格
   const featuredIds = featuredProducts.map((p) => p.id);
   useEffect(() => {
@@ -151,7 +151,13 @@ export default function Hero({ featuredProducts, productCount, categoryCount }: 
                       {isLoggedIn ? (
                         (() => {
                           const pi = getPrice(p.id);
-                          if (!pi) return <div className="animate-pulse bg-gray-200 rounded h-3 w-14" />;
+                          if (!pi) {
+                            // 已确认无权（401/403）→ Ver precio，而非永久骨架
+                            if (denied) {
+                              return <div className="text-[9px] text-gray-400 italic"><Lock size={9} className="inline mr-0.5" />Ver precio</div>;
+                            }
+                            return <div className="animate-pulse bg-gray-200 rounded h-3 w-14" />;
+                          }
                           const base = parseFloat(pi.price || "0");
                           const reg = parseFloat(pi.regular_price || "0");
                           return (

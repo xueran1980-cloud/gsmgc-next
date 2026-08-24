@@ -22,6 +22,8 @@ interface PriceContextType {
   getPrice: (id: number) => PriceInfo | null;
   /** 是否已登录且有权限（决定 UI 是否显示价格） */
   canViewPrice: boolean;
+  /** 401/403 已确认无权（组件据此显示 Ver precio 而非永久骨架） */
+  denied: boolean;
 }
 
 const PriceContext = createContext<PriceContextType | null>(null);
@@ -37,6 +39,8 @@ export function PriceProvider({ children }: { children: ReactNode }) {
   const { isLoggedIn, user } = useAuth();
   const [prices, setPrices] = useState<Record<number, PriceInfo>>({});
   const [canViewPrice, setCanViewPrice] = useState(false);
+  /** 401/403 已确认无权（区别于"加载中"：无权显示 Ver precio，加载中显示骨架） */
+  const [denied, setDenied] = useState(false);
   const pendingRef = useRef<Set<number>>(new Set());
   const fetchingRef = useRef<Set<number>>(new Set());
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -51,9 +55,10 @@ export function PriceProvider({ children }: { children: ReactNode }) {
       flushTimerRef.current = null;
     }
     setCanViewPrice(false);
+    setDenied(false);
   }, [isLoggedIn, user?.id]);
 
-  const fetchPrices = useCallback(async (ids: number[]) => {
+  const fetchPrices = useCallback(async (ids: number[], attempt = 0) => {
     if (ids.length === 0) return;
     const token = getAuthToken();
     if (!token) return;
@@ -63,7 +68,7 @@ export function PriceProvider({ children }: { children: ReactNode }) {
     fresh.forEach((id) => fetchingRef.current.add(id));
 
     try {
-      // GATE 1: Authorization: Bearer（禁止 URL auth_token）
+      // GATE 1: Authorization: Bearer（禁止 URL auth_token）+ 10s 超时（防骨架无限挂起）
       const res = await fetch(`${API_PRICES}?ids=${fresh.join(',')}`, {
         method: 'GET',
         headers: {
@@ -71,20 +76,41 @@ export function PriceProvider({ children }: { children: ReactNode }) {
           'Authorization': `Bearer ${token}`,
         },
         cache: 'no-store',
+        signal: AbortSignal.timeout(10000),
       });
 
       if (res.status === 401 || res.status === 403) {
         setCanViewPrice(false);
-        return; // 未授权：不设置价格
+        setDenied(true); // 无权：UI 回退 Ver precio（而非永久骨架）
+        return;
       }
-      if (!res.ok) return;
+      if (!res.ok) {
+        // 5xx/其他 → 重试最多 2 次（退避 0.8s/1.6s）
+        if (attempt < 2) {
+          setTimeout(() => fetchPrices(fresh, attempt + 1), 800 * (attempt + 1));
+          return;
+        }
+        return;
+      }
 
       const data = await res.json();
-      if (!data.success || !data.prices) return;
+      if (!data.success || !data.prices) {
+        if (attempt < 2) {
+          setTimeout(() => fetchPrices(fresh, attempt + 1), 800 * (attempt + 1));
+          return;
+        }
+        return;
+      }
 
       setCanViewPrice(true);
+      setDenied(false);
       setPrices((prev) => ({ ...prev, ...data.prices }));
     } catch (err) {
+      // 网络错误/超时 → 重试最多 2 次（退避 0.8s/1.6s）
+      if (attempt < 2) {
+        setTimeout(() => fetchPrices(fresh, attempt + 1), 800 * (attempt + 1));
+        return;
+      }
       console.warn('[Price] fetch failed:', (err as Error).message);
     } finally {
       fresh.forEach((id) => fetchingRef.current.delete(id));
@@ -122,7 +148,7 @@ export function PriceProvider({ children }: { children: ReactNode }) {
   }, [prices]);
 
   return (
-    <PriceContext.Provider value={{ prices, ensurePrices, getPrice, canViewPrice }}>
+    <PriceContext.Provider value={{ prices, ensurePrices, getPrice, canViewPrice, denied }}>
       {children}
     </PriceContext.Provider>
   );

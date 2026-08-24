@@ -21,7 +21,7 @@ export function PriceOrLoginPrompt({
   compact?: boolean;
 }) {
   const { isLoggedIn, loading } = useAuth();
-  const { getPrice, ensurePrices } = usePrices();
+  const { getPrice, ensurePrices, denied } = usePrices();
 
   // 登录后确保拉取该产品价格（GATE 2: 唯一来源 products-prices）
   useEffect(() => {
@@ -63,6 +63,14 @@ export function PriceOrLoginPrompt({
   // ⭐ 已登录 + 有 productId + 价格未就绪（products-prices 拉取中）→ 骨架占位
   //   （避免回退显示 €0.00 / 白条——登录客户 1-2 秒内看到假价格是 UX 缺陷）
   if (isLoggedIn && productId && !priceInfo) {
+    // 已确认无权（401/403）→ 显示 Ver precio，而非永久骨架
+    if (denied) {
+      return (
+        <div className={compact ? "text-[10px] text-gray-400 italic" : "text-sm text-gray-500"}>
+          <Lock size={9} className="inline mr-0.5" />Ver precio
+        </div>
+      );
+    }
     return (
       <div className="animate-pulse">
         <div className={`bg-gray-200 rounded ${compact ? 'h-3 w-12' : 'h-4 w-16'} mb-1`} />

@@ -43,7 +43,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
   const { isLoggedIn } = useAuth();
-  const { getPrice, ensurePrices } = usePrices();
+  const { getPrice, ensurePrices, denied } = usePrices();
   const router = useRouter();
 
   // ISSUE-2026-002 Phase 2: 登录后从 products-prices 拉取该产品价格
@@ -103,6 +103,15 @@ export default function ProductCard({ product, compact = false }: { product: Pro
     }
     // 已登录但价格未就绪（products-prices 拉取中）→ 骨架，避免显示 0
     if (!priceInfo) {
+      // 已确认无权（401/403）→ 显示 Ver precio，而非永久骨架
+      if (denied) {
+        if (c) return <div className="text-[10px] text-gray-400 italic"><Lock size={9} className="inline mr-0.5" />Ver precio</div>;
+        return (
+          <span className="text-sm font-bold text-gray-400 flex items-center gap-1">
+            <Lock size={13} /> Ver precio
+          </span>
+        );
+      }
       return <div className={`animate-pulse bg-gray-200 rounded ${c ? 'h-3 w-14' : 'h-4 w-18'}`} />;
     }
     const sizeClass = c ? 'text-xs' : 'text-sm';
