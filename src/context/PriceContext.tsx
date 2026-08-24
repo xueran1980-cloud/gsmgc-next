@@ -18,6 +18,8 @@ interface PriceContextType {
   prices: Record<number, PriceInfo>;
   /** 批量请求价格（登录后由组件调用；自动去重） */
   ensurePrices: (ids: number[]) => void;
+  /** 合并 products-paginated 同包返回的价格（候选 X：仅授权响应带价；不覆盖已有；防重复请求） */
+  mergePrices: (entries: Record<number, PriceInfo>) => void;
   /** 单个产品价格（无则 null） */
   getPrice: (id: number) => PriceInfo | null;
   /** 是否已登录且有权限（决定 UI 是否显示价格） */
@@ -143,12 +145,40 @@ export function PriceProvider({ children }: { children: ReactNode }) {
     }
   }, [isLoggedIn, prices, fetchPrices]);
 
+  /**
+   * mergePrices — 候选 X（ISSUE-2026-002）
+   * 把 products-paginated 同包返回的价格合并进 prices。
+   * 规则：
+   *   ① 不覆盖已有价格（products-prices 响应先到则保留，后到则同值覆盖，无害）；
+   *   ② 已合并 id 从 pending/fetching 移除（防御：防止兜底 ensurePrices 重复发请求）；
+   * 登出/切账户时与 prices 一并清空（现有 GATE 3 effect 覆盖），无串账户风险。
+   */
+  const mergePrices = useCallback((entries: Record<number, PriceInfo>) => {
+    setPrices((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const [k, v] of Object.entries(entries)) {
+        const id = Number(k);
+        if (!next[id] && v.price != null && v.price !== '') {
+          next[id] = v;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+    // 防御：若价格已在 pending 队列或请求中，移除标记避免重复发请求
+    for (const k of Object.keys(entries)) {
+      pendingRef.current.delete(Number(k));
+      fetchingRef.current.delete(Number(k));
+    }
+  }, []);
+
   const getPrice = useCallback((id: number): PriceInfo | null => {
     return prices[id] ?? null;
   }, [prices]);
 
   return (
-    <PriceContext.Provider value={{ prices, ensurePrices, getPrice, canViewPrice, denied }}>
+    <PriceContext.Provider value={{ prices, ensurePrices, mergePrices, getPrice, canViewPrice, denied }}>
       {children}
     </PriceContext.Provider>
   );

@@ -7,6 +7,8 @@ import type { Product, ProductCategory } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
 import { BRAND_CATEGORY_NAMES, EXCLUDED_CATEGORY_NAMES } from '@/config/category-config';
 import { useAsyncState } from '@/hooks/useAsyncState';
+import { usePrices } from '@/context/PriceContext';
+import type { PriceInfo } from '@/context/PriceContext';
 
 const PER_PAGE = 24;
 
@@ -53,6 +55,8 @@ export default function TiendaClient({
   const [loading, setLoading] = useState(!(initialProducts && initialProducts.length > 0));
   const [totalCount, setTotalCount] = useState(initialTotal || 0);
   const [totalPages, setTotalPages] = useState(initialTotal ? Math.ceil(initialTotal / PER_PAGE) : 0);
+
+  const { mergePrices } = usePrices();
 
   // ★ SSR 水合：有初始数据 + 无筛选 → 直接用，跳过 fetch
   const ssrReady = useRef(!!(initialProducts && initialProducts.length > 0));
@@ -223,6 +227,23 @@ export default function TiendaClient({
 
         // ★ 兼容两种响应格式: Vercel代理(camelCase) + 后端直连(snake_case)
         if (prodData && Array.isArray(prodData.products)) {
+          // ★ 候选 X：同包价格喂给 PriceContext（仅授权响应带价；匿名无 price 自动跳过）
+          //   先 mergePrices 后 setProducts → React 18 批处理一次提交
+          //   → 新卡片 mount 时 prices 已就绪 → ensurePrices 见价不请求 → 筛选场景 0 次 products-prices
+          const priceEntries: Record<number, PriceInfo> = {};
+          for (const p of prodData.products) {
+            if (p && p.id != null && p.price != null && p.price !== '') {
+              priceEntries[p.id] = {
+                price: String(p.price),
+                regular_price: p.regular_price != null ? String(p.regular_price) : '',
+                sale_price: p.sale_price != null ? String(p.sale_price) : '',
+                min_qty: typeof p.min_qty === 'number' && p.min_qty > 0 ? p.min_qty : 1,
+              };
+            }
+          }
+          if (Object.keys(priceEntries).length > 0) {
+            mergePrices(priceEntries);
+          }
           setProducts(prodData.products);
           setTotalCount(prodData.totalCount || prodData.total || prodData.products.length);
           setTotalPages(prodData.totalPages || prodData.total_pages || 1);
