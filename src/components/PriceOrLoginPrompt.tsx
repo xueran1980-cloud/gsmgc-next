@@ -59,6 +59,18 @@ export function PriceOrLoginPrompt({
 
   // 已登录：价格来自 products-prices（productId 优先；无 productId 时回退旧 prop）
   const priceInfo = productId ? getPrice(productId) : null;
+
+  // ⭐ 已登录 + 有 productId + 价格未就绪（products-prices 拉取中）→ 骨架占位
+  //   （避免回退显示 €0.00 / 白条——登录客户 1-2 秒内看到假价格是 UX 缺陷）
+  if (isLoggedIn && productId && !priceInfo) {
+    return (
+      <div className="animate-pulse">
+        <div className={`bg-gray-200 rounded ${compact ? 'h-3 w-12' : 'h-4 w-16'} mb-1`} />
+        <div className={`bg-gray-200 rounded ${compact ? 'h-2 w-10' : 'h-3 w-12'}`} />
+      </div>
+    );
+  }
+
   const base = priceInfo ? parseFloat(priceInfo.price) : parseFloat(price || "0");
   const igic = calcIGIC(base);
   const regularVal = priceInfo

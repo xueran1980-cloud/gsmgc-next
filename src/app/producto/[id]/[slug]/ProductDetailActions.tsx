@@ -46,6 +46,8 @@ export default function ProductDetailActions({ product, waMsg }: ProductDetailAc
   const priceInfo = getPrice(product.id);
   const displayPrice = priceInfo?.price ?? product.price ?? "0";
   const displayRegular = priceInfo?.regular_price ?? product.regular_price ?? "";
+  // ⭐ 价格就绪守卫：已登录但 products-prices 未就绪 → 禁用加购（防 0 价入车 / 白条期误操作）
+  const priceReady = !isLoggedIn || !!priceInfo || !product.id;
 
   // ★ IntersectionObserver: show mobile bottom bar when add-to-cart button scrolls out of view
   useEffect(() => {
@@ -82,6 +84,8 @@ export default function ProductDetailActions({ product, waMsg }: ProductDetailAc
 
   function handleAdd() {
     if (!product) return;
+    // 价格未就绪守卫（登录后 products-prices 拉取中）→ 禁止 0 价入车
+    if (!priceReady) return;
 
     // ★ Clamp qty to maxQty
     const requestQty = Math.min(qty, maxQty);
@@ -230,15 +234,19 @@ export default function ProductDetailActions({ product, waMsg }: ProductDetailAc
 
                   <button
                     onClick={handleAdd}
-                    disabled={added}
+                    disabled={added || !priceReady}
                     className={`flex-1 h-12 rounded-xl font-bold flex items-center justify-center gap-2 transition text-base ${
                       added
                         ? 'bg-green-500 text-white'
-                        : 'bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-lg hover:shadow-xl'
+                        : !priceReady
+                          ? 'bg-gray-200 text-gray-400 cursor-wait'
+                          : 'bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-lg hover:shadow-xl'
                     }`}
                   >
                     {added ? (
                       <><Check size={18} /> Añadido al carrito</>
+                    ) : !priceReady ? (
+                      <><ShoppingCart size={18} /> Cargando precio…</>
                     ) : (
                       <><ShoppingCart size={18} /> Añadir al carrito</>
                     )}
