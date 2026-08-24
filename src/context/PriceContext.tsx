@@ -39,12 +39,17 @@ export function PriceProvider({ children }: { children: ReactNode }) {
   const [canViewPrice, setCanViewPrice] = useState(false);
   const pendingRef = useRef<Set<number>>(new Set());
   const fetchingRef = useRef<Set<number>>(new Set());
+  const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 登录/登出/切账户 → 清空价格状态（GATE 3）
   useEffect(() => {
     setPrices({});
     pendingRef.current = new Set();
     fetchingRef.current = new Set();
+    if (flushTimerRef.current !== null) {
+      clearTimeout(flushTimerRef.current);
+      flushTimerRef.current = null;
+    }
     setCanViewPrice(false);
   }, [isLoggedIn, user?.id]);
 
@@ -89,15 +94,27 @@ export function PriceProvider({ children }: { children: ReactNode }) {
   const ensurePrices = useCallback((ids: number[]) => {
     // 未登录不请求
     if (!isLoggedIn) return;
-    const need = ids.filter((id) => {
+    let added = false;
+    ids.forEach((id) => {
       const hasPrice = prices[id] !== undefined;
       const pending = pendingRef.current.has(id);
       const fetching = fetchingRef.current.has(id);
-      return !hasPrice && !pending && !fetching;
+      if (!hasPrice && !pending && !fetching) {
+        pendingRef.current.add(id);
+        added = true;
+      }
     });
-    if (need.length === 0) return;
-    need.forEach((id) => pendingRef.current.add(id));
-    fetchPrices(need);
+    if (!added) return;
+    // ⭐ 批量合并：50ms 窗口内所有 ensurePrices（Tienda 24 卡各自触发）合并为一次请求
+    //   （否则 24 个商品卡 = 24 个并发 products-prices 请求 → 骨架显示久）
+    if (flushTimerRef.current === null) {
+      flushTimerRef.current = setTimeout(() => {
+        flushTimerRef.current = null;
+        const batch = Array.from(pendingRef.current);
+        pendingRef.current = new Set();
+        if (batch.length > 0) fetchPrices(batch);
+      }, 50);
+    }
   }, [isLoggedIn, prices, fetchPrices]);
 
   const getPrice = useCallback((id: number): PriceInfo | null => {
