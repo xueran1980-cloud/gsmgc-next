@@ -144,24 +144,22 @@ export default async function ProductDetailPage({ params }: Props) {
     cleanDesc(product.description) ||
     `SKU: ${product.sku || id}`) as string;
 
-  const dp = getDisplayPrice(
-    String(product.price ?? 0),
-    String(product.regular_price ?? "")
-  );
+  // ISSUE-2026-002 Phase 2: 公开 SSR 无价格（产品页骨架），登录价格由 PriceOrLoginPrompt
+  // 通过 productId 从 products-prices 获取（GATE 2/5：禁止从 public fallback 恢复 price）
+  const dp = getDisplayPrice("0", "");
 
   const inStock = product.stock_status === "instock";
 
-  // WhatsApp message
-  const waPrice = Number(product.price ?? 0);
+  // WhatsApp message（价格占位——客户登录后通过 UI 交互获取真实价格，避免 SSR 泄露）
   const canonicalUrl = `https://gsmgc.es/producto/${product.id}/${product.slug}`;
   const waMsg = encodeURIComponent(
-    `Hola! Me interesa este producto:\n\n📱 ${(product.name || 'Producto')}\n💰 Precio: €${waPrice.toFixed(2)}\n🔗 ${canonicalUrl}\n\n¿Tienen stock disponible?`
+    `Hola! Me interesa este producto:\n\n📱 ${(product.name || 'Producto')}\n🔗 ${canonicalUrl}\n\n¿Tienen stock disponible?`
   );
 
   const adaptedProduct = {
     ...product,
-    price: String(product.price ?? 0),
-    regular_price: String(product.regular_price ?? 0),
+    price: "0",
+    regular_price: "0",
     stock_status: product.stock_status || (inStock ? "instock" : "outofstock"),
     min_qty: product.min_qty || 1,
   };
@@ -201,11 +199,12 @@ export default async function ProductDetailPage({ params }: Props) {
             </span>
           )}
 
-          {/* Price — client-side auth guard */}
+          {/* Price — client-side auth guard + products-prices */}
           <div className="mb-6">
             <PriceOrLoginPrompt
-              price={String(product.price ?? 0)}
-              regularPrice={String(product.regular_price ?? "")}
+              price="0"
+              regularPrice=""
+              productId={product.id}
             />
           </div>
 

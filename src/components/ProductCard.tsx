@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ShoppingCart, Eye, Lock } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { usePrices } from "@/context/PriceContext";
 import { resolveImageUrl } from "@/lib/image";
 import type { Product } from "@/lib/api";
 import { getDisplayPrice, getProductUrl } from "@/lib/display-formatter";
@@ -42,9 +43,22 @@ export default function ProductCard({ product, compact = false }: { product: Pro
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
   const { isLoggedIn } = useAuth();
+  const { getPrice, ensurePrices } = usePrices();
   const router = useRouter();
 
-  const dp = getDisplayPrice(product.price, product.regular_price);
+  // ISSUE-2026-002 Phase 2: 登录后从 products-prices 拉取该产品价格
+  useEffect(() => {
+    if (isLoggedIn && product.id) {
+      ensurePrices([product.id]);
+    }
+  }, [isLoggedIn, product.id, ensurePrices]);
+
+  // 登录价格：优先 products-prices；未登录/未拉到 → 骨架
+  const priceInfo = getPrice(product.id);
+  const dp = priceInfo
+    ? getDisplayPrice(priceInfo.price, priceInfo.regular_price)
+    : getDisplayPrice("0", "");
+
   // ★ 双重检查：stock_status + stock_quantity（与 ProductDetailActions 一致）
   const statusInstock = product.stock_status === "instock";
   const isActuallyOutOfStock = statusInstock
@@ -59,8 +73,8 @@ export default function ProductCard({ product, compact = false }: { product: Pro
     e.preventDefault();
     e.stopPropagation();
     addItem({
-      id: product.id, name: product.name, price: product.price,
-      regular_price: product.regular_price, image: imgUrl,
+      id: product.id, name: product.name, price: priceInfo?.price ?? "0",
+      regular_price: priceInfo?.regular_price ?? "", image: imgUrl,
       sku: product.sku, stock_quantity: product.stock_quantity,
       qty: Math.max(1, product.min_qty || 1),
     });
@@ -84,6 +98,10 @@ export default function ProductCard({ product, compact = false }: { product: Pro
           <Lock size={13} /> Ver precio
         </span>
       );
+    }
+    // 已登录但价格未就绪（products-prices 拉取中）→ 骨架，避免显示 0
+    if (!priceInfo) {
+      return <div className={`animate-pulse bg-gray-200 rounded ${c ? 'h-3 w-14' : 'h-4 w-18'}`} />;
     }
     const sizeClass = c ? 'text-xs' : 'text-sm';
     return (

@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { ShieldCheck, Truck, MapPin, Clock, ArrowRight, Star, UserPlus, Lock } from "lucide-react";
 import type { Product } from "@/lib/api";
 import { getProductImage } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { usePrices } from "@/context/PriceContext";
 
 const TRUST_ITEMS = [
   { icon: Truck, text: "Envío en 24h a Canarias" },
@@ -17,6 +19,14 @@ const HOT_CATS = ["iPhone", "Samsung", "Xiaomi", "Cables", "Baterías"];
 
 export default function Hero({ featuredProducts, productCount, categoryCount }: { featuredProducts: Product[]; productCount: number; categoryCount: number }) {
   const { isLoggedIn } = useAuth();
+  const { getPrice, ensurePrices } = usePrices();
+  // ISSUE-2026-002 Phase 2: 登录后拉取 featured 产品价格
+  const featuredIds = featuredProducts.map((p) => p.id);
+  useEffect(() => {
+    if (isLoggedIn && featuredIds.length > 0) {
+      ensurePrices(featuredIds);
+    }
+  }, [isLoggedIn, ensurePrices]); // eslint-disable-line react-hooks/exhaustive-deps
   const HERO_STATS = [
     { value: productCount.toLocaleString('es-ES'), label: "Productos" },
     { value: String(categoryCount), label: "Categorías" },
@@ -139,14 +149,22 @@ export default function Hero({ featuredProducts, productCount, categoryCount }: 
                       </div>
                       <div className="text-[10px] font-bold text-gray-800 leading-tight line-clamp-2 mb-1">{p.name}</div>
                       {isLoggedIn ? (
-                        <div className="text-[10px] font-bold text-[#2563eb]">
-                          €{parseFloat(p.price || "0").toFixed(2)}
-                          {p.regular_price && parseFloat(p.regular_price) > parseFloat(p.price) && (
-                            <span className="text-[9px] text-gray-400 line-through ml-1">
-                              €{parseFloat(p.regular_price).toFixed(2)}
-                            </span>
-                          )}
-                        </div>
+                        (() => {
+                          const pi = getPrice(p.id);
+                          if (!pi) return <div className="animate-pulse bg-gray-200 rounded h-3 w-14" />;
+                          const base = parseFloat(pi.price || "0");
+                          const reg = parseFloat(pi.regular_price || "0");
+                          return (
+                            <div className="text-[10px] font-bold text-[#2563eb]">
+                              €{base.toFixed(2)}
+                              {reg > 0 && reg > base && (
+                                <span className="text-[9px] text-gray-400 line-through ml-1">
+                                  €{reg.toFixed(2)}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()
                       ) : (
                         <div className="text-[9px] text-gray-400 italic mt-0.5">
                           <Lock size={9} className="inline mr-0.5" />Precio exclusivo

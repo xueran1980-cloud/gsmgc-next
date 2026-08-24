@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ShoppingCart, Check, MessageCircle, Lock, AlertCircle } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { usePrices } from '@/context/PriceContext';
 import { PriceOrLoginPrompt } from '@/components/PriceOrLoginPrompt';
 import type { ProductImage } from '@/lib/api';
 
@@ -27,11 +28,24 @@ interface ProductDetailActionsProps {
 export default function ProductDetailActions({ product, waMsg }: ProductDetailActionsProps) {
   const { addItem } = useCart();
   const { isLoggedIn, loading: authLoading } = useAuth();
+  const { getPrice, ensurePrices } = usePrices();
   const [added, setAdded] = useState(false);
   const [qty, setQty] = useState(1);
   const [stockMsg, setStockMsg] = useState('');
   const [showMobileBar, setShowMobileBar] = useState(false);
   const addToCartRef = useRef<HTMLDivElement>(null);
+
+  // ISSUE-2026-002 Phase 2: 登录后拉取产品价格（唯一来源 products-prices）
+  useEffect(() => {
+    if (isLoggedIn && product.id) {
+      ensurePrices([product.id]);
+    }
+  }, [isLoggedIn, product.id, ensurePrices]);
+
+  // 登录价格：products-prices 优先
+  const priceInfo = getPrice(product.id);
+  const displayPrice = priceInfo?.price ?? product.price ?? "0";
+  const displayRegular = priceInfo?.regular_price ?? product.regular_price ?? "";
 
   // ★ IntersectionObserver: show mobile bottom bar when add-to-cart button scrolls out of view
   useEffect(() => {
@@ -61,9 +75,9 @@ export default function ProductDetailActions({ product, waMsg }: ProductDetailAc
     setQty(mq);
   }, [product.id, minQty]);
 
-  const hasDiscount = parseFloat(product.regular_price) > parseFloat(product.price);
+  const hasDiscount = parseFloat(displayRegular) > parseFloat(displayPrice);
   const discountPct = hasDiscount
-    ? Math.round((1 - parseFloat(product.price) / parseFloat(product.regular_price)) * 100)
+    ? Math.round((1 - parseFloat(displayPrice) / parseFloat(displayRegular)) * 100)
     : 0;
 
   function handleAdd() {
@@ -81,7 +95,7 @@ export default function ProductDetailActions({ product, waMsg }: ProductDetailAc
       id: product.id,
       sku: product.sku,
       name: product.name,
-      price: product.price,
+      price: displayPrice,
       image: product.images?.[0]?.src || '',
       qty: requestQty,
       stock_quantity: product.stock_quantity ?? null,
@@ -107,16 +121,16 @@ export default function ProductDetailActions({ product, waMsg }: ProductDetailAc
             {/* Price block */}
             <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl border border-blue-100 p-5 mb-6">
               <div className="flex items-end gap-3 flex-wrap">
-                <PriceOrLoginPrompt price={product.price || '0'} regularPrice={product.regular_price} />
+                <PriceOrLoginPrompt price={displayPrice || '0'} regularPrice={displayRegular} productId={product.id} />
                 {hasDiscount && (
                   <span className="text-xl text-gray-300 line-through mb-0.5">
-                    €{parseFloat(product.regular_price).toFixed(2)}
+                    €{parseFloat(displayRegular).toFixed(2)}
                   </span>
                 )}
               </div>
               {hasDiscount && (
                 <div className="mt-1.5 inline-flex items-center gap-1.5 bg-[#ea580c]/10 text-[#ea580c] text-sm font-bold px-3 py-1 rounded-full">
-                  Ahorras €{(parseFloat(product.regular_price) - parseFloat(product.price)).toFixed(2)} ({discountPct}% dto.)
+                  Ahorras €{(parseFloat(displayRegular) - parseFloat(displayPrice)).toFixed(2)} ({discountPct}% dto.)
                 </div>
               )}
             </div>
@@ -300,7 +314,7 @@ export default function ProductDetailActions({ product, waMsg }: ProductDetailAc
           <div className="flex items-center gap-3 max-w-lg mx-auto">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-gray-900 truncate">{product.name}</p>
-              <PriceOrLoginPrompt price={product.price || '0'} regularPrice={product.regular_price} />
+              <PriceOrLoginPrompt price={displayPrice || '0'} regularPrice={displayRegular} productId={product.id} />
             </div>
             <button
               onClick={handleAdd}

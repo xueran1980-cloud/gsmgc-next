@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { PriceProvider } from "@/context/PriceContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -67,12 +68,14 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} font-sans antialiased`}>
         <AuthProvider>
+        <PriceProvider>
         <CartProvider>
             <Header />
             <main>{children}</main>
             <Footer />
             <WhatsAppFloat />
           </CartProvider>
+        </PriceProvider>
         </AuthProvider>
         {/* PWA Service Worker */}
         <script

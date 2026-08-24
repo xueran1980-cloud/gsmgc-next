@@ -1,20 +1,34 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { usePrices } from "@/context/PriceContext";
 import { Lock } from "lucide-react";
 import { formatPrice, calcIGIC } from "@/lib/display-formatter";
 
 export function PriceOrLoginPrompt({
   price,
   regularPrice,
+  productId,
   compact = false,
 }: {
-  price: string;
+  /** 兼容旧调用：SSR 骨架传 0/空；登录价格以 productId 为准 */
+  price?: string;
   regularPrice?: string;
+  /** ISSUE-2026-002 Phase 2: 通过 productId 从 products-prices 取真实价格 */
+  productId?: number;
   compact?: boolean;
 }) {
   const { isLoggedIn, loading } = useAuth();
+  const { getPrice, ensurePrices } = usePrices();
+
+  // 登录后确保拉取该产品价格（GATE 2: 唯一来源 products-prices）
+  useEffect(() => {
+    if (isLoggedIn && productId) {
+      ensurePrices([productId]);
+    }
+  }, [isLoggedIn, productId, ensurePrices]);
 
   if (loading) {
     return (
@@ -43,10 +57,14 @@ export function PriceOrLoginPrompt({
     );
   }
 
-  const base = parseFloat(price || "0");
+  // 已登录：价格来自 products-prices（productId 优先；无 productId 时回退旧 prop）
+  const priceInfo = productId ? getPrice(productId) : null;
+  const base = priceInfo ? parseFloat(priceInfo.price) : parseFloat(price || "0");
   const igic = calcIGIC(base);
-  const regular = regularPrice ? parseFloat(regularPrice) : 0;
-  const hasDiscount = regular > 0 && base > 0 && regular > base;
+  const regularVal = priceInfo
+    ? parseFloat(priceInfo.regular_price)
+    : regularPrice ? parseFloat(regularPrice) : 0;
+  const hasDiscount = regularVal > 0 && base > 0 && regularVal > base;
 
   return (
     <div>
@@ -55,7 +73,7 @@ export function PriceOrLoginPrompt({
       </span>
       {hasDiscount && (
         <span className="text-[10px] text-gray-400 line-through ml-1">
-          {formatPrice(regular)}
+          {formatPrice(regularVal)}
         </span>
       )}
       <div className={`${compact ? 'text-[9px]' : 'text-xs'} text-gray-500`}>
