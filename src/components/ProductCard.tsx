@@ -101,9 +101,9 @@ export default function ProductCard({ product, compact = false }: { product: Pro
         </span>
       );
     }
-    // 已登录但价格未就绪（products-prices 拉取中）→ 骨架，避免显示 0
+    // 已登录但价格未就绪（products-prices 拉取中）→ 透明占位保持布局，无灰条闪烁
     if (!priceInfo) {
-      // 已确认无权（401/403）→ 显示 Ver precio，而非永久骨架
+      // 已确认无权（401/403）→ 显示 Ver precio，而非空占位
       if (denied) {
         if (c) return <div className="text-[10px] text-gray-400 italic"><Lock size={9} className="inline mr-0.5" />Ver precio</div>;
         return (
@@ -112,7 +112,8 @@ export default function ProductCard({ product, compact = false }: { product: Pro
           </span>
         );
       }
-      return <div className={`animate-pulse bg-gray-200 rounded ${c ? 'h-3 w-14' : 'h-4 w-18'}`} />;
+      // 透明占位：与价格同尺寸，无背景无动画 → 就绪后价格直接出现，无闪烁
+      return <div className={c ? "h-3 w-14" : "h-4 w-18"} />;
     }
     const sizeClass = c ? 'text-xs' : 'text-sm';
     return (

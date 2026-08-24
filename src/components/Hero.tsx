@@ -152,11 +152,12 @@ export default function Hero({ featuredProducts, productCount, categoryCount }: 
                         (() => {
                           const pi = getPrice(p.id);
                           if (!pi) {
-                            // 已确认无权（401/403）→ Ver precio，而非永久骨架
+                            // 已确认无权（401/403）→ Ver precio，而非空占位
                             if (denied) {
                               return <div className="text-[9px] text-gray-400 italic"><Lock size={9} className="inline mr-0.5" />Ver precio</div>;
                             }
-                            return <div className="animate-pulse bg-gray-200 rounded h-3 w-14" />;
+                            // 透明占位：与价格同尺寸，无背景无动画 → 就绪后价格直接出现
+                            return <div className="h-3 w-14" />;
                           }
                           const base = parseFloat(pi.price || "0");
                           const reg = parseFloat(pi.regular_price || "0");
