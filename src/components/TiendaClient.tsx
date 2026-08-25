@@ -494,7 +494,7 @@ export default function TiendaClient({
                   : 'Catálogo de Accesorios Móviles al Mayor'}
             </h1>
 
-            {loading && (!initialProducts || initialProducts.length === 0) ? (
+            {loading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
                 {Array.from({ length: 24 }).map((_, i) => (
                   <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 animate-pulse">
