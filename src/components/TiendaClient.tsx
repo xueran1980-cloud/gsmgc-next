@@ -186,10 +186,10 @@ export default function TiendaClient({
       if (isDefaultView) return;
     }
 
-    // ★ 有筛选条件时立即显示 loading
-    if (category || searchTerm || page > 1) {
-      setLoading(true);
-    }
+    // ★ 任何需要 fetch 的 URL 变化都立即显示 loading（含回 Todos/默认视图）
+    //   首次 SSR 默认视图已在上方 ssrReady 守卫 return；能走到这里 = 必须 fetch
+    //   → 旧 grid 立即失效，不再把旧筛选结果伪装成新状态（对称修复：Todos→分类 / 分类→Todos / A→B / 搜索 / 翻页）
+    setLoading(true);
 
     const orderby = orderbyParam || 'price'; // ★ 旧站默认：price-desc
     const order = orderParam || 'desc';
