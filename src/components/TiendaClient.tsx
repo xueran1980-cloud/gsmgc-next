@@ -9,8 +9,20 @@ import { BRAND_CATEGORY_NAMES, EXCLUDED_CATEGORY_NAMES } from '@/config/category
 import { useAsyncState } from '@/hooks/useAsyncState';
 import { usePrices } from '@/context/PriceContext';
 import type { PriceInfo } from '@/context/PriceContext';
+import { useAuth } from '@/context/AuthContext';
 
 const PER_PAGE = 24;
+
+// ★ Phase 1：会话内最近结果缓存 — TTL 60s；身份+授权+查询隔离；token 永不入 key；价格数据仅运行时内存
+const RECENT_CACHE_TTL_MS = 60_000;
+
+/** 缓存条目：最近一次查询结果（products / totalCount / totalPages / fetchedAt） */
+type CacheEntry = {
+  products: Product[];
+  totalCount: number;
+  totalPages: number;
+  fetchedAt: number;
+};
 
 /**
  * 搜索关键词高亮（对齐旧站）
@@ -56,7 +68,8 @@ export default function TiendaClient({
   const [totalCount, setTotalCount] = useState(initialTotal || 0);
   const [totalPages, setTotalPages] = useState(initialTotal ? Math.ceil(initialTotal / PER_PAGE) : 0);
 
-  const { mergePrices } = usePrices();
+  const { isLoggedIn, user } = useAuth();
+  const { mergePrices, canViewPrice } = usePrices();
 
   // ★ SSR 水合：有初始数据 + 无筛选 → 直接用，跳过 fetch
   const ssrReady = useRef(!!(initialProducts && initialProducts.length > 0));
@@ -66,6 +79,18 @@ export default function TiendaClient({
 
   // ★ Safari Router 冻结自愈：防止连续点击触发重复导航
   const navigationLockRef = useRef(false);
+
+  // ★ Phase 1：会话内最近结果缓存（Map 内存；TTL 60s；身份+授权+query 隔离；价格仅内存）
+  const cacheRef = useRef<Map<string, CacheEntry>>(new Map());
+  // ★ 缓存失效锚点：登录/登出/换账号/授权状态变化 → 清空（双保险于 key 隔离）
+  const prevAuthRef = useRef('');
+  const authState = `${isLoggedIn ? 'u:' + (user?.id ?? '?') : 'guest'}:p:${canViewPrice ? 1 : 0}`;
+  useEffect(() => {
+    if (prevAuthRef.current !== '' && prevAuthRef.current !== authState) {
+      cacheRef.current.clear();
+    }
+    prevAuthRef.current = authState;
+  }, [authState]);
 
   // ★ 可终止异步状态机 — 15s timeout + abort + auto retry + unmount guard
   const search = useAsyncState<void>();
@@ -189,8 +214,6 @@ export default function TiendaClient({
     // ★ 任何需要 fetch 的 URL 变化都立即显示 loading（含回 Todos/默认视图）
     //   首次 SSR 默认视图已在上方 ssrReady 守卫 return；能走到这里 = 必须 fetch
     //   → 旧 grid 立即失效，不再把旧筛选结果伪装成新状态（对称修复：Todos→分类 / 分类→Todos / A→B / 搜索 / 翻页）
-    setLoading(true);
-
     const orderby = orderbyParam || 'price'; // ★ 旧站默认：price-desc
     const order = orderParam || 'desc';
 
@@ -201,6 +224,27 @@ export default function TiendaClient({
     if (searchTerm) params.set('search', searchTerm);
     params.set('per_page', String(PER_PAGE));
     params.set('page', String(page));
+
+    // ★ Phase 1：会话缓存命中检测（同一身份+授权+查询 60s 内 → 直接渲染，0 fetch / 0 skeleton）
+    //   identityKey：游客 "guest"；登录 `u:{id}:p:{canViewPrice?1:0}` — token 永不入 key
+    const identityKey = !isLoggedIn || !user?.id ? 'guest' : `u:${user.id}:p:${canViewPrice ? 1 : 0}`;
+    const cacheKey = `${identityKey}:${params.toString()}`;
+    const cached = cacheRef.current.get(cacheKey);
+    if (cached && Date.now() - cached.fetchedAt < RECENT_CACHE_TTL_MS) {
+      // ★ 使在途旧请求失效（thisId !== fetchRequestId.current → 结果被忽略，防覆盖缓存渲染）
+      fetchRequestId.current++;
+      setProducts(cached.products);
+      setTotalCount(cached.totalCount);
+      setTotalPages(cached.totalPages);
+      setLoading(false);
+      return;
+    }
+    // 过期条目清理（防 Map 无限增长）
+    for (const [k, v] of cacheRef.current) {
+      if (Date.now() - v.fetchedAt >= RECENT_CACHE_TTL_MS) cacheRef.current.delete(k);
+    }
+
+    setLoading(true);
 
     // ★ 构建请求 headers：透传 Bearer token 给 /api/products → WP 后端
     const fetchHeaders: Record<string, string> = {};
@@ -247,11 +291,25 @@ export default function TiendaClient({
           setProducts(prodData.products);
           setTotalCount(prodData.totalCount || prodData.total || prodData.products.length);
           setTotalPages(prodData.totalPages || prodData.total_pages || 1);
+          // ★ Phase 1：写会话缓存（仅成功响应；身份+授权+query 隔离；价格仅内存）
+          cacheRef.current.set(cacheKey, {
+            products: prodData.products,
+            totalCount: prodData.totalCount || prodData.total || prodData.products.length,
+            totalPages: prodData.totalPages || prodData.total_pages || 1,
+            fetchedAt: Date.now(),
+          });
         } else if (Array.isArray(prodData)) {
           // 兼容旧格式（纯数组）
           setProducts(prodData);
           setTotalCount(prodData.length);
           setTotalPages(1);
+          // ★ Phase 1：写会话缓存（旧数组格式）
+          cacheRef.current.set(cacheKey, {
+            products: prodData,
+            totalCount: prodData.length,
+            totalPages: 1,
+            fetchedAt: Date.now(),
+          });
         } else {
           setProducts([]);
           setTotalCount(0);
