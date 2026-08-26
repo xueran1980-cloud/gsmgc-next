@@ -497,11 +497,29 @@ export default function TiendaClient({
             {loading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
                 {Array.from({ length: 24 }).map((_, i) => (
-                  <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 animate-pulse">
-                    <div className="bg-gray-100 rounded-xl h-40 mb-4" />
-                    <div className="h-4 bg-gray-100 rounded w-3/4 mb-2" />
-                    <div className="h-3 bg-gray-100 rounded w-1/2 mb-3" />
-                    <div className="h-5 bg-gray-100 rounded w-1/3" />
+                  <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 animate-pulse flex flex-col relative overflow-hidden">
+                    {/* 图片区 — 对齐 ProductCard h-40 mb-4 */}
+                    <div className="rounded-xl h-40 mb-4 bg-gray-100" />
+                    {/* 标题区 — flex-1 撑开（对齐 ProductCard flex-1 flex flex-col）
+                        ★ 响应式占位：<xl(2/3列) 6 行 ≈420px / xl(4列) 5 行 ≈368px
+                        → 第 6 行仅 <1280px 显示（窄屏标题更长，防 grid 塌陷）*/}
+                    <div className="flex-1 flex flex-col gap-2">
+                      <div className="h-4 bg-gray-100 rounded w-4/5" />
+                      <div className="h-3 bg-gray-100 rounded w-3/5" />
+                      <div className="h-3 bg-gray-100 rounded w-2/5" />
+                      <div className="h-3 bg-gray-100 rounded w-1/2" />
+                      <div className="h-3 bg-gray-100 rounded w-3/4" />
+                      <div className="h-3 bg-gray-100 rounded w-3/5 xl:hidden" />
+                    </div>
+                    {/* 底部区 — 对齐 ProductCard mt-3 pt-3 border-t（价格 + 按钮 p-2.5=40px）*/}
+                    <div className="flex items-end gap-2 mt-3 pt-3 border-t border-gray-50">
+                      <div className="flex-1">
+                        <div className="h-5 bg-gray-100 rounded w-2/3" />
+                        <div className="h-3 bg-gray-100 rounded w-1/2 mt-1" />
+                      </div>
+                      <div className="h-10 w-10 bg-gray-100 rounded-xl shrink-0" />
+                      <div className="h-10 w-10 bg-gray-100 rounded-xl shrink-0" />
+                    </div>
                   </div>
                 ))}
               </div>
