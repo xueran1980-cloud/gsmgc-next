@@ -68,7 +68,7 @@ export default function TiendaClient({
   const [totalPages, setTotalPages] = useState(initialTotal ? Math.ceil(initialTotal / PER_PAGE) : 0);
 
   const { isLoggedIn, user } = useAuth();
-  const { canViewPrice } = usePrices();
+  const { canViewPrice, ensurePrices } = usePrices();
 
   // ★ SSR 水合：有初始数据 + 无筛选 → 直接用，跳过 fetch
   const ssrReady = useRef(!!(initialProducts && initialProducts.length > 0));
@@ -99,6 +99,16 @@ export default function TiendaClient({
       return;
     }
     // 无初始数据 → 走正常 fetch 流程（与旧版 /tienda 相同）
+  }, []);
+
+  // ★ Complete First Paint: SSR 默认视图已有初始产品 → hydration 后即触发价格批量获取
+  //   与 ProductCard ensurePrices 经 pendingRef 去重 → 仅一次 50ms 批量请求；
+  //   游客在 PriceContext.ensurePrices 内部早返回（不泄露价格请求）；登录态晚到由 ProductCard 守卫补触发
+  useEffect(() => {
+    if (initialProducts && initialProducts.length > 0) {
+      ensurePrices(initialProducts.map((p) => p.id));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Read params from URL — ★ 对齐旧站默认：Precio: mayor a menor (price-desc)
@@ -274,9 +284,12 @@ export default function TiendaClient({
         // ★ 兼容两种响应格式: Vercel代理(camelCase) + 后端直连(snake_case)
         if (prodData && Array.isArray(prodData.products)) {
           // ★ P1 架构减负 (2026-08-26): 公开 API 已彻底去认证（永远无价格）
-          //   价格唯一入口 = products-prices（ProductCard ensurePrices 批量获取）
+          //   价格唯一入口 = products-prices（TiendaClient + ProductCard ensurePrices 批量获取，pendingRef 去重）
           //   → 原同包 mergePrices 死代码已删
           setProducts(prodData.products);
+          // ★ Complete First Paint: 拿到 products 立即并行触发当前页价格批量获取
+          //   （不等待 24 张 ProductCard mount，消除"商品先出现、价格随后补"的顺延）
+          ensurePrices(prodData.products.map((p: Product) => p.id));
           setTotalCount(prodData.totalCount || prodData.total || prodData.products.length);
           setTotalPages(prodData.totalPages || prodData.total_pages || 1);
           // ★ Phase 1：写会话缓存（仅成功响应；身份+授权+query 隔离；价格仅内存）
@@ -289,6 +302,8 @@ export default function TiendaClient({
         } else if (Array.isArray(prodData)) {
           // 兼容旧格式（纯数组）
           setProducts(prodData);
+          // ★ Complete First Paint: 纯数组格式同样立即触发价格批量获取
+          ensurePrices(prodData.map((p: Product) => p.id));
           setTotalCount(prodData.length);
           setTotalPages(1);
           // ★ Phase 1：写会话缓存（旧数组格式）
@@ -540,7 +555,7 @@ export default function TiendaClient({
                   : 'Catálogo de Accesorios Móviles al Mayor'}
             </h1>
 
-            {loading ? (
+            {loading && products.length === 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
                 {Array.from({ length: 24 }).map((_, i) => (
                   <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 animate-pulse flex flex-col relative overflow-hidden">
