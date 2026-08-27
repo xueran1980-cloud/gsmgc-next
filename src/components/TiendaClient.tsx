@@ -179,10 +179,13 @@ export default function TiendaClient({
         setCategories(cats);
       })
       .catch(() => {
-        // Fallback: 通过 categories-list 端点获取
-        fetch(`${API_BASE}/wp-json/gsmgc/v1/categories-list`, { cache: 'no-store' })
+        // Fallback: 重试 categories-raw（数据源统一 — 原 categories-list 已弃用）
+        fetch(`${API_BASE}/wp-json/gsmgc/v1/categories-raw`, { cache: 'no-store' })
           .then(r => r.json())
-          .then(data => setCategories(Array.isArray(data) ? data : []))
+          .then(data => {
+            const cats = data?.categories ?? (Array.isArray(data) ? data : []);
+            setCategories(cats);
+          })
           .catch((err: unknown) =>
             console.error('[TiendaClient] categories fetch failed:', err)
           );

@@ -193,13 +193,15 @@ export async function fetchCategoriesDirect(): Promise<ProductCategory[]> {
 export async function fetchCategories(): Promise<ProductCategory[]> {
   try {
     const res = await fetch(
-      'https://api.gsmgc.es/wp-json/gsmgc/v1/categories-list',
+      'https://api.gsmgc.es/wp-json/gsmgc/v1/categories-raw',
       { next: { revalidate: 3600 }, headers: SERVER_HEADERS }
     );
     if (!res.ok) return [];
     const data = await res.json();
-    if (Array.isArray(data)) return data;
-    return [];
+    // ★ categories-raw 返回 { success, count, categories: [...] }；兼容纯数组
+    const list = Array.isArray(data) ? data : (data?.categories ?? []);
+    // ★ 保持 hide_empty=true 语义：过滤空分类（count > 0），不把空分类引入 sitemap
+    return list.filter((c: ProductCategory) => c && (c.count ?? 0) > 0);
   } catch {
     // Fallback: derive from products-raw
     try {
