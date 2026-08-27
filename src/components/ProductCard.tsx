@@ -89,6 +89,19 @@ export default function ProductCard({ product, compact = false }: { product: Pro
   // ── Price (aligned to FINAL MAPPING CONTRACT) ──
   const PriceDisplay = ({ compact: c }: { compact?: boolean }) => {
     const { isLoggedIn, loading } = useAuth();
+    // ★ DoD B（2026-08-27）：SSR 注入价（product._price，仅登录请求由服务端注入）优先渲染 → 首帧直接带价，
+    //   不受 auth loading 阻塞（否则 SSR 永远走灰条，_price 无法首帧显示）。
+    //   安全：游客请求无 _price（服务端不注入）→ 不会泄露；客户端以 getPrice(PriceContext) 为准。
+    if (priceInfo) {
+      const sizeClass = c ? 'text-xs' : 'text-sm';
+      return (
+        <div>
+          <span className={`font-black text-[#2563eb] ${sizeClass}`}>{dp.base}</span>
+          {dp.hasDiscount && <span className="text-[10px] text-gray-400 line-through ml-1">{dp.regular}</span>}
+          <div className={`${c ? 'text-[9px]' : 'text-xs'} text-gray-500`}>IGIC incl. {dp.igic}</div>
+        </div>
+      );
+    }
     if (loading) {
       return <div className={`animate-pulse bg-gray-200 rounded ${c ? 'h-3 w-14' : 'h-4 w-18'}`} />;
     }
@@ -104,27 +117,16 @@ export default function ProductCard({ product, compact = false }: { product: Pro
       );
     }
     // 已登录但价格未就绪（products-prices 拉取中）→ 透明占位保持布局，无灰条闪烁
-    if (!priceInfo) {
-      // 已确认无权（401/403）→ 显示 Ver precio，而非空占位
-      if (denied) {
-        if (c) return <div className="text-[10px] text-gray-400 italic"><Lock size={9} className="inline mr-0.5" />Ver precio</div>;
-        return (
-          <span className="text-sm font-bold text-gray-400 flex items-center gap-1">
-            <Lock size={13} /> Ver precio
-          </span>
-        );
-      }
-      // 透明占位：与价格同尺寸，无背景无动画 → 就绪后价格直接出现，无闪烁
-      return <div className={c ? "h-3 w-14" : "h-4 w-18"} />;
+    if (denied) {
+      if (c) return <div className="text-[10px] text-gray-400 italic"><Lock size={9} className="inline mr-0.5" />Ver precio</div>;
+      return (
+        <span className="text-sm font-bold text-gray-400 flex items-center gap-1">
+          <Lock size={13} /> Ver precio
+        </span>
+      );
     }
-    const sizeClass = c ? 'text-xs' : 'text-sm';
-    return (
-      <div>
-        <span className={`font-black text-[#2563eb] ${sizeClass}`}>{dp.base}</span>
-        {dp.hasDiscount && <span className="text-[10px] text-gray-400 line-through ml-1">{dp.regular}</span>}
-        <div className={`${c ? 'text-[9px]' : 'text-xs'} text-gray-500`}>IGIC incl. {dp.igic}</div>
-      </div>
-    );
+    // 透明占位：与价格同尺寸，无背景无动画 → 就绪后价格直接出现，无闪烁
+    return <div className={c ? "h-3 w-14" : "h-4 w-18"} />;
   };
 
   // ── compact variant ──
