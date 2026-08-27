@@ -156,6 +156,10 @@ export default function TiendaClient({
     const targetUrl = new URL(url, window.location.origin).href;
     if (before === targetUrl) return;         // ★ 同 URL 不触发
     navigationLockRef.current = true;
+    // ★ 解耦（2026-08-27）：导航（点击分类/分页/排序/搜索）即旧内容失效 —— 点击瞬间清空，
+    //   URL 变更前旧 grid 已消失 → 杜绝「URL=新查询 / 内容=旧查询」任何一帧（回归硬闸）
+    setProducts([]);
+    setLoading(true);
     router.replace(url, { scroll: false });
     let checked = false;
     const check = () => {
