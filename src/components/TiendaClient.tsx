@@ -68,29 +68,13 @@ export default function TiendaClient({
   const [totalPages, setTotalPages] = useState(initialTotal ? Math.ceil(initialTotal / PER_PAGE) : 0);
 
   const { isLoggedIn, user } = useAuth();
-  const { canViewPrice, ensurePrices, mergePrices } = usePrices();
+  const { canViewPrice, ensurePrices } = usePrices();
 
-  // ★ Complete First Paint: 授权客户切分类/分页 → 产品+价格都 ready 后再首次渲染新 grid
-  //   直接取 products-prices 并用 PriceContext 暴露的 mergePrices 写入价格（不新增缓存/不动权限逻辑）
-  //   游客(isLoggedIn=false) 不取价格；登录但 401/403 → ensurePrices 走既有 denied 路径
-  const fetchAndMergePrices = useCallback(async (ids: number[], signal: AbortSignal): Promise<boolean> => {
-    try {
-      const token = localStorage.getItem('gsmgc_auth_token');
-      if (!token) return false;
-      const res = await fetch(
-        `https://api.gsmgc.es/wp-json/gsmgc/v1/products-prices?ids=${ids.join(',')}`,
-        { method: 'GET', headers: { Accept: 'application/json', Authorization: `Bearer ${token}` }, cache: 'no-store', signal }
-      );
-      if (res.status === 401 || res.status === 403) return false;
-      if (!res.ok) return false;
-      const data = await res.json();
-      if (!data?.success || !data?.prices) return false;
-      mergePrices(data.prices);
-      return true;
-    } catch {
-      return false;
-    }
-  }, [mergePrices]);
+  // ★ 解耦（2026-08-27 决策）：产品切换不再等待价格就绪。
+  //   价格唯一入口 = products-prices，由 ProductCard mount 时 ensurePrices 按现有机制随后拉取
+  //   （透明占位 → 价格出现，无灰条无闪烁）；游客 ensurePrices 早返回，不泄露价格请求。
+  //   删除原 4542cc9 的 fetchAndMergePrices gate —— 它把「产品切换」和「价格就绪」绑死，
+  //   导致旧 Todos 冒充新分类 ~1s（回归判定 2026-08-27 实证）。
 
   // ★ SSR 水合：有初始数据 + 无筛选 → 直接用，跳过 fetch
   const ssrReady = useRef(!!(initialProducts && initialProducts.length > 0));
@@ -266,23 +250,13 @@ export default function TiendaClient({
     const cached = cacheRef.current.get(cacheKey);
     if (cached && Date.now() - cached.fetchedAt < RECENT_CACHE_TTL_MS) {
       // ★ 使在途旧请求失效（thisId !== fetchRequestId.current → 结果被忽略，防覆盖缓存渲染）
-      const myId = ++fetchRequestId.current;
-      // ★ Complete First Paint: 授权客户命中会话缓存也先等价格 ready 再渲染（旧 grid 维持稳定）
-      if (isLoggedIn) {
-        fetchAndMergePrices(cached.products.map((p) => p.id), AbortSignal.timeout(10000)).then((ok) => {
-          if (myId !== fetchRequestId.current) return;
-          if (!ok) ensurePrices(cached.products.map((p) => p.id));
-          setProducts(cached.products);
-          setTotalCount(cached.totalCount);
-          setTotalPages(cached.totalPages);
-          setLoading(false);
-        });
-      } else {
-        setProducts(cached.products);
-        setTotalCount(cached.totalCount);
-        setTotalPages(cached.totalPages);
-        setLoading(false);
-      }
+      ++fetchRequestId.current;
+      // ★ 解耦：缓存命中立即渲染（游客/授权一致）。
+      //   价格已在 PriceContext 内存（首次 fetch 时 mergePrices 已写入）；万一缺失由 ProductCard ensurePrices 按需补。
+      setProducts(cached.products);
+      setTotalCount(cached.totalCount);
+      setTotalPages(cached.totalPages);
+      setLoading(false);
       return;
     }
     // 过期条目清理（防 Map 无限增长）
@@ -291,6 +265,8 @@ export default function TiendaClient({
     }
 
     setLoading(true);
+    // ★ 解耦：URL 变化（新查询）→ 旧内容同帧失效，绝不保留旧查询结果冒充新分类（回归铁律）
+    setProducts([]);
 
     // ★ 构建请求 headers：透传 Bearer token 给 /api/products → WP 后端
     const fetchHeaders: Record<string, string> = {};
@@ -318,14 +294,9 @@ export default function TiendaClient({
         // ★ 兼容两种响应格式: Vercel代理(camelCase) + 后端直连(snake_case)
         if (prodData && Array.isArray(prodData.products)) {
           // ★ P1 架构减负 (2026-08-26): 公开 API 已彻底去认证（永远无价格）
-          //   价格唯一入口 = products-prices（授权客户由 TiendaClient 在 setProducts 前并行取齐，再 mergePrices 写入）
+          //   价格唯一入口 = products-prices（ProductCard mount 时 ensurePrices 按需拉取）
           const productsList = prodData.products as Product[];
-          // ★ Complete First Paint: 授权客户 → 产品+价格都 ready 后才首次渲染新 grid（首屏即完整卡片）
-          //   游客(isLoggedIn=false) 不取价格；401/403 → ensurePrices 走既有 denied 路径
-          if (isLoggedIn) {
-            const ok = await fetchAndMergePrices(productsList.map((p: Product) => p.id), signal);
-            if (!ok) ensurePrices(productsList.map((p: Product) => p.id));
-          }
+          // ★ 解耦：产品切换不等待价格（价格由现有 ensurePrices 机制随后进入，透明占位无灰条无闪烁）
           setProducts(productsList);
           setTotalCount(prodData.totalCount || prodData.total || prodData.products.length);
           setTotalPages(prodData.totalPages || prodData.total_pages || 1);
@@ -339,10 +310,7 @@ export default function TiendaClient({
         } else if (Array.isArray(prodData)) {
           // 兼容旧格式（纯数组）
           const productsList = prodData as Product[];
-          if (isLoggedIn) {
-            const ok = await fetchAndMergePrices(productsList.map((p: Product) => p.id), signal);
-            if (!ok) ensurePrices(productsList.map((p: Product) => p.id));
-          }
+          // ★ 解耦：同上，产品切换不等待价格
           setProducts(productsList);
           setTotalCount(productsList.length);
           setTotalPages(1);
@@ -596,33 +564,15 @@ export default function TiendaClient({
             </h1>
 
             {loading && products.length === 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
-                {Array.from({ length: 24 }).map((_, i) => (
-                  <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 animate-pulse flex flex-col relative overflow-hidden">
-                    {/* 图片区 — 对齐 ProductCard h-40 mb-4 */}
-                    <div className="rounded-xl h-40 mb-4 bg-gray-100" />
-                    {/* 标题区 — flex-1 撑开（对齐 ProductCard flex-1 flex flex-col）
-                        ★ 响应式占位：<xl(2/3列) 6 行 ≈420px / xl(4列) 5 行 ≈368px
-                        → 第 6 行仅 <1280px 显示（窄屏标题更长，防 grid 塌陷）*/}
-                    <div className="flex-1 flex flex-col gap-2">
-                      <div className="h-4 bg-gray-100 rounded w-4/5" />
-                      <div className="h-3 bg-gray-100 rounded w-3/5" />
-                      <div className="h-3 bg-gray-100 rounded w-2/5" />
-                      <div className="h-3 bg-gray-100 rounded w-1/2" />
-                      <div className="h-3 bg-gray-100 rounded w-3/4" />
-                      <div className="h-3 bg-gray-100 rounded w-3/5 xl:hidden" />
-                    </div>
-                    {/* 底部区 — 对齐 ProductCard mt-3 pt-3 border-t（价格 + 按钮 p-2.5=40px）*/}
-                    <div className="flex items-end gap-2 mt-3 pt-3 border-t border-gray-50">
-                      <div className="flex-1">
-                        <div className="h-5 bg-gray-100 rounded w-2/3" />
-                        <div className="h-3 bg-gray-100 rounded w-1/2 mt-1" />
-                      </div>
-                      <div className="h-10 w-10 bg-gray-100 rounded-xl shrink-0" />
-                      <div className="h-10 w-10 bg-gray-100 rounded-xl shrink-0" />
-                    </div>
-                  </div>
-                ))}
+              // ★ 解耦（2026-08-27）：轻量加载态 — 非旧内容冒充新分类、非整屏灰 Skeleton
+              <div className="flex items-center justify-center py-24">
+                <div className="flex items-center gap-2.5 text-gray-400">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <span className="text-sm">Cargando…</span>
+                </div>
               </div>
             ) : products.length === 0 ? (
               <div className="text-center py-20">
