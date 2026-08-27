@@ -34,7 +34,12 @@ export const metadata: Metadata = {
 //   登录客户（带 gsmgc_auth httpOnly cookie）→ 服务端并行取 products + products-prices → 首帧 HTML 直接带本客户价格
 export default async function TiendaPage() {
   const cookieStore = await cookies();
-  const authToken = cookieStore.get('gsmgc_auth')?.value || null;
+  // ★ set-cookie 时 encodeURIComponent（login route）→ 读取后必须 decode，否则 Bearer 是编码值 → WP 401 → 无价降级
+  const rawToken = cookieStore.get('gsmgc_auth')?.value || null;
+  let authToken: string | null = null;
+  if (rawToken) {
+    try { authToken = decodeURIComponent(rawToken); } catch { authToken = rawToken; }
+  }
   let initialProducts: Product[] = [];
   let initialTotal = 0;
   let fetched = false; // 是否成功获取（含合法空），失败语义用
