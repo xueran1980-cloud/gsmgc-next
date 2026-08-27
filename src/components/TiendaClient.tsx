@@ -68,7 +68,29 @@ export default function TiendaClient({
   const [totalPages, setTotalPages] = useState(initialTotal ? Math.ceil(initialTotal / PER_PAGE) : 0);
 
   const { isLoggedIn, user } = useAuth();
-  const { canViewPrice, ensurePrices } = usePrices();
+  const { canViewPrice, ensurePrices, mergePrices } = usePrices();
+
+  // ★ Complete First Paint: 授权客户切分类/分页 → 产品+价格都 ready 后再首次渲染新 grid
+  //   直接取 products-prices 并用 PriceContext 暴露的 mergePrices 写入价格（不新增缓存/不动权限逻辑）
+  //   游客(isLoggedIn=false) 不取价格；登录但 401/403 → ensurePrices 走既有 denied 路径
+  const fetchAndMergePrices = useCallback(async (ids: number[], signal: AbortSignal): Promise<boolean> => {
+    try {
+      const token = localStorage.getItem('gsmgc_auth_token');
+      if (!token) return false;
+      const res = await fetch(
+        `https://api.gsmgc.es/wp-json/gsmgc/v1/products-prices?ids=${ids.join(',')}`,
+        { method: 'GET', headers: { Accept: 'application/json', Authorization: `Bearer ${token}` }, cache: 'no-store', signal }
+      );
+      if (res.status === 401 || res.status === 403) return false;
+      if (!res.ok) return false;
+      const data = await res.json();
+      if (!data?.success || !data?.prices) return false;
+      mergePrices(data.prices);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [mergePrices]);
 
   // ★ SSR 水合：有初始数据 + 无筛选 → 直接用，跳过 fetch
   const ssrReady = useRef(!!(initialProducts && initialProducts.length > 0));
@@ -244,11 +266,23 @@ export default function TiendaClient({
     const cached = cacheRef.current.get(cacheKey);
     if (cached && Date.now() - cached.fetchedAt < RECENT_CACHE_TTL_MS) {
       // ★ 使在途旧请求失效（thisId !== fetchRequestId.current → 结果被忽略，防覆盖缓存渲染）
-      fetchRequestId.current++;
-      setProducts(cached.products);
-      setTotalCount(cached.totalCount);
-      setTotalPages(cached.totalPages);
-      setLoading(false);
+      const myId = ++fetchRequestId.current;
+      // ★ Complete First Paint: 授权客户命中会话缓存也先等价格 ready 再渲染（旧 grid 维持稳定）
+      if (isLoggedIn) {
+        fetchAndMergePrices(cached.products.map((p) => p.id), AbortSignal.timeout(10000)).then((ok) => {
+          if (myId !== fetchRequestId.current) return;
+          if (!ok) ensurePrices(cached.products.map((p) => p.id));
+          setProducts(cached.products);
+          setTotalCount(cached.totalCount);
+          setTotalPages(cached.totalPages);
+          setLoading(false);
+        });
+      } else {
+        setProducts(cached.products);
+        setTotalCount(cached.totalCount);
+        setTotalPages(cached.totalPages);
+        setLoading(false);
+      }
       return;
     }
     // 过期条目清理（防 Map 无限增长）
@@ -284,12 +318,15 @@ export default function TiendaClient({
         // ★ 兼容两种响应格式: Vercel代理(camelCase) + 后端直连(snake_case)
         if (prodData && Array.isArray(prodData.products)) {
           // ★ P1 架构减负 (2026-08-26): 公开 API 已彻底去认证（永远无价格）
-          //   价格唯一入口 = products-prices（TiendaClient + ProductCard ensurePrices 批量获取，pendingRef 去重）
-          //   → 原同包 mergePrices 死代码已删
-          setProducts(prodData.products);
-          // ★ Complete First Paint: 拿到 products 立即并行触发当前页价格批量获取
-          //   （不等待 24 张 ProductCard mount，消除"商品先出现、价格随后补"的顺延）
-          ensurePrices(prodData.products.map((p: Product) => p.id));
+          //   价格唯一入口 = products-prices（授权客户由 TiendaClient 在 setProducts 前并行取齐，再 mergePrices 写入）
+          const productsList = prodData.products as Product[];
+          // ★ Complete First Paint: 授权客户 → 产品+价格都 ready 后才首次渲染新 grid（首屏即完整卡片）
+          //   游客(isLoggedIn=false) 不取价格；401/403 → ensurePrices 走既有 denied 路径
+          if (isLoggedIn) {
+            const ok = await fetchAndMergePrices(productsList.map((p: Product) => p.id), signal);
+            if (!ok) ensurePrices(productsList.map((p: Product) => p.id));
+          }
+          setProducts(productsList);
           setTotalCount(prodData.totalCount || prodData.total || prodData.products.length);
           setTotalPages(prodData.totalPages || prodData.total_pages || 1);
           // ★ Phase 1：写会话缓存（仅成功响应；身份+授权+query 隔离；价格仅内存）
@@ -301,10 +338,13 @@ export default function TiendaClient({
           });
         } else if (Array.isArray(prodData)) {
           // 兼容旧格式（纯数组）
-          setProducts(prodData);
-          // ★ Complete First Paint: 纯数组格式同样立即触发价格批量获取
-          ensurePrices(prodData.map((p: Product) => p.id));
-          setTotalCount(prodData.length);
+          const productsList = prodData as Product[];
+          if (isLoggedIn) {
+            const ok = await fetchAndMergePrices(productsList.map((p: Product) => p.id), signal);
+            if (!ok) ensurePrices(productsList.map((p: Product) => p.id));
+          }
+          setProducts(productsList);
+          setTotalCount(productsList.length);
           setTotalPages(1);
           // ★ Phase 1：写会话缓存（旧数组格式）
           cacheRef.current.set(cacheKey, {
