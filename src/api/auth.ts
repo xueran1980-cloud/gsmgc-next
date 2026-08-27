@@ -185,6 +185,10 @@ export async function logout(): Promise<{ success: boolean }> {
         headers: { 'Accept': 'application/json' },
       }, token).catch(() => {});  // 忽略错误，反正要清 token
     }
+    // ★ DoD B（2026-08-27）：同时清服务端 httpOnly cookie（fire-and-forget，失败由 Max-Age 过期兜底）
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' }).catch(() => {});
+    } catch {}
   } catch (err) {
     console.warn('Logout API error:', err);
   }

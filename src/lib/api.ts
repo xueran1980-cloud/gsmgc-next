@@ -38,6 +38,8 @@ export interface Product {
   categories: ProductCategory[];
   status: string;
   min_qty: number;
+  /** DoD B（2026-08-27）：Tienda 登录 SSR 服务端注入的本客户价格（仅首帧用；客户端以 PriceContext 为准）*/
+  _price?: { price: string; regular_price: string; sale_price: string; min_qty: number };
 }
 
 // ★ 统一服务端请求头 — 防止被 SiteGround ModSecurity 规则误判

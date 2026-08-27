@@ -54,7 +54,9 @@ export default function ProductCard({ product, compact = false }: { product: Pro
   }, [isLoggedIn, product.id, ensurePrices]);
 
   // 登录价格：优先 products-prices；未登录/未拉到 → 骨架
-  const priceInfo = getPrice(product.id);
+  // ★ DoD B（2026-08-27）：Tienda 登录 SSR 已注入本客户价格（product._price）→ 首帧直接带价；
+  //   客户端 hydration 后 PriceContext 有值则以 context 为准（同值），否则用 SSR 注入值（防闪失）
+  const priceInfo = getPrice(product.id) ?? product._price ?? null;
   // ⭐ 价格就绪守卫：已登录但 products-prices 未就绪 → 禁用加购（防 0 价入车，与 ProductDetailActions 一致）
   const priceReady = !isLoggedIn || !!priceInfo;
   const dp = priceInfo

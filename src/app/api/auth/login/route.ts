@@ -30,11 +30,19 @@ export async function POST(request: NextRequest) {
 
     const data = await res.json();
 
+    // ★ DoD B（2026-08-27）：登录成功 → 服务端 set httpOnly cookie（Host-only，不设 Domain）
+    //   仅用于 Next SSR（/tienda）读身份；客户端 api.gsmgc.es 仍走 localStorage Bearer（迁移期双存储，P2b 退出）
+    //   属性：HttpOnly + Secure + SameSite=Lax + Path=/ + Max-Age=7d（Host-only 减少凭证暴露范围）
+    const token = data?.auth_token ?? null;
+    const headers: Record<string, string> = { 'Cache-Control': 'no-store' };
+    if (token) {
+      headers['Set-Cookie'] =
+        `gsmgc_auth=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`;
+    }
+
     return NextResponse.json(data, {
       status: res.status,
-      headers: {
-        'Cache-Control': 'no-store',
-      },
+      headers,
     });
   } catch (err: any) {
     console.error('[API /auth/login] Error:', err);
