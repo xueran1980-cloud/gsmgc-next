@@ -8,7 +8,6 @@ import ProductCard from '@/components/ProductCard';
 import { BRAND_CATEGORY_NAMES, EXCLUDED_CATEGORY_NAMES } from '@/config/category-config';
 import { useAsyncState } from '@/hooks/useAsyncState';
 import { usePrices } from '@/context/PriceContext';
-import type { PriceInfo } from '@/context/PriceContext';
 import { useAuth } from '@/context/AuthContext';
 
 const PER_PAGE = 24;
@@ -69,7 +68,7 @@ export default function TiendaClient({
   const [totalPages, setTotalPages] = useState(initialTotal ? Math.ceil(initialTotal / PER_PAGE) : 0);
 
   const { isLoggedIn, user } = useAuth();
-  const { canViewPrice, ensurePrices, mergePrices } = usePrices();
+  const { canViewPrice, ensurePrices } = usePrices();
 
   // ★ 解耦（2026-08-27 决策）：产品切换不再等待价格就绪。
   //   价格唯一入口 = products-prices，由 ProductCard mount 时 ensurePrices 按现有机制随后拉取
@@ -298,23 +297,8 @@ export default function TiendaClient({
 
         // ★ 兼容两种响应格式: Vercel代理(camelCase) + 后端直连(snake_case)
         if (prodData && Array.isArray(prodData.products)) {
-          // ★ 方案 A 恢复 (2026-08-28): 授权响应同包带价 → mergePrices 先喂价后 setProducts（React 18 批处理同帧）
-          //   → 新卡片 mount 时 prices 已就绪 → ensurePrices 见价不请求 → 筛选场景 0 次 products-prices
-          //   游客无 token 响应无 price → priceEntries 空自动跳过；安全边界与 P1 前一致
-          const priceEntries: Record<number, PriceInfo> = {};
-          for (const p of prodData.products) {
-            if (p && p.id != null && p.price != null && p.price !== '') {
-              priceEntries[p.id] = {
-                price: String(p.price),
-                regular_price: p.regular_price != null ? String(p.regular_price) : '',
-                sale_price: p.sale_price != null ? String(p.sale_price) : '',
-                min_qty: typeof p.min_qty === 'number' && p.min_qty > 0 ? p.min_qty : 1,
-              };
-            }
-          }
-          if (Object.keys(priceEntries).length > 0) {
-            mergePrices(priceEntries);
-          }
+          // ★ P1 架构减负 (2026-08-26): 公开 API 已彻底去认证（永远无价格）
+          //   价格唯一入口 = products-prices（ProductCard mount 时 ensurePrices 按需拉取）
           const productsList = prodData.products as Product[];
           // ★ 解耦：产品切换不等待价格（价格由现有 ensurePrices 机制随后进入，透明占位无灰条无闪烁）
           setProducts(productsList);
