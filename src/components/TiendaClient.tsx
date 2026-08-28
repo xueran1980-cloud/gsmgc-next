@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, Suspense, use } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product, ProductCategory } from '@/lib/api';
@@ -46,16 +46,35 @@ function HighlightText({ text, highlight }: { text: string; highlight: string })
   }
 }
 
+/**
+ * ★ C1（2026-08-28）：SSR 流式价格注入器
+ * - 服务端把"未 await 的取价 Promise"流式推到客户端；use() 解包后写入 PriceContext
+ * - 渲染 null → 价格出现在 ProductCard 原位置（占位同尺寸、无灰块、无布局跳变）
+ * - 返回 null（非 null 时才会二次渲染价格）；null → 客户端 ensurePrices 兜底（零功能损失）
+ */
+function PriceSeed({ promise }: { promise: Promise<Record<string, NonNullable<Product['_price']>> | null> }) {
+  const { mergePrices } = usePrices();
+  const prices = use(promise);
+  useEffect(() => {
+    if (prices && Object.keys(prices).length > 0) {
+      mergePrices(prices as unknown as Parameters<typeof mergePrices>[0]);
+    }
+  }, [prices, mergePrices]);
+  return null;
+}
+
 export default function TiendaClient({
   categories: categoriesProp,
   initialProducts,
   initialTotal,
   initialPage,
+  pricesPromise,
 }: {
   categories?: ProductCategory[];
   initialProducts?: Product[];
   initialTotal?: number;
   initialPage?: number;
+  pricesPromise?: Promise<Record<string, NonNullable<Product['_price']>> | null> | null;
 }) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -416,6 +435,13 @@ export default function TiendaClient({
 
   return (
     <div className={`min-h-screen bg-gray-50${!loading ? ' animate-page-enter' : ''}`}>
+      {/* ★ C1：SSR 流式价格洞 — fallback=null（占位在卡片内，保持尺寸、无灰块，不制造"等价格"的视觉） */}
+      {pricesPromise ? (
+        <Suspense fallback={null}>
+          <PriceSeed promise={pricesPromise} />
+        </Suspense>
+      ) : null}
+
       {/* Header bar */}
       <div className="bg-white border-b border-gray-100 sticky top-[--header-offset] z-10">
         <div className="max-w-7xl mx-auto px-4 py-3">

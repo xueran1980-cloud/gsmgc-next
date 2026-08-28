@@ -86,31 +86,14 @@ export default async function TiendaPage() {
     throw new Error('Tienda: fallo al cargar el catálogo');
   }
 
-  // ★ DoD B：登录客户 → 服务端取本客户价格（串行依赖 ids；失败降级 → 客户端 ensurePrices 兜底，零功能损失）
-  if (authToken && initialProducts.length > 0) {
-    const ids = initialProducts.map((p) => p.id).join(',');
-    try {
-      const res = await fetch(
-        `https://api.gsmgc.es/wp-json/gsmgc/v1/products-prices?ids=${ids}`,
-        {
-          headers: { 'User-Agent': 'GSMGC-Next-Server/1.0', 'Accept': 'application/json', Authorization: `Bearer ${authToken}` },
-          cache: 'no-store',
-          signal: AbortSignal.timeout(6000),
-        }
-      );
-      if (res.ok) {
-        const json = await res.json();
-        if (json?.success && json?.prices) {
-          initialProducts = initialProducts.map((p) => ({
-            ...p,
-            _price: json.prices[String(p.id)] as Product['_price'],
-          }));
-        }
-      }
-    } catch (err) {
-      console.warn('[tienda SSR] prices fetch failed, client ensurePrices fallback:', (err as Error).message);
-    }
-  }
+  // ★ C1（2026-08-28）：价格**不阻塞 HTML flush**（9ad38bd 的唯一错误 = await prices 发生在 flush 之前）
+  //   shell（布局 + 24 张无价产品卡）立即 flush → 用户 ~150-200ms 即看到完整结构并可操作
+  //   取价 Promise 交给客户端 Suspense 边界 → 价格在同一响应流内到达 → 原位置注入，无额外客户端往返
+  //   失败/401/403 → resolve(null)（绝不 reject，避免 Suspense error boundary 破页）→ 客户端 ensurePrices 兜底
+  const pricesPromise: Promise<Record<string, NonNullable<Product['_price']>> | null> | null =
+    authToken && initialProducts.length > 0
+      ? fetchCustomerPrices(initialProducts.map((p) => p.id), authToken)
+      : null;
 
   return (
     <Suspense fallback={<TiendaSkeleton />}>
@@ -118,9 +101,38 @@ export default async function TiendaPage() {
       initialProducts={initialProducts}
       initialTotal={initialTotal}
       initialPage={1}
+      pricesPromise={pricesPromise}
     />
     </Suspense>
   );
+}
+
+/**
+ * 服务端取本客户价格（C1：不阻塞 shell，供 Suspense 边界流式消费）
+ * - 401/403/网络失败/超时 → null（安全边界不变：无价降级，卡片显示 Ver precio）
+ * - 绝不 throw：Promise reject 会击穿 Suspense → 页面级错误
+ */
+async function fetchCustomerPrices(
+  ids: number[],
+  token: string
+): Promise<Record<string, NonNullable<Product['_price']>> | null> {
+  try {
+    const res = await fetch(
+      `https://api.gsmgc.es/wp-json/gsmgc/v1/products-prices?ids=${ids.join(',')}`,
+      {
+        headers: { 'User-Agent': 'GSMGC-Next-Server/1.0', 'Accept': 'application/json', Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(6000),
+      }
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (!json?.success || !json?.prices) return null;
+    return json.prices as Record<string, NonNullable<Product['_price']>>;
+  } catch (err) {
+    console.warn('[tienda SSR] prices fetch failed, client ensurePrices fallback:', (err as Error).message);
+    return null;
+  }
 }
 
 // ★ RSC Suspense fallback — 匹配 TiendaClient loading skeleton
