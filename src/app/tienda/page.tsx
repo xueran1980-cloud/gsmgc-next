@@ -123,20 +123,21 @@ export default async function TiendaPage() {
   );
 }
 
-// ★ RSC Suspense fallback — 匹配 TiendaClient loading skeleton
+// ★ RSC Suspense fallback — C' (2026-08-28): 轻量占位（单 spinner）替代 24 卡整页骨架。
+//   只改视觉 fallback：RSC/SSR 数据逻辑、TiendaClient 生命周期、价格同步均不变。
+//   整页导航（RSC 慢/失败 fallback）时用户看到轻量加载态，而非吓人的整页骨架。
 function TiendaSkeleton() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
-          {Array.from({ length: 24 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 animate-pulse">
-              <div className="bg-gray-100 rounded-xl h-40 mb-4" />
-              <div className="h-4 bg-gray-100 rounded w-3/4 mb-2" />
-              <div className="h-3 bg-gray-100 rounded w-1/2 mb-3" />
-              <div className="h-5 bg-gray-100 rounded w-1/3" />
-            </div>
-          ))}
+        <div className="flex items-center justify-center py-40">
+          <div className="flex items-center gap-2.5 text-gray-400">
+            <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <span className="text-sm">Cargando…</span>
+          </div>
         </div>
       </div>
     </div>
