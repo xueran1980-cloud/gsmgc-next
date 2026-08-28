@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product, ProductCategory } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
@@ -58,9 +58,14 @@ export default function TiendaClient({
   initialTotal?: number;
   initialPage?: number;
 }) {
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const pathname = usePathname();
+
+  // ★ R (2026-08-28): 自管理 URL 查询状态 — 替代 Next useSearchParams 响应式。
+  //   彻底绕开 router.replace / RSC navigation（WebKit 下 RSC 客户端导航 14/15 失败 → fallback 整页导航，历史顽疾）
+  const [navQuery, setNavQuery] = useState(() =>
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).toString() : ''
+  );
+  const navParams = new URLSearchParams(navQuery);
   const [filterOpen, setFilterOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>(initialProducts || []);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
@@ -90,7 +95,7 @@ export default function TiendaClient({
   // ★ Safari Router 冻结自愈：防止连续点击触发重复导航
   const navigationLockRef = useRef(false);
   // ★ A' (2026-08-28): 内容就绪标记 —— fetch 成功渲染后置 true；
-  //    safeReplace 3000ms 检查时若内容已更新则不强制整页导航（避免不必要的整页 Suspense Skeleton）
+  //    navigateTo 本地导航：内容已更新后不再有整页导航（R 方案已消除整页 fallback）
   const contentReadyRef = useRef(false);
 
   // ★ Phase 1：会话内最近结果缓存（Map 内存；TTL 60s；身份+授权+query 隔离；价格仅内存）
@@ -126,19 +131,19 @@ export default function TiendaClient({
   }, []);
 
   // Read params from URL — ★ 对齐旧站默认：Precio: mayor a menor (price-desc)
-  const categoryParam = searchParams.get('category') || '';
-  const searchParam = searchParams.get('search') || '';
-  const pageParam = Math.max(1, parseInt(searchParams.get('page') || '1'));
-  const orderby = searchParams.get('orderby');
-  const order = searchParams.get('order');
+  const categoryParam = navParams.get('category') || '';
+  const searchParam = navParams.get('search') || '';
+  const pageParam = Math.max(1, parseInt(navParams.get('page') || '1'));
+  const orderby = navParams.get('orderby');
+  const order = navParams.get('order');
   const finalOrderby = orderby || 'price'; // ★ 旧站默认：price-desc
   const finalOrder = order || 'desc';
 
-  // ★ URL 为唯一真相源 — fetch 只依赖 searchParams，无中间状态
+  // ★ URL 为唯一真相源 — fetch 只依赖 navQuery（自管理），无中间状态
 
   // ★ URL 驱动导航：只修改 URL，不合成状态
   const buildUrl = (updates: Record<string, string | null>, clear?: string[]) => {
-    const p = new URLSearchParams(searchParams.toString());
+    const p = new URLSearchParams(navQuery);
     for (const [k, v] of Object.entries(updates)) {
       if (v) p.set(k, v);
       else p.delete(k);
@@ -147,58 +152,59 @@ export default function TiendaClient({
     return p.toString() ? `${pathname}?${p}` : pathname;
   };
 
-  // ★ Header 搜索事件 → TiendaClient 统一 URL 写入口
-  useEffect(() => {
-    function handler(e: CustomEvent<{ url: string }>) {
-      safeReplace(e.detail.url);
-    }
-    window.addEventListener('gsmgc:search', handler as EventListener);
-    return () => window.removeEventListener('gsmgc:search', handler as EventListener);
-  }, [searchParams, pathname, router]);
-
-  // ★ Safari Router 冻结自愈：router.replace 失败时 800ms 硬导航 fallback
-  const safeReplace = (url: string) => {
+  // ★ R (2026-08-28): 本地导航 — 彻底绕开 router.replace / RSC navigation。
+  //   WebKit 下 Next.js RSC 客户端导航 14/15 失败 → fallback 整页导航（历史顽疾，原 safeReplace 800ms fallback 只是缓解）。
+  //   R: 本地 state(navQuery) → history.replaceState（零 RSC）→ useEffect → 直接 fetch → setProducts
+  const navigateTo = useCallback((url: string) => {
     if (!url.startsWith('/')) return;        // ★ 防御：拒绝非站内路径
-    if (navigationLockRef.current) return;
+    if (navigationLockRef.current) return;  // ★ 防同帧连点
     const before = window.location.href;
     const targetUrl = new URL(url, window.location.origin).href;
     if (before === targetUrl) return;         // ★ 同 URL 不触发
     navigationLockRef.current = true;
-    // ★ 解耦（2026-08-27）：导航（点击分类/分页/排序/搜索）即旧内容失效 —— 点击瞬间清空，
-    //   URL 变更前旧 grid 已消失 → 杜绝「URL=新查询 / 内容=旧查询」任何一帧（回归硬闸）
-    setProducts([]);
+    // ★ R (2026-08-28 老板要求)：分类请求期间**保留旧产品**（渐进更新，不清空）。
+    //   URL 由 replaceState 与 navQuery 同帧同步 → 不存在「URL=新/内容=旧」错帧（R 架构保证）。
+    //   请求失败 → 保留旧内容 + 顶部错误横幅 Reintentar（不变成「没有产品」）
     setLoading(true);
-    contentReadyRef.current = false;   // ★ A'：本次导航内容未就绪
-    router.replace(url, { scroll: false });
-    let checked = false;
-    const check = () => {
-      if (checked) return;
-      checked = true;
-      // ★ A' (2026-08-28): 检查窗口 800→3000ms（给 RSC 更多时间，减少慢路径误触发整页导航）；
-      //   若内容已更新（fetch 成功渲染）→ 即使 URL 未同步也不强制整页导航（避免整页 Skeleton）
-      if (window.location.href === before && !contentReadyRef.current) {
-        window.location.assign(url);
-      }
-      navigationLockRef.current = false;
-    };
-    setTimeout(check, 3000);
-    requestAnimationFrame(() => setTimeout(check, 200));
-  };
+    contentReadyRef.current = false;
+    // ★ R 核心：更新本地状态 + history.replaceState 同步地址栏（不触发 Next.js RSC navigation）
+    const q = url.includes('?') ? url.slice(url.indexOf('?') + 1) : '';
+    setNavQuery(q);
+    window.history.replaceState(null, '', url);
+    // ★ 锁释放用 setTimeout(16ms) 而非 requestAnimationFrame —— rAF 在窗口后台/不可见时不执行会永久卡锁
+    setTimeout(() => { navigationLockRef.current = false; }, 16);
+  }, [setProducts, setLoading, setNavQuery, navigationLockRef, contentReadyRef]);
+
+  // ★ Header 搜索事件 → TiendaClient 统一 URL 写入口（R: 经 navigateTo 本地导航，零 RSC）
+  useEffect(() => {
+    function handler(e: CustomEvent<{ url: string }>) {
+      navigateTo(e.detail.url);
+    }
+    window.addEventListener('gsmgc:search', handler as EventListener);
+    return () => window.removeEventListener('gsmgc:search', handler as EventListener);
+  }, [navigateTo]);
+
+  // ★ R: popstate — 浏览器后退/前进 → 从 URL 重新读取并触发 fetch（兜底；replaceState 不产生历史，站内几乎不触发）
+  useEffect(() => {
+    const onPop = () => setNavQuery(new URLSearchParams(window.location.search).toString());
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   const setCategory = useCallback((slug: string) => {
-    safeReplace(buildUrl({ category: slug }, ['page', 'search']));
-  }, [searchParams, pathname, router]);
+    navigateTo(buildUrl({ category: slug }, ['page', 'search']));
+  }, [navigateTo, buildUrl, pathname, navQuery]);
 
   const setPage = useCallback((n: number) => {
-    safeReplace(buildUrl({ page: String(n) }));
+    navigateTo(buildUrl({ page: String(n) }));
     if (typeof window !== 'undefined') {
       requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
     }
-  }, [searchParams, pathname, router]);
+  }, [navigateTo, buildUrl, pathname, navQuery]);
 
   const resetAll = useCallback(() => {
-    safeReplace(pathname);
-  }, [router, pathname]);
+    navigateTo(pathname);
+  }, [navigateTo, pathname]);
 
   // ★ 独立获取分类 — 浏览器直连 WP，绕开 Vercel→SG 代理通道（SG IP 阻断）
   useEffect(() => {
@@ -223,14 +229,14 @@ export default function TiendaClient({
       });
   }, []);
 
-  // ★ useEffect：URL (searchParams) 为唯一状态源，URL 变化时 fetch
+  // ★ useEffect：URL (navQuery) 为唯一状态源，navQuery 变化时 fetch（R: 本地导航驱动）
   //    通过 useAsyncState 管理 fetch 生命周期：15s timeout + abort + auto retry + unmount guard
   useEffect(() => {
-    const category = searchParams.get('category') || '';
-    const searchTerm = searchParams.get('search') || '';
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
-    const orderbyParam = searchParams.get('orderby');
-    const orderParam = searchParams.get('order');
+    const category = navParams.get('category') || '';
+    const searchTerm = navParams.get('search') || '';
+    const page = Math.max(1, parseInt(navParams.get('page') || '1'));
+    const orderbyParam = navParams.get('orderby');
+    const orderParam = navParams.get('order');
 
     // ★ 守卫（候选C）：SSR 已提供数据 + 当前 URL = SSR 默认查询 → 跳过重复 fetch
     //   ssrReady 无条件消费（一次性），isDefaultView 决定是否跳过
@@ -365,7 +371,7 @@ export default function TiendaClient({
           setTotalCount(0);
           setTotalPages(0);
         }
-        // ★ A'：内容已就绪（fetch 成功）→ safeReplace 3000ms 检查不再强制整页导航
+        // ★ 内容已就绪（fetch 成功）→ 后续导航不再有整页 fallback（R: 本地导航）
         contentReadyRef.current = true;
         setFetchError(false);   // ★ B'：成功清除错误态
         setLoading(false);
@@ -385,9 +391,9 @@ export default function TiendaClient({
     return () => {
       search.abort();
     };
-  // 依赖 searchParams.toString() 确保任何参数变化都触发；retryNonce 触发 Reintentar 重试（同查询）
+  // 依赖 navQuery 确保任何参数变化都触发；retryNonce 触发 Reintentar 重试（同查询）
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams.toString(), retryNonce]);
+  }, [navQuery, retryNonce]);
 
   // ★ 组件卸载时完整清理
   useEffect(() => {
@@ -477,13 +483,13 @@ export default function TiendaClient({
                 value={`${finalOrderby}-${finalOrder}`}
                 onChange={e => {
                   const [ob, or] = e.target.value.split('-');
-                  const params = new URLSearchParams(searchParams.toString());
+                  const params = new URLSearchParams(navQuery);
                   if (categoryParam) params.set('category', categoryParam);
                   if (searchParam) params.set('search', searchParam);
                   params.set('orderby', ob);
                   params.set('order', or);
                   params.delete('page');
-                  safeReplace(`${pathname}?${params.toString()}`);
+                  navigateTo(`${pathname}?${params.toString()}`);
                 }}
                 className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
               >
@@ -620,8 +626,9 @@ export default function TiendaClient({
                   <span className="text-sm">Cargando…</span>
                 </div>
               </div>
-            ) : fetchError ? (
-              // ★ B' (2026-08-28): 网络错误/超时态 → 明确提示 + Reintentar（重试当前查询，不改变筛选）
+            ) : fetchError && products.length === 0 ? (
+              // ★ B' (2026-08-28): 网络错误/超时态且无旧内容 → 全屏提示 + Reintentar
+              //   （有旧内容时走下方列表分支 + 顶部错误横幅，保留旧产品）
               <div className="text-center py-20">
                 <div className="text-6xl mb-4">{'⚠️'}</div>
                 <h2 className="text-xl font-bold text-gray-800 mb-2">Error de conexión</h2>
@@ -647,6 +654,18 @@ export default function TiendaClient({
               </div>
             ) : (
               <>
+                {/* ★ R (2026-08-28 老板要求)：请求失败保留旧内容 + Reintentar 横幅（不变成「没有产品」） */}
+                {fetchError && (
+                  <div className="mb-4 flex items-center justify-between gap-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+                    <span className="text-sm font-medium">Error de conexión — se muestran los resultados anteriores</span>
+                    <button
+                      onClick={() => setRetryNonce((n) => n + 1)}
+                      className="bg-[#2563eb] text-white text-sm font-bold px-4 py-2 rounded-lg whitespace-nowrap"
+                    >
+                      Reintentar
+                    </button>
+                  </div>
+                )}
                 {/* 统计信息（对齐旧站：搜索时显示 resultado(s) 格式） */}
                 <p className="text-sm text-gray-500 mb-4">
                   {searchParam
