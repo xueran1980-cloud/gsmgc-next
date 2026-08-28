@@ -47,12 +47,15 @@ export async function safeApiFetch<T = any>(
   options: RequestInit = {},
   token?: string
 ): Promise<T> {
-  let url = `${API_BASE}${apiPath}`;
+  const url = `${API_BASE}${apiPath}`;
 
-  // auth_token URL 兜底（客户端）
-  if (token && typeof window !== 'undefined' && !url.includes('auth_token=')) {
-    const sep = url.includes('?') ? '&' : '?';
-    url = `${url}${sep}auth_token=${encodeURIComponent(token)}`;
+  // ★ P1-1 (2026-08-28): token 改走 Authorization: Bearer header（与 fetchWithFallbackClient 一致）
+  //   不再追加 ?auth_token= 到 URL（SG access log 明文记录，Audit P1-1 Confirmed）
+  const headers = new Headers(options.headers);
+  if (!headers.has('Accept')) headers.set('Accept', 'application/json');
+  if (!headers.has('User-Agent')) headers.set('User-Agent', 'GSMGC-Next.js/1.0');
+  if (token && typeof window !== 'undefined' && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
   }
 
   // 超时控制
@@ -63,11 +66,7 @@ export async function safeApiFetch<T = any>(
     const res = await fetch(url, {
       ...options,
       cache: 'no-store',
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'GSMGC-Next.js/1.0',
-        ...options.headers,
-      },
+      headers,
       signal: controller.signal as any,
     });
 
