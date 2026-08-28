@@ -85,6 +85,9 @@ export default function TiendaClient({
 
   // ★ Safari Router 冻结自愈：防止连续点击触发重复导航
   const navigationLockRef = useRef(false);
+  // ★ A' (2026-08-28): 内容就绪标记 —— fetch 成功渲染后置 true；
+  //    safeReplace 3000ms 检查时若内容已更新则不强制整页导航（避免不必要的整页 Suspense Skeleton）
+  const contentReadyRef = useRef(false);
 
   // ★ Phase 1：会话内最近结果缓存（Map 内存；TTL 60s；身份+授权+query 隔离；价格仅内存）
   const cacheRef = useRef<Map<string, CacheEntry>>(new Map());
@@ -161,17 +164,20 @@ export default function TiendaClient({
     //   URL 变更前旧 grid 已消失 → 杜绝「URL=新查询 / 内容=旧查询」任何一帧（回归硬闸）
     setProducts([]);
     setLoading(true);
+    contentReadyRef.current = false;   // ★ A'：本次导航内容未就绪
     router.replace(url, { scroll: false });
     let checked = false;
     const check = () => {
       if (checked) return;
       checked = true;
-      if (window.location.href === before) {
+      // ★ A' (2026-08-28): 检查窗口 800→3000ms（给 RSC 更多时间，减少慢路径误触发整页导航）；
+      //   若内容已更新（fetch 成功渲染）→ 即使 URL 未同步也不强制整页导航（避免整页 Skeleton）
+      if (window.location.href === before && !contentReadyRef.current) {
         window.location.assign(url);
       }
       navigationLockRef.current = false;
     };
-    setTimeout(check, 800);
+    setTimeout(check, 3000);
     requestAnimationFrame(() => setTimeout(check, 200));
   };
 
@@ -346,6 +352,8 @@ export default function TiendaClient({
           setTotalCount(0);
           setTotalPages(0);
         }
+        // ★ A'：内容已就绪（fetch 成功）→ safeReplace 3000ms 检查不再强制整页导航
+        contentReadyRef.current = true;
         setLoading(false);
       } catch (_err) {
         // ★ 只有最新请求才清 loading（防竞态）
