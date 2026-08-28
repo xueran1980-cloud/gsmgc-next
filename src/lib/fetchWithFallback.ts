@@ -66,7 +66,7 @@ export async function fetchWithFallbackServer(
  *
  * @param apiPath - WP JSON API 路径
  * @param options - fetch 选项
- * @param token - 可选 auth token（添加到 URL 参数）
+ * @param token - 可选 auth token（★ P1-1: 改走 Authorization: Bearer header，不再放 URL query）
  * @returns Response
  */
 export async function fetchWithFallbackClient(
@@ -74,16 +74,19 @@ export async function fetchWithFallbackClient(
   options: RequestInit,
   token?: string
 ): Promise<Response> {
-  let url = `${API_BASE}${apiPath}`;
+  const url = `${API_BASE}${apiPath}`;
 
-  // auth_token URL 兜底
-  if (token && typeof window !== 'undefined' && !url.includes('auth_token=')) {
-    const sep = url.includes('?') ? '&' : '?';
-    url = `${url}${sep}auth_token=${encodeURIComponent(token)}`;
+  // ★ P1-1 (2026-08-28): token 改走 Authorization: Bearer header —— 不再追加 ?auth_token= 到 URL
+  //   原因：URL token 被 SG access log 明文记录（Full-Site Audit P1-1，Confirmed，实测 982 次/天）
+  //   兼容：后端 _gsmgc_get_bearer_token() 阶段 1 仍保留 $_GET['auth_token'] fallback（Phase 2 观察 7 天后另行审批）
+  //   已实证：OPTIONS preflight 204 + allow-headers 含 Authorization；GET /me + Bearer 穿透 CF 达后端（401 JSON）
+  const headers = new Headers(options.headers);
+  if (token && typeof window !== 'undefined' && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
   }
 
   try {
-    const res = await fetch(url, { ...options, cache: 'no-store' });
+    const res = await fetch(url, { ...options, headers, cache: 'no-store' });
     if (isResponseUnreliable(res)) {
       console.error(`[fetch] Unreliable response: ${res.status} ${res.headers.get('Content-Type')}`);
       return new Response(
