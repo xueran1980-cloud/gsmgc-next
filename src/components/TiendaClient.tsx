@@ -68,7 +68,8 @@ export default function TiendaClient({
   const navParams = new URLSearchParams(navQuery);
   const [filterOpen, setFilterOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>(initialProducts || []);
-  const [categories, setCategories] = useState<ProductCategory[]>([]);
+  // ★ SSR 分类注入（2026-08-28）：服务端已带 categories（page.tsx 并行 fetch）→ 首帧直接渲染完整侧栏
+  const [categories, setCategories] = useState<ProductCategory[]>(categoriesProp || []);
   const [loading, setLoading] = useState(!(initialProducts && initialProducts.length > 0));
   // ★ B' (2026-08-28): fetch 错误态（10s 超时/网络失败）→ 明确错误提示 + Reintentar；
   //    retryNonce 作为重试触发器（重跑当前查询，不改变筛选条件）
@@ -212,7 +213,10 @@ export default function TiendaClient({
   }, [navigateTo, pathname]);
 
   // ★ 独立获取分类 — 浏览器直连 WP，绕开 Vercel→SG 代理通道（SG IP 阻断）
+  // ★ SSR 注入守卫（2026-08-28）：服务端已带分类（非空）→ 绝不再次请求 categories-raw（消除首帧空白窗口 + 冗余请求）；
+  //   无 SSR 数据（SSR fetch 失败/2s 超时）→ 保留原客户端 fetch 兜底
   useEffect(() => {
+    if (categoriesProp && categoriesProp.length > 0) return;
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.gsmgc.es';
     fetch(`${API_BASE}/wp-json/gsmgc/v1/categories-raw`, { cache: 'no-store' })
       .then(r => r.json())

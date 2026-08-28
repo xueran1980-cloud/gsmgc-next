@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import type { Product } from '@/lib/api';
+import type { Product, ProductCategory } from '@/lib/api';
 import TiendaClient from '@/components/TiendaClient';
 
 // ★ DoD B（2026-08-27）：读 cookies() → 本路由 dynamic（Vercel 层 ISR 移除，游客由 CF「Cache HTML 5min」override_origin 承接）
@@ -47,6 +47,21 @@ export default async function TiendaPage() {
   // fetch — 默认排序 + 1次重试（应对 CF Bot Fight Mode）；dynamic 后无 ISR，重试语义保留
   const backendUrl = 'https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?per_page=24&page=1&orderby=price&order=desc';
   const fetchOpts = { headers: { 'User-Agent': 'GSMGC-Next-Server/1.0', 'Accept': 'application/json' }, cache: 'no-store' as const };
+
+  // ★ SSR 分类注入（2026-08-28 老板批准）：与 products **并行**发起 categories-raw（后端 12h transient，非每次重算）。
+  //   2s 超时保护：categories 意外慢绝不拖长 TTFB（超时/失败 → 返回空数组 → 客户端 fetch 兜底，零功能损失）。
+  //   首帧 HTML 直接带完整侧栏（Marcas + Categorías），消除「Todas+数量后等待品牌」的空白窗口。
+  const catPromise = fetch('https://api.gsmgc.es/wp-json/gsmgc/v1/categories-raw', {
+    headers: { 'User-Agent': 'GSMGC-Next-Server/1.0', 'Accept': 'application/json' },
+    cache: 'no-store',
+    signal: AbortSignal.timeout(2000),
+  })
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error('categories status ' + r.status))))
+    .then((data) => {
+      const cats = data?.categories ?? (Array.isArray(data) ? data : []);
+      return Array.isArray(cats) ? (cats as ProductCategory[]) : [];
+    })
+    .catch(() => [] as ProductCategory[]);
 
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
@@ -112,9 +127,14 @@ export default async function TiendaPage() {
     }
   }
 
+  // ★ SSR 分类注入：并行 categories 已在进行中（catPromise 与 products/prices 并发），
+  //   此处 await 拿结果（超时/失败 → 空数组 → 客户端 fetch 兜底）
+  const initialCategories = await catPromise;
+
   return (
     <Suspense fallback={<TiendaSkeleton />}>
     <TiendaClient
+      categories={initialCategories}
       initialProducts={initialProducts}
       initialTotal={initialTotal}
       initialPage={1}
