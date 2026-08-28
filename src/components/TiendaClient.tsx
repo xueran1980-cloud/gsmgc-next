@@ -65,6 +65,10 @@ export default function TiendaClient({
   const [products, setProducts] = useState<Product[]>(initialProducts || []);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(!(initialProducts && initialProducts.length > 0));
+  // ★ B' (2026-08-28): fetch 错误态（10s 超时/网络失败）→ 明确错误提示 + Reintentar；
+  //    retryNonce 作为重试触发器（重跑当前查询，不改变筛选条件）
+  const [fetchError, setFetchError] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
   const [totalCount, setTotalCount] = useState(initialTotal || 0);
   const [totalPages, setTotalPages] = useState(initialTotal ? Math.ceil(initialTotal / PER_PAGE) : 0);
 
@@ -291,12 +295,21 @@ export default function TiendaClient({
 
     search.run(async (signal) => {
       const thisId = ++fetchRequestId.current;
+      // ★ B' (2026-08-28): 10s 硬超时兜底 —— 兼容写法（AbortController + setTimeout + 外部 signal 转发），
+      //   不用 AbortSignal.any()/timeout()（Safari 兼容性）。useAsyncState 的 15s abort 依赖 fetch 响应
+      //   abort，iPad 挂起场景不可靠 → 此层独立 10s 保证任何浏览器/网络下超时必 reject → 进 catch → 显示 Reintentar
+      const hardTimeoutController = new AbortController();
+      const hardTimeoutId = setTimeout(() => hardTimeoutController.abort(), 10000);
+      const onOuterAbort = () => hardTimeoutController.abort();
+      signal.addEventListener('abort', onOuterAbort);
       try {
         const res = await fetch(directUrl, {
           headers: fetchHeaders,
           cache: 'no-store',
-          signal,
+          signal: hardTimeoutController.signal,
         });
+        clearTimeout(hardTimeoutId);
+        signal.removeEventListener('abort', onOuterAbort);
         const prodData = await res.json();
 
         // ★ 防止旧请求结果覆盖新请求
@@ -354,10 +367,15 @@ export default function TiendaClient({
         }
         // ★ A'：内容已就绪（fetch 成功）→ safeReplace 3000ms 检查不再强制整页导航
         contentReadyRef.current = true;
+        setFetchError(false);   // ★ B'：成功清除错误态
         setLoading(false);
       } catch (_err) {
+        clearTimeout(hardTimeoutId);
+        signal.removeEventListener('abort', onOuterAbort);
         // ★ 只有最新请求才清 loading（防竞态）
         if (thisId === fetchRequestId.current) {
+          // ★ B'：超时/网络失败 → 错误态（UI 显示「Error de conexión + Reintentar」）
+          setFetchError(true);
           setLoading(false);
         }
       }
@@ -367,9 +385,9 @@ export default function TiendaClient({
     return () => {
       search.abort();
     };
-  // 依赖 searchParams.toString() 确保任何参数变化都触发
+  // 依赖 searchParams.toString() 确保任何参数变化都触发；retryNonce 触发 Reintentar 重试（同查询）
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams.toString()]);
+  }, [searchParams.toString(), retryNonce]);
 
   // ★ 组件卸载时完整清理
   useEffect(() => {
@@ -601,6 +619,19 @@ export default function TiendaClient({
                   </svg>
                   <span className="text-sm">Cargando…</span>
                 </div>
+              </div>
+            ) : fetchError ? (
+              // ★ B' (2026-08-28): 网络错误/超时态 → 明确提示 + Reintentar（重试当前查询，不改变筛选）
+              <div className="text-center py-20">
+                <div className="text-6xl mb-4">{'⚠️'}</div>
+                <h2 className="text-xl font-bold text-gray-800 mb-2">Error de conexión</h2>
+                <p className="text-gray-500 mb-4">No se pudieron cargar los productos. Comprueba tu conexión e inténtalo de nuevo.</p>
+                <button
+                  onClick={() => setRetryNonce((n) => n + 1)}
+                  className="bg-[#2563eb] text-white font-bold px-6 py-3 rounded-xl"
+                >
+                  Reintentar
+                </button>
               </div>
             ) : products.length === 0 ? (
               <div className="text-center py-20">
