@@ -97,6 +97,9 @@ export default function TiendaClient({
   // ★ A' (2026-08-28): 内容就绪标记 —— fetch 成功渲染后置 true；
   //    navigateTo 本地导航：内容已更新后不再有整页导航（R 方案已消除整页 fallback）
   const contentReadyRef = useRef(false);
+  // ★ R 残留修复（2026-08-28）：本地导航标记 —— navigateTo 触发 → 本次 fetch 保留旧产品渐进更新；
+  //   直达/首次（hydration 后 URL≠SSR 数据）→ 仍清空防错帧（旧内容不得冒充新分类）
+  const isLocalNavRef = useRef(false);
 
   // ★ Phase 1：会话内最近结果缓存（Map 内存；TTL 60s；身份+授权+query 隔离；价格仅内存）
   const cacheRef = useRef<Map<string, CacheEntry>>(new Map());
@@ -162,6 +165,8 @@ export default function TiendaClient({
     const targetUrl = new URL(url, window.location.origin).href;
     if (before === targetUrl) return;         // ★ 同 URL 不触发
     navigationLockRef.current = true;
+    // ★ 本地导航标记：fetch effect 消费后保留旧产品（不清空 → 不闪 Cargando）
+    isLocalNavRef.current = true;
     // ★ R (2026-08-28 老板要求)：分类请求期间**保留旧产品**（渐进更新，不清空）。
     //   URL 由 replaceState 与 navQuery 同帧同步 → 不存在「URL=新/内容=旧」错帧（R 架构保证）。
     //   请求失败 → 保留旧内容 + 顶部错误横幅 Reintentar（不变成「没有产品」）
@@ -285,9 +290,14 @@ export default function TiendaClient({
       if (Date.now() - v.fetchedAt >= RECENT_CACHE_TTL_MS) cacheRef.current.delete(k);
     }
 
+    // ★ R 残留修复（2026-08-28）：本地导航/重试且已有旧内容 → 保留旧产品（渐进更新，不闪 Cargando）；
+    //   直达/首次（SSR 数据 ≠ URL 查询）→ 仍清空（防错帧：旧内容不得冒充新分类，8/26 回归铁律）
+    const keepOldContent = isLocalNavRef.current || (retryNonce > 0 && products.length > 0);
+    isLocalNavRef.current = false;
     setLoading(true);
-    // ★ 解耦：URL 变化（新查询）→ 旧内容同帧失效，绝不保留旧查询结果冒充新分类（回归铁律）
-    setProducts([]);
+    if (!keepOldContent) {
+      setProducts([]);
+    }
 
     // ★ 构建请求 headers：透传 Bearer token 给 /api/products → WP 后端
     const fetchHeaders: Record<string, string> = {};
