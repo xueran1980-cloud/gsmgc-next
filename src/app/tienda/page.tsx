@@ -45,7 +45,10 @@ export default async function TiendaPage() {
   let fetched = false; // 是否成功获取（含合法空），失败语义用
 
   // fetch — 默认排序 + 1次重试（应对 CF Bot Fight Mode）；dynamic 后无 ISR，重试语义保留
-  const backendUrl = 'https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?per_page=24&page=1&orderby=price&order=desc';
+  // ★ 2026-09-04：默认视图 = Todas 无 search ⇒ 按老板排序规则改为【最新上架优先】
+  //   （orderby=date → WC post_date = 首次创建/上架时间，非 modified date）
+  //   必须与 TiendaClient 的客户端默认一致，否则首屏与 hydration 后排序不一致。
+  const backendUrl = 'https://api.gsmgc.es/wp-json/gsmgc/v1/products-paginated?per_page=24&page=1&orderby=date&order=desc';
   const fetchOpts = { headers: { 'User-Agent': 'GSMGC-Next-Server/1.0', 'Accept': 'application/json' }, cache: 'no-store' as const };
 
   // ★ SSR 分类注入（2026-08-28 老板批准）：与 products **并行**发起 categories-raw（后端 12h transient，非每次重算）。

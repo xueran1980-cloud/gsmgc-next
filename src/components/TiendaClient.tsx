@@ -140,7 +140,12 @@ export default function TiendaClient({
   const pageParam = Math.max(1, parseInt(navParams.get('page') || '1'));
   const orderby = navParams.get('orderby');
   const order = navParams.get('order');
-  const finalOrderby = orderby || 'price'; // ★ 旧站默认：price-desc
+  // ★ 老板 2026-09-04 排序业务规则：
+  //   Todas + 无 search = “逛新品” → 首次创建/上架时间 DESC（最新优先）
+  //   有 search / 选了分类 / 选了品牌 = “找货” → 价格 DESC
+  //   URL 显式 orderby 始终优先（用户手动选择不被覆盖）
+  const isBrowsingAll = !categoryParam && !searchParam;
+  const finalOrderby = orderby || (isBrowsingAll ? 'date' : 'price');
   const finalOrder = order || 'desc';
 
   // ★ URL 为唯一真相源 — fetch 只依赖 navQuery（自管理），无中间状态
@@ -249,10 +254,11 @@ export default function TiendaClient({
 
     // ★ 守卫（候选C）：SSR 已提供数据 + 当前 URL = SSR 默认查询 → 跳过重复 fetch
     //   ssrReady 无条件消费（一次性），isDefaultView 决定是否跳过
-    //   默认查询 = 无 category/search + page<=1 + orderby 缺省或 price + order 缺省或 desc
+    //   ★ 2026-09-04：默认查询（Todas 无 search）排序改为 date-desc ⇒ 判定同步为 date
+    //   默认查询 = 无 category/search + page<=1 + orderby 缺省或 date + order 缺省或 desc
     const isDefaultView =
       !category && !searchTerm && page <= 1 &&
-      (orderbyParam === null || orderbyParam === 'price') &&
+      (orderbyParam === null || orderbyParam === 'date') &&
       (orderParam === null || orderParam === 'desc');
     if (ssrReady.current) {
       ssrReady.current = false;
@@ -262,7 +268,8 @@ export default function TiendaClient({
     // ★ 任何需要 fetch 的 URL 变化都立即显示 loading（含回 Todos/默认视图）
     //   首次 SSR 默认视图已在上方 ssrReady 守卫 return；能走到这里 = 必须 fetch
     //   → 旧 grid 立即失效，不再把旧筛选结果伪装成新状态（对称修复：Todos→分类 / 分类→Todos / A→B / 搜索 / 翻页）
-    const orderby = orderbyParam || 'price'; // ★ 旧站默认：price-desc
+    // ★ 2026-09-04 排序业务规则：无 category + 无 search（Todas 浏览）→ date DESC
+    const orderby = orderbyParam || ((!category && !searchTerm) ? 'date' : 'price');
     const order = orderParam || 'desc';
 
     const params = new URLSearchParams();
