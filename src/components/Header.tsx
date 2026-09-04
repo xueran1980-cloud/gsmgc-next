@@ -73,7 +73,23 @@ export default function Header() {
     setActiveDropdown(null);
     setMenuOpen(false);
     setSearchOpen(false);
+    // ★ 搜索词保留（2026-09-04 老板需求）：跨路由切换时输入框同步 URL 的激活搜索
+    setSearchVal(new URLSearchParams(window.location.search).get('search') || '');
   }, [pathname]);
+
+  // ★ 搜索词保留（2026-09-04 老板需求）：输入框 = 激活搜索的镜像（URL 单一真相源）。
+  //   同步触发：挂载（直达 URL/整页导航/刷新）· TiendaClient 本地导航（gsmgc:urlchange
+  //   —— history.replaceState 不触发 React 渲染，必须显式通知）· 浏览器后退（popstate）。
+  useEffect(() => {
+    const sync = () => setSearchVal(new URLSearchParams(window.location.search).get('search') || '');
+    sync();
+    window.addEventListener('gsmgc:urlchange', sync);
+    window.addEventListener('popstate', sync);
+    return () => {
+      window.removeEventListener('gsmgc:urlchange', sync);
+      window.removeEventListener('popstate', sync);
+    };
+  }, []);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -87,8 +103,30 @@ export default function Header() {
         }
       }, 80);
       setSearchOpen(false);
-      setSearchVal('');
+      // ★ 搜索词保留：不再清空输入框（搜索完成后保留本次搜索词，× 可清除）
     }
+  }
+
+  // ★ × 清空（2026-09-04 老板需求）：
+  //   · 当前处于 /tienda 且有激活 search → 经 gsmgc:search IPC（TiendaClient 唯一
+  //     URL 写入口，零 RSC）清除搜索过滤；保留其余参数（category/orderby），page
+  //     随搜索失效归 1；80ms assign 兜底与 handleSearch 同构。
+  //   · 否则（他页/仅键入未提交）→ 仅清空输入框文本。
+  function handleClearSearch() {
+    setSearchVal('');
+    if (typeof window === 'undefined') return;
+    const u = new URL(window.location.href);
+    if (u.pathname !== '/tienda' || !u.searchParams.get('search')) return;
+    u.searchParams.delete('search');
+    u.searchParams.delete('page');
+    const target = u.pathname + (u.searchParams.toString() ? '?' + u.searchParams.toString() : '');
+    const before = window.location.href;
+    window.dispatchEvent(new CustomEvent('gsmgc:search', { detail: { url: target } }));
+    setTimeout(function () {
+      if (window.location.href === before) {
+        window.location.assign(target);
+      }
+    }, 80);
   }
 
   function handleMouseEnter(label: string) {
@@ -220,9 +258,19 @@ export default function Header() {
                 value={searchVal}
                 onChange={(e) => setSearchVal(e.target.value)}
                 placeholder="Buscar producto, marca, modelo..."
-                className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent bg-gray-50 focus:bg-white transition"
+                className={`w-full border border-gray-200 rounded-xl pl-10 ${searchVal ? 'pr-9' : 'pr-4'} py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent bg-gray-50 focus:bg-white transition`}
               />
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              {searchVal && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  aria-label="Limpiar búsqueda"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded-full transition"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </form>
           </div>
 
@@ -283,9 +331,19 @@ export default function Header() {
                 value={searchVal}
                 onChange={(e) => setSearchVal(e.target.value)}
                 placeholder="Buscar..."
-                className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] bg-gray-50"
+                className={`w-full border border-gray-200 rounded-xl pl-10 ${searchVal ? 'pr-9' : 'pr-4'} py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] bg-gray-50`}
               />
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              {searchVal && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  aria-label="Limpiar búsqueda"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded-full transition"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </form>
           </div>
         )}

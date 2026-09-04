@@ -182,6 +182,9 @@ export default function TiendaClient({
     const q = url.includes('?') ? url.slice(url.indexOf('?') + 1) : '';
     setNavQuery(q);
     window.history.replaceState(null, '', url);
+    // ★ 搜索词保留（2026-09-04 老板需求）：replaceState 不触发 React/Next 渲染 →
+    //   显式通知 Header 同步搜索框镜像（URL 单一真相源；Header 自读 location.search）。
+    window.dispatchEvent(new CustomEvent('gsmgc:urlchange'));
     // ★ 锁释放用 setTimeout(16ms) 而非 requestAnimationFrame —— rAF 在窗口后台/不可见时不执行会永久卡锁
     setTimeout(() => { navigationLockRef.current = false; }, 16);
   }, [setProducts, setLoading, setNavQuery, navigationLockRef, contentReadyRef]);
