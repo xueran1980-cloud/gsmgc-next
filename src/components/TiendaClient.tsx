@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product, ProductCategory } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
-import { BRAND_CATEGORY_NAMES, EXCLUDED_CATEGORY_NAMES } from '@/config/category-config';
+import { getBrandCategories, getRealCategories, getMarcasParentId } from '@/lib/brandCategory';
 import { useAsyncState } from '@/hooks/useAsyncState';
 import { usePrices } from '@/context/PriceContext';
 import type { PriceInfo } from '@/context/PriceContext';
@@ -433,26 +433,12 @@ export default function TiendaClient({
     (c.slug || '').toLowerCase() === categoryParam.toLowerCase()
   );
 
-  // Marcas — ★ 对齐现站：仅白名单内的品牌
-  const brandCategories = [...safeCategories]
-    .filter(c => {
-      if ((c.count ?? 0) <= 0) return false;
-      const slug = (c.slug || '').toLowerCase();
-      if (EXCLUDED_CATEGORY_NAMES.has(slug)) return false;
-      return BRAND_CATEGORY_NAMES.has(slug);
-    })
-    .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
+  // Marcas — ★ Plan A（2026-09-10）：品牌 = parent === Marcas 父 id（运行时动态），回退白名单
+  const marcasParentId = getMarcasParentId(safeCategories);
+  const brandCategories = getBrandCategories(safeCategories, marcasParentId);
 
-  // Tipo de Producto — ★ 其余所有根分类 + 子分类
-  const realCategories = [...safeCategories]
-    .filter(c => {
-      if ((c.count ?? 0) <= 0) return false;
-      const slug = (c.slug || '').toLowerCase();
-      if (EXCLUDED_CATEGORY_NAMES.has(slug)) return false;
-      if (BRAND_CATEGORY_NAMES.has(slug)) return false;
-      return true;
-    })
-    .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
+  // Tipo de Producto — ★ 其余所有根分类 + 子分类（排除品牌 / Marcas 容器 / 排除 slug）
+  const realCategories = getRealCategories(safeCategories, marcasParentId);
 
   // Smart page numbers with ellipsis（对齐旧站）
   function renderPagination() {

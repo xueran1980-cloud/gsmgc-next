@@ -2,31 +2,21 @@
 
 import Link from "next/link";
 import type { ProductCategory } from "@/lib/api";
-import { BRAND_CATEGORY_NAMES, EXCLUDED_CATEGORY_NAMES } from '@/config/category-config';
+import { getBrandCategories, LEGACY_BRAND_SLUGS } from '@/lib/brandCategory';
 
-// 兜底：当 categories 数据未加载时显示
-const FALLBACK_BRANDS = Array.from(BRAND_CATEGORY_NAMES)
+// 兜底：当 categories 数据未加载时显示（迁移前白名单）
+const FALLBACK_BRANDS = Array.from(LEGACY_BRAND_SLUGS)
   .map(s => s.charAt(0).toUpperCase() + s.slice(1))
   .map(s => s.replace(/-/g, ' '));
 
 interface BrandsSectionProps {
   categories?: ProductCategory[];
+  /** Marcas 父分类 id（来自 categories-raw）。null = 尚未迁移，回退白名单。 */
+  marcasParentId?: number | null;
 }
 
-function filterBrandCategories(categories: ProductCategory[]) {
-  if (!categories || categories.length === 0) return [];
-  return [...categories]
-    .filter(c => {
-      if ((c.count ?? 0) <= 0) return false;
-      const slug = (c.slug || '').toLowerCase();
-      if (EXCLUDED_CATEGORY_NAMES.has(slug)) return false;
-      return BRAND_CATEGORY_NAMES.has(slug);
-    })
-    .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
-}
-
-export default function BrandsSection({ categories }: BrandsSectionProps) {
-  const brandCats = filterBrandCategories(categories || []);
+export default function BrandsSection({ categories, marcasParentId = null }: BrandsSectionProps) {
+  const brandCats = getBrandCategories(categories, marcasParentId);
   const brands = brandCats.length > 0 ? brandCats : null;
 
   return (

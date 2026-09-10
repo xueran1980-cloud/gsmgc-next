@@ -190,6 +190,24 @@ export async function fetchCategoriesDirect(): Promise<ProductCategory[]> {
   return fetchCategories();
 }
 
+// ★ Plan A（2026-09-10）：返回 categories-raw 完整列表（含 count=0，如 Marcas 容器）。
+//   用于首页取 Marcas 父 id；不过滤空分类（区别于 fetchCategories）。
+export async function fetchCategoriesRaw(): Promise<ProductCategory[]> {
+  try {
+    const res = await fetch(
+      'https://api.gsmgc.es/wp-json/gsmgc/v1/categories-raw',
+      { next: { revalidate: 3600 }, headers: SERVER_HEADERS }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : (data?.categories ?? []);
+    return Array.isArray(list) ? list : [];
+  } catch (err) {
+    console.warn('[fetchCategoriesRaw] failed:', err);
+    return [];
+  }
+}
+
 // ---------- 分类数据 ----------
 
 export async function fetchCategories(): Promise<ProductCategory[]> {

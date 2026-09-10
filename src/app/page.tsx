@@ -1,6 +1,7 @@
 // ISR cache reset — force re-render
 import type { Metadata } from "next";
-import { fetchHomepageData } from "@/lib/api";
+import { fetchHomepageData, fetchCategoriesRaw } from "@/lib/api";
+import { getMarcasParentId } from "@/lib/brandCategory";
 import Hero from "@/components/Hero";
 import { ProductsCarousel } from "@/components/ProductsCarousel";
 import CategoriesSection from "@/components/CategoriesSection";
@@ -32,6 +33,10 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const products = await fetchHomepageData();
+  // ★ Plan A（2026-09-10）：独立取 categories-raw（含 Marcas 容器，count=0）以取得 Marcas 父 id。
+  //   首页 products 推导列表不含 Marcas → 必须单独读。fetchCategoriesRaw 缓存 3600s。
+  const rawCategories = await fetchCategoriesRaw();
+  const marcasParentId = getMarcasParentId(rawCategories);
 
   // Compute category counts from products
   const categoryMap = new Map<number, { id: number; name: string; slug: string; parent: number; count: number }>();
@@ -153,7 +158,7 @@ export default async function HomePage() {
         products={featured}
         viewAllLink="/tienda"
       />
-      <BrandsSection categories={categoriesWithCounts} />
+      <BrandsSection categories={categoriesWithCounts} marcasParentId={marcasParentId} />
       <StatsSection productCount={productCount} />
     </>
   );
