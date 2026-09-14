@@ -110,7 +110,10 @@ export default function StockNotifyCardAction({ productId, onDone }: StockNotify
         className={`shrink-0 rounded-xl px-3 py-2 text-xs font-bold transition flex items-center gap-1.5 ${
           state === 'sending'
             ? 'bg-gray-200 text-gray-400 cursor-wait'
-            : 'bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-md hover:shadow-lg'
+            // ★ 2026-09-14：复用原列表卡片「Agotado」的红色视觉体系（bg-red-600 + text-white），
+            //   使缺货入口一眼可辨。仅背景色由蓝色改为原 Agotado 红；几何/字号/图标/行为全部不变。
+            //   （原 Agotado 是静态 pill 故无 hover；按钮补 hover:bg-red-700 —— 同一 Tailwind 红阶）
+            : 'bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg'
         }`}
       >
         {state === 'sending' ? (
