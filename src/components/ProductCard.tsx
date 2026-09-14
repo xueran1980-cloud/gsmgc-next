@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, Eye, Lock } from "lucide-react";
+import { ShoppingCart, Eye, Lock, Check } from "lucide-react";
+import StockNotifyCardAction from "@/components/StockNotifyCardAction";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { usePrices } from "@/context/PriceContext";
@@ -42,6 +43,8 @@ function StockBadge({ product }: { product: Product }) {
 export default function ProductCard({ product, compact = false }: { product: Product; compact?: boolean }) {
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
+  // ★ B1：缺货卡片上「一次性到货提醒」登记成功后的原地确认态（仅前端，不持久化）
+  const [notifyDone, setNotifyDone] = useState(false);
   const { isLoggedIn } = useAuth();
   const { getPrice, ensurePrices, denied } = usePrices();
   const router = useRouter();
@@ -170,11 +173,8 @@ export default function ProductCard({ product, compact = false }: { product: Pro
     <Link href={productUrl} className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-blue-100 transition-all p-4 group flex flex-col h-full relative overflow-hidden">
       <DiscountBadge dp={dp} />
       <StockBadge product={product} />
-      {!inStock && (
-        <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-xl">
-          <span className="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full animate-pulse">Agotado</span>
-        </div>
-      )}
+      {/* ★ B1（2026-09-14）：列表卡片不再显示 Agotado 蒙层，改由底部 Avísame 作为缺货操作入口。
+          仅移除前端展示 —— stock_status / stock_quantity / inStock 判断与后端库存逻辑完全不变。 */}
       <div className="rounded-xl h-40 flex items-center justify-center mb-4 overflow-hidden relative">
         {imgUrl ? (
           <img src={imgUrl} alt={product.name}
@@ -193,25 +193,42 @@ export default function ProductCard({ product, compact = false }: { product: Pro
           <span className="text-[11px] text-gray-400 mb-1 block">SKU: {product.sku}</span>
         )}
       </div>
-      <div className="flex items-end gap-2 mt-3 pt-3 border-t border-gray-50">
-        <div className="flex-1"><PriceDisplay /></div>
-        {isLoggedIn ? (
-          <div className="flex items-center gap-1.5">
-            <button onClick={handleAdd} disabled={!inStock || !priceReady}
-              className={`rounded-xl p-2.5 transition font-bold text-sm ${added ? "bg-green-500 text-white shadow-md" : !priceReady ? "bg-gray-200 text-gray-400 cursor-wait" : inStock ? "bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-md hover:shadow-lg" : "bg-red-100 text-red-400 cursor-not-allowed"}`}>
-              {added ? <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> : <ShoppingCart size={16} />}
-            </button>
+      <div className="mt-3 pt-3 border-t border-gray-50">
+        <div className="flex items-end gap-2">
+          <div className="flex-1"><PriceDisplay /></div>
+          {isLoggedIn ? (
+            <div className="flex items-center gap-1.5">
+              {inStock ? (
+                <button onClick={handleAdd} disabled={!priceReady}
+                  className={`rounded-xl p-2.5 transition font-bold text-sm ${added ? "bg-green-500 text-white shadow-md" : !priceReady ? "bg-gray-200 text-gray-400 cursor-wait" : "bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-md hover:shadow-lg"}`}>
+                  {added ? <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> : <ShoppingCart size={16} />}
+                </button>
+              ) : (
+                /* ★ B1：缺货 → Avísame 取代原「禁用红色购物车按钮」（有货分支完全不变） */
+                !notifyDone && <StockNotifyCardAction productId={product.id} onDone={() => setNotifyDone(true)} />
+              )}
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(productUrl); }}
+                className="rounded-xl p-2.5 border border-gray-200 text-gray-400 hover:border-[#2563eb] hover:text-[#2563eb] transition cursor-pointer"
+                title="Ver detalles"
+              ><Eye size={16} /></button>
+            </div>
+          ) : inStock ? (
             <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(productUrl); }}
-              className="rounded-xl p-2.5 border border-gray-200 text-gray-400 hover:border-[#2563eb] hover:text-[#2563eb] transition cursor-pointer"
-              title="Ver detalles"
-            ><Eye size={16} /></button>
-          </div>
-        ) : !inStock ? null : (
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push('/mi-cuenta'); }}
-            className="shrink-0 rounded-xl px-3 py-2 bg-[#ea580c] hover:bg-[#d97706] text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-          ><Lock size={13} />Registrarse</button>
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push('/mi-cuenta'); }}
+              className="shrink-0 rounded-xl px-3 py-2 bg-[#ea580c] hover:bg-[#d97706] text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+            ><Lock size={13} />Registrarse</button>
+          ) : (
+            /* ★ B1：缺货 + 未登录 → 同样只提供 Avísame（点击走现有登录流程，绝不创建匿名记录） */
+            !notifyDone && <StockNotifyCardAction productId={product.id} onDone={() => setNotifyDone(true)} />
+          )}
+        </div>
+        {/* ★ B1：登记成功 → 当前卡片立即原地显示确认文案（无需刷新；刷新后恢复 Avísame，与详情页语义一致） */}
+        {!inStock && notifyDone && (
+          <p className="mt-2 text-[10px] leading-tight text-green-700 font-semibold flex items-start gap-1">
+            <Check size={11} className="shrink-0 mt-px" />
+            <span>Te avisaremos cuando vuelva a estar disponible.</span>
+          </p>
         )}
       </div>
     </Link>
