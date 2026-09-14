@@ -7,6 +7,7 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { usePrices } from '@/context/PriceContext';
 import { PriceOrLoginPrompt } from '@/components/PriceOrLoginPrompt';
+import StockNotifyButton from '@/components/StockNotifyButton';
 import type { ProductImage } from '@/lib/api';
 
 interface ProductDetailActionsProps {
@@ -160,6 +161,9 @@ export default function ProductDetailActions({ product, waMsg }: ProductDetailAc
               )}
             </div>
 
+            {/* ★ Stock Notify: 缺货时提供一次性到货提醒入口（纯新增，有货时零新增 UI） */}
+            {!effectiveInStock && <StockNotifyButton productId={product.id} />}
+
             {/* Quantity + Add to cart */}
             {effectiveInStock && (
               <div className="mb-5" ref={addToCartRef}>
@@ -300,6 +304,9 @@ export default function ProductDetailActions({ product, waMsg }: ProductDetailAc
               <span className="text-red-600 font-semibold text-sm">{isActuallyOutOfStock ? 'Agotado' : 'Sin stock'}</span>
             )}
           </div>
+
+          {/* ★ Stock Notify: 缺货时提供一次性到货提醒入口（纯新增，有货时零新增 UI） */}
+          {!effectiveInStock && <StockNotifyButton productId={product.id} />}
 
           {/* WhatsApp CTA (always visible for guests) — ★ no price, B2B solicitation only */}
           <a
