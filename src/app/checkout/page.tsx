@@ -947,7 +947,12 @@ export default function CheckoutPage() {
                       type="button"
                       onClick={() => {
                         clearAllAuth();
-                        router.push('/login?redirect=/checkout');
+                        // ★ 2026-09-14 FIX（GSMGC-DEFER-008）：原跳转目标是一个**不存在的路由**
+                        //   （生产对该路径直接 404）→ 用户 token 失效后必然落死页面，无任何出路。
+                        //   改为应用唯一的、既有的登录入口 /mi-cuenta（与本页游客门禁、
+                        //   「Mi cuenta →」链接及 Header/Footer/产品页完全一致）。
+                        //   仅改导航目标：不新增 redirect 机制、不改 auth/token/cookie/权限逻辑。
+                        router.push('/mi-cuenta');
                       }}
                       className="flex-1 bg-[#2563eb] text-white font-bold py-2.5 rounded-xl text-sm hover:bg-[#1d4ed8] transition flex items-center justify-center gap-1.5"
                     >
