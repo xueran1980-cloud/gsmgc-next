@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
@@ -14,6 +14,13 @@ import {
   Trash2, X,
 } from 'lucide-react';
 import type { ReactNode, FormEvent, ChangeEvent } from 'react';
+
+/**
+ * ★ GSMGC-DEFER-008（续）：登录成功后允许跳回的内部目标 —— **精确匹配白名单**。
+ * 只用固定字面量比对，**任何 URL 里的自由文本都不会进入导航** ⇒ 结构上不存在 open-redirect 面。
+ * 需要新增返回目标时必须在此显式登记（不引入通用 URL 校验器，避免为未知目标开口子）。
+ */
+const POST_LOGIN_RETURN_WHITELIST = ['/checkout'];
 
 export default function AccountPage() {
   return (
@@ -29,8 +36,23 @@ function AccountPageContent() {
   const searchParams = useSearchParams();
   const { login: authLogin, isLoggedIn, isPending, user, logout: authLogout, refreshUser } = useAuth();
 
+  // ★ GSMGC-DEFER-008（续）：仅在 next 命中白名单时才设置返回目标；否则为 ''（= 与改动前完全一致的行为）
+  const nextRaw = searchParams.get('next') ?? '';
+  const returnTo = POST_LOGIN_RETURN_WHITELIST.includes(nextRaw) ? nextRaw : '';
+  const redirectedRef = useRef(false);
+
+  // 登录成功（isLoggedIn 置位）且存在合法返回目标 → 跳回原上下文。
+  // 使用 window.location.assign（整页导航）：与项目导航铁律一致（避免 RSC 客户端导航在 WebKit 的历史顽疾）。
+  useEffect(() => {
+    if (!isLoggedIn || !user || !returnTo || redirectedRef.current) return;
+    redirectedRef.current = true;
+    window.location.assign(returnTo);
+  }, [isLoggedIn, user, returnTo]);
+
   // If already logged in and approved, show profile
   if (isLoggedIn && user) {
+    // 有返回目标时先显示过渡态，避免账户页闪现后再跳走
+    if (returnTo) return <LoginRedirecting />;
     return <LoggedInView user={user} onLogout={() => authLogout()} />;
   }
 
@@ -58,6 +80,15 @@ function AccountPageContent() {
 }
 
 /* ───────── Logged-in Dashboard ───────── */
+/** 登录成功 → 跳回原上下文期间的过渡态（复用本页既有的 spinner 视觉） */
+function LoginRedirecting() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-[#2563eb] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
 function LoggedInView({ user, onLogout }: { user: any; onLogout: () => Promise<void> }) {
   const [loggingOut, setLoggingOut] = useState(false);
   const [orders, setOrders] = useState<any[] | null>(null); // null=loading, []=empty, [...]=loaded

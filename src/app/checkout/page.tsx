@@ -582,7 +582,7 @@ export default function CheckoutPage() {
 
             <div className="flex gap-3 justify-center flex-wrap">
               {!isPendingUser && !isRetrying && (
-                <Link href="/mi-cuenta" className="bg-[#2563eb] text-white font-bold px-8 py-3 rounded-xl inline-block hover:bg-[#1d4ed8] transition shadow-lg">
+                <Link href="/mi-cuenta?next=/checkout" className="bg-[#2563eb] text-white font-bold px-8 py-3 rounded-xl inline-block hover:bg-[#1d4ed8] transition shadow-lg">
                   Iniciar sesión
                 </Link>
               )}
@@ -952,7 +952,9 @@ export default function CheckoutPage() {
                         //   改为应用唯一的、既有的登录入口 /mi-cuenta（与本页游客门禁、
                         //   「Mi cuenta →」链接及 Header/Footer/产品页完全一致）。
                         //   仅改导航目标：不新增 redirect 机制、不改 auth/token/cookie/权限逻辑。
-                        router.push('/mi-cuenta');
+                        //   ★ 续（GSMGC-DEFER-008 第二段）：带 next=/checkout → 登录成功后自动跳回本页
+                        //     （next 只接受 /mi-cuenta 内白名单里的精确路径，无 open-redirect 面）。
+                        router.push('/mi-cuenta?next=/checkout');
                       }}
                       className="flex-1 bg-[#2563eb] text-white font-bold py-2.5 rounded-xl text-sm hover:bg-[#1d4ed8] transition flex items-center justify-center gap-1.5"
                     >
